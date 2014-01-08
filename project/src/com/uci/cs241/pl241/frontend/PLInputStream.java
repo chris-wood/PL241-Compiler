@@ -10,8 +10,12 @@ import java.util.Scanner;
  */
 public class PLInputStream 
 {
+	// Enumerator that describes the type of token at the front
+	public enum PLInputTokenType {STRING, NUMBER};
+	
 	// Head of the input stream
 	private String sym;
+	private PLInputTokenType type;
 	
 	// Scanner object containing the program input string
 	private Scanner scan;
@@ -30,6 +34,7 @@ public class PLInputStream
 	
 	/**
 	 * Advance the input stream to the next token, discarding the current symbol.
+	 * Also, fix the type of token that was just read.
 	 * 
 	 * @param none
 	 * @return nothing
@@ -37,6 +42,17 @@ public class PLInputStream
 	public void next()
 	{
 		sym = scan.next();
+		
+		// Determine the type of the new symbol
+		try
+		{
+			int val = Integer.parseInt(sym);
+			type = PLInputTokenType.NUMBER;
+		}
+		catch (NumberFormatException e)
+		{
+			type = PLInputTokenType.STRING;
+		}
 	}
 	
 	/**
@@ -47,5 +63,15 @@ public class PLInputStream
 	public String getSymbol()
 	{
 		return sym;
+	}
+	
+	/**
+	 * Determine the type of the input stream head.
+	 * 
+	 * @return type of sym (string or number)
+	 */
+	public PLInputTokenType getSymbolType()
+	{
+		return type;
 	}
 }

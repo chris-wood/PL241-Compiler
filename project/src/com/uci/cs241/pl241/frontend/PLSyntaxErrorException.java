@@ -11,10 +11,11 @@ public class PLSyntaxErrorException extends Exception
 	/**
 	 * Default constructor for the exception. There is no special
 	 * functionality - just call the parent constructor. 
-	 * @param message
+	 * 
+	 * @param message - source of the syntax error
 	 */
 	public PLSyntaxErrorException(String message)
 	{
-		super(message);
+		super("PL241 Syntax Error: " + message);
 	}
 }
