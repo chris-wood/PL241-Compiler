@@ -18,15 +18,27 @@ public class PLTokenizer
 	private ArrayList<String> lines;
 	private int lineNumber; // stream index
 	private int lineOffset; // offset in the current line
+	private char lastChar;
 
 	// Special relational characters
 	private char[] relChars = { '=', '!', '<', '>' };
+	private String[] relStrings = {"==", "!=", "<", "<=", ">", ">="};
 
 	private boolean isRelationalCharacter(char c)
 	{
 		for (int i = 0; i < relChars.length; i++)
 		{
 			if (c == relChars[i])
+				return true;
+		}
+		return false;
+	}
+	
+	private boolean isRelationalString(String s)
+	{
+		for (int i = 0; i < relStrings.length; i++)
+		{
+			if (s.equals(relChars[i]))
 				return true;
 		}
 		return false;
@@ -97,12 +109,12 @@ public class PLTokenizer
 			lineOffset = 0;
 		}
 		char nextChar = line.charAt(lineOffset++);
+		token.append(nextChar);
 //		System.out.println("      " + nextChar);
 
 		// Now build the token by parsing character-by-character with a FSM
 		if (Character.isDigit(nextChar)) // must be a digit
 		{
-			token.append(nextChar);
 			nextChar = line.charAt(lineOffset++);
 //			System.out.println("      " + nextChar);
 			while (Character.isDigit(nextChar))
@@ -110,11 +122,11 @@ public class PLTokenizer
 				token.append(nextChar);
 				nextChar = line.charAt(lineOffset++);
 			}
+			lineOffset--;
 //			System.out.println(token.toString());
 		} 
 		else if (Character.isLetter(nextChar))
 		{
-			token.append(nextChar);
 			nextChar = line.charAt(lineOffset++);
 //			System.out.println("      " + nextChar);
 			while (Character.isDigit(nextChar) || Character.isLetter(nextChar))
@@ -122,13 +134,29 @@ public class PLTokenizer
 				token.append(nextChar);
 				nextChar = line.charAt(lineOffset++);
 			}
+			lineOffset--;
 //			System.out.println(token.toString() + " - " + lineOffset);
 		} 
-		else 
+		else if (isRelationalCharacter(nextChar))
 		{
-			token.append(nextChar);
+			if (nextChar == '<') // check to see if assignment
+			{
+				nextChar = line.charAt(lineOffset++);
+				token.append(nextChar);
+				
+				// TODO: is this correct/warranted?
+				if (nextChar != '-' && isRelationalString(token.toString()) == false)
+				{
+					throw new PLSyntaxErrorException("Invalid relational operator");
+				}
+			}
+			else
+			{
+				nextChar = line.charAt(lineOffset++);
+				token.append(nextChar);
+			}
 		}
 
-		return token.toString();
+		return token.toString().trim();
 	}
 }

@@ -26,7 +26,7 @@ public class PLInterpreter
 			while (true)
 			{
 				String token = tokenizer.next();
-				System.out.print(token + " ");
+				System.out.print(token);
 			}
 		}
 		catch (PLEndOfFileException e)
