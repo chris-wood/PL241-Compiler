@@ -99,7 +99,7 @@ public class PLTokenizer
 	{
 		StringBuilder token = new StringBuilder("");	
 		String line = lines.get(lineNumber);
-		if (lineOffset == line.length())
+		if (lineOffset == line.length() - 1)
 		{
 			if (lineNumber == lines.size() - 1)
 			{
@@ -120,6 +120,7 @@ public class PLTokenizer
 			while (Character.isDigit(nextChar))
 			{
 				token.append(nextChar);
+				if (lineOffset == line.length()) break;
 				nextChar = line.charAt(lineOffset++);
 			}
 			lineOffset--;
@@ -132,6 +133,7 @@ public class PLTokenizer
 			while (Character.isDigit(nextChar) || Character.isLetter(nextChar))
 			{
 				token.append(nextChar);
+				if (lineOffset == line.length()) break;
 				nextChar = line.charAt(lineOffset++);
 			}
 			lineOffset--;

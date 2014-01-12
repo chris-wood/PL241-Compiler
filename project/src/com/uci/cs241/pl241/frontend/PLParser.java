@@ -1,14 +1,39 @@
 package com.uci.cs241.pl241.frontend;
 
+import java.io.IOException;
+
 public class PLParser
 {
 	// terminals: letter digit relOp
 	
-	public PLParseResult parse(PLInputStream stream) throws PLSyntaxErrorException
+//	private PLTokenizer stream;
+	
+	private String sym;
+	
+//	public PLParser(PLTokenizer stream)
+//	{
+//		this.stream = stream;
+//	}
+	
+	public void SyntaxError(String msg) throws PLSyntaxErrorException
+	{
+		throw new PLSyntaxErrorException(msg);
+	}
+	
+	// this is what's called - starting with the computation non-terminal
+	public PLParseResult parse(PLTokenizer stream) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLParseResult result = null;
 		
-		// TODO
+		sym = stream.next();
+		if (sym.equals("main"))
+		{
+			System.out.println("we're here!");
+		}
+		else
+		{
+			SyntaxError("Computation does not begin with main keyword");
+		}
 		
 		return result;
 	}

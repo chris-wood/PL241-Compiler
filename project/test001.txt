@@ -1,5 +1,5 @@
 //Simple parsing test
-main 
+main
 var x, y;
 {
     let x <- 51; 
