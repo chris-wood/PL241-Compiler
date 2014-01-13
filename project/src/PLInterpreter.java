@@ -8,10 +8,8 @@ import com.uci.cs241.pl241.frontend.PLTokenizer;
 
 public class PLInterpreter
 {
-
 	public static void main(String[] args) throws IOException
 	{
-
 		if (args.length != 1)
 		{
 			System.err.println("usage: PLInterpreter <program.txt>");

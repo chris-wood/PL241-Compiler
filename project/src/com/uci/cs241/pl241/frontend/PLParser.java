@@ -98,8 +98,10 @@ public class PLParser
 		return null;
 	}
 
-	private PLParseResult parse_designator(PLTokenizer in) throws PLSyntaxErrorException
+	private PLParseResult parse_designator(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
+		// TODO: finish
+		sym = in.next();
 		return null;
 	}
 
@@ -113,8 +115,10 @@ public class PLParser
 		return null;
 	}
 
-	private PLParseResult parse_expression(PLTokenizer in) throws PLSyntaxErrorException
+	private PLParseResult parse_expression(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
+		// TODO: finish
+		sym = in.next();
 		return null;
 	}
 

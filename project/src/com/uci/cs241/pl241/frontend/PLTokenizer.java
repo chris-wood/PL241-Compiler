@@ -84,10 +84,6 @@ public class PLTokenizer
 			}
 		}
 		
-		System.out.println("-----");
-		System.out.println("Tokenizing results below...");
-		System.out.println("-----");
-		
 		this.lineNumber = 0;
 		this.lineOffset = 0;
 

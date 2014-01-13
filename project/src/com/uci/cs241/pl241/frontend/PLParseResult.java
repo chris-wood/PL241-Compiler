@@ -8,6 +8,9 @@ package com.uci.cs241.pl241.frontend;
  *
  */
 public class PLParseResult
-{
-	// TODO
+{	
+	public PLParseResultKind kind;
+	public int val;
+	public int address;
+	public int regno;
 }
