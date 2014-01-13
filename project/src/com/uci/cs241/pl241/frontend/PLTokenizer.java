@@ -94,12 +94,22 @@ public class PLTokenizer
 		// this.stream = in;
 		// this.streamIndex = 0;
 	}
-
+	
 	public String next() throws IOException, PLSyntaxErrorException, PLEndOfFileException
+	{
+		String token = getNextToken();
+		while (token.trim().length() == 0) // skip over white space at the tokenizer
+		{
+			token = getNextToken();
+		}
+		return token;
+	}
+
+	private String getNextToken() throws IOException, PLSyntaxErrorException, PLEndOfFileException
 	{
 		StringBuilder token = new StringBuilder("");	
 		String line = lines.get(lineNumber);
-		if (lineOffset == line.length() - 1)
+		if (lineOffset == line.length())
 		{
 			if (lineNumber == lines.size() - 1)
 			{
@@ -108,27 +118,49 @@ public class PLTokenizer
 			line = lines.get(++lineNumber);
 			lineOffset = 0;
 		}
+		
 		char nextChar = line.charAt(lineOffset++);
 		token.append(nextChar);
 //		System.out.println("      " + nextChar);
+		
+		if (lineOffset == line.length())
+		{
+			if (lineNumber == lines.size() - 1)
+			{
+				throw new PLEndOfFileException();
+			}
+			line = lines.get(++lineNumber);
+			lineOffset = 0;
+			return token.toString();
+		}
 
 		// Now build the token by parsing character-by-character with a FSM
 		if (Character.isDigit(nextChar)) // must be a digit
 		{
 			nextChar = line.charAt(lineOffset++);
+			if ((Character.isDigit(nextChar)) == false)
+			{
+				lineOffset--;
+				return token.toString();
+			}
 //			System.out.println("      " + nextChar);
 			while (Character.isDigit(nextChar))
 			{
 				token.append(nextChar);
-				if (lineOffset == line.length()) break;
+				if (lineOffset == line.length()){ break; }
 				nextChar = line.charAt(lineOffset++);
 			}
-			lineOffset--;
+//			if (Character.isDigit(nextChar) == false) lineOffset--; 
 //			System.out.println(token.toString());
 		} 
 		else if (Character.isLetter(nextChar))
 		{
 			nextChar = line.charAt(lineOffset++);
+			if ((Character.isDigit(nextChar) || Character.isLetter(nextChar)) == false)
+			{
+				lineOffset--;
+				return token.toString();
+			}
 //			System.out.println("      " + nextChar);
 			while (Character.isDigit(nextChar) || Character.isLetter(nextChar))
 			{
@@ -136,7 +168,7 @@ public class PLTokenizer
 				if (lineOffset == line.length()) break;
 				nextChar = line.charAt(lineOffset++);
 			}
-			lineOffset--;
+//			if (Character.isDigit(nextChar) == false && Character.isLetter(nextChar)) lineOffset--; 
 //			System.out.println(token.toString() + " - " + lineOffset);
 		} 
 		else if (isRelationalCharacter(nextChar))
@@ -158,7 +190,12 @@ public class PLTokenizer
 				token.append(nextChar);
 			}
 		}
+//		else
+//		{
+//			lineOffset--;
+//		}
 
+//		System.out.println(token.toString());
 		return token.toString().trim();
 	}
 }

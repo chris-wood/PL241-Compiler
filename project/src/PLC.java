@@ -21,8 +21,13 @@ public class PLC
 
 		BufferedReader reader = new BufferedReader(new FileReader(args[0]));
 		PLTokenizer tokenizer = new PLTokenizer(reader);
-		PLParser parser = new PLParser();
 		
+//		while (true)
+//		{
+//			System.out.println(tokenizer.next());
+//		}
+		
+		PLParser parser = new PLParser();
 		parser.parse(tokenizer);
 	}
 }
