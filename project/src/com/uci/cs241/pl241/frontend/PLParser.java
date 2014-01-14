@@ -70,7 +70,6 @@ public class PLParser
 			}
 			
 //			System.out.println("we're here!");
-			
 		}
 		else
 		{
@@ -83,48 +82,118 @@ public class PLParser
 	// non-terminals
 	private PLParseResult parse_ident(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-//		if (in.getSymbolType() == PLInputStream.PLInputTokenType.NUMBER)
-//		{
-//			throw new PLSyntaxErrorException("ident");
-//		}
-		
+		// TODO
 		sym = in.next();
 		
 		return null;
 	}
 
-	private PLParseResult parse_number(PLTokenizer in) throws PLSyntaxErrorException
+	private PLParseResult parse_number(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
+		// TODO
+		sym = in.next();
+		
 		return null;
 	}
 
 	private PLParseResult parse_designator(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		// TODO: finish
-		sym = in.next();
+		PLParseResult result = null;
+		
+		result = parse_ident(in);
+		while (sym.equals("["))
+		{
+			sym = in.next();
+			result = parse_expression(in);
+			if (!(sym.equals("]")))
+			{
+				SyntaxError("']' missing froim designator non-terminal.");
+			}
+			sym = in.next();
+		}
+		
 		return null;
 	}
 
-	private PLParseResult parse_factor(PLTokenizer in) throws PLSyntaxErrorException
+	private PLParseResult parse_factor(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
+		PLParseResult result = null;
+		
+		if (sym.equals("("))
+		{
+			sym = in.next();
+			result = parse_expression(in);
+			if (!(sym.equals(")")))
+			{
+				SyntaxError("')' missing from factor non-terminal");
+			}
+		}
+		else if (sym.equals("call"))
+		{
+			result = parse_expression(in);
+		}
+		else 
+		{
+			if (PLToken.isNumber(sym))
+			{
+				result = parse_number(in);
+			}
+			else
+			{
+				result = parse_designator(in); // only other possibility...
+			}
+		}
+		
 		return null;
 	}
 
-	private PLParseResult parse_term(PLTokenizer in) throws PLSyntaxErrorException
+	private PLParseResult parse_term(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		return null;
+		PLParseResult result = null;
+		
+		result = parse_factor(in);
+		while (sym.equals("*") || sym.equals("/"))
+		{
+			sym = in.next();
+			result = parse_factor(in);
+		}
+		
+		return result;
 	}
 
 	private PLParseResult parse_expression(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		// TODO: finish
-		sym = in.next();
-		return null;
+		PLParseResult result = null;
+		
+		result = parse_term(in);
+		while (sym.equals("+") || sym.equals("-"))
+		{
+			sym = in.next();
+			result = parse_term(in);
+		}
+		
+		return result;
 	}
 
-	private PLParseResult parse_relation(PLTokenizer in) throws PLSyntaxErrorException
+	private PLParseResult parse_relation(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		return null;
+		PLParseResult result = null;
+		
+		result = parse_expression(in);
+		// TODO: combine
+		
+		if (!(PLToken.isRelationalString(sym)))
+		{
+			SyntaxError("Invalid relational character");
+		}
+		sym = in.next();
+		
+		// TODO: save the relational code here
+		
+		// TODO: combine
+		result = parse_expression(in);
+		
+		return result;
 	}
 
 	private PLParseResult parse_assignment(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
@@ -153,60 +222,116 @@ public class PLParser
 		return result;
 	}
 
-	private PLParseResult parse_funcCall(PLTokenizer in) throws PLSyntaxErrorException
+	private PLParseResult parse_funcCall(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-//		if (!(sym.equals("call")))
-//		{
-//			throw new PLSyntaxErrorException("funcCall");
-//		}
-//		else
-//		{
-//			// TODO
-//		}
-//		
-		return null;
+		PLParseResult result = null;
+		
+		if (!(sym.equals("call")))
+		{
+			SyntaxError("Invalid start to funcCall non-terminal");
+		}
+		else
+		{
+			sym = in.next();
+			result = parse_ident(in);
+			
+			if (sym.equals("("))
+			{
+				sym = in.next();
+				
+				// TODO: how to handle conditional check for expression??? same problem with returnStatement
+			}
+			
+			// TODO: necessary?
+			sym = in.next();
+		}
+		
+		return result;
 	}
 
-	private PLParseResult parse_ifStatement(PLTokenizer in) throws PLSyntaxErrorException
+	private PLParseResult parse_ifStatement(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-//		if (!(sym.equals("if")))
-//		{
-//			throw new PLSyntaxErrorException("ifStatement");
-//		}
-//		else
-//		{
-//			// TODO
-//		}
+		PLParseResult result = null;
 		
-		return null;
+		if (!(sym.equals("if")))
+		{
+			SyntaxError("Invalid start to ifStatement non-terminal");
+		}
+		else
+		{
+			sym = in.next();
+			result = parse_relation(in);
+			
+			if (!(sym.equals("then")))
+			{
+				SyntaxError("Missing then clause");
+			}
+			sym = in.next();
+			result = parse_statSequence(in);
+			
+			if (sym.equals("else"))
+			{
+				sym = in.next();
+				result = parse_statSequence(in);
+			}
+			else if (!(sym.equals("fi")))
+			{
+				SyntaxError("Missing 'fi' close to if statement");
+			}
+			
+			sym = in.next();
+		}
+		
+		return result;
 	}
 
-	private PLParseResult parse_whileStatement(PLTokenizer in) throws PLSyntaxErrorException
+	private PLParseResult parse_whileStatement(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-//		if (!(sym.equals("while")))
-//		{
-//			throw new PLSyntaxErrorException("whileStatement");
-//		}
-//		else
-//		{
-//			// TODO
-//		}
+		PLParseResult result = null;
 		
-		return null;
+		if (!(sym.equals("while")))
+		{
+			SyntaxError("Invalid start to ifStatement non-terminal");
+		}
+		else
+		{
+			sym = in.next();
+			result = parse_relation(in);
+			
+			if (!(sym.equals("do")))
+			{
+				SyntaxError("Missing 'do' in while statement");
+			}
+			
+			sym = in.next();
+			result = parse_statSequence(in);
+			
+			if (!(sym.equals("od")))
+			{
+				SyntaxError("Missing 'od' in while statement");
+			}
+			
+			sym = in.next();
+		}
+		
+		return result;
 	}
 
-	private PLParseResult parse_returnStatement(PLTokenizer in) throws PLSyntaxErrorException
+	private PLParseResult parse_returnStatement(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-//		if (!(sym.equals("return")))
-//		{
-//			throw new PLSyntaxErrorException("returnStatement");
-//		}
-//		else
-//		{
-//			// TODO: how to handle expression?
-//		}
+		PLParseResult result = null;
 		
-		return null;
+		if (!(sym.equals("return")))
+		{
+			SyntaxError("Invalid start to ifStatement non-terminal");
+		}
+		else
+		{
+			sym = in.next();
+			// TODO: how to handle optional expression?!?!
+		}
+		
+		return result;
 	}
 
 	private PLParseResult parse_statement(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
@@ -325,67 +450,86 @@ public class PLParser
 		return result;
 	}
 
-	private PLParseResult parse_funcDecl(PLTokenizer in) throws PLSyntaxErrorException
+	private PLParseResult parse_funcDecl(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-//		if (sym.equals("function") || sym.equals("procedure"))
-//		{
-//			in.next();
-//			parse_ident(in);
-//			
-//			if (!(sym.equals(";")))
-//			{
-//				parse_formalParam(in);
-//			}
-//			
-//			in.next(); // eat semi-colon
-//			
-//			parse_funcBody(in);
-//			
-//			if (!(sym.equals("}")))
-//			{
-//				throw new PLSyntaxErrorException("funcDecl");
-//			}
-//			else
-//			{
-//				in.next();
-//			}
-//		}
-//		else
-//		{
-//			throw new PLSyntaxErrorException("funcDecl");
-//		}
+		PLParseResult result = null;
 		
-		return null;
+		if (sym.equals("function") || sym.equals("procedure"))
+		{
+			sym = in.next();
+			result = parse_ident(in);
+			
+			if (!(sym.equals(";")))
+			{
+				result = parse_formalParam(in);
+			}
+			
+			sym = in.next(); // eat semi-colon
+			result = parse_funcBody(in);
+			
+			if (!(sym.equals(";")))
+			{
+				SyntaxError("'}' missing from funcDecl non-terminal");
+			}
+			
+			sym = in.next();
+		}
+		else
+		{
+			SyntaxError("Invalid start to funcDecl non-terminal");
+		}
+		
+		return result;
 	}
 
-	private PLParseResult parse_formalParam(PLTokenizer in) throws PLSyntaxErrorException
+	private PLParseResult parse_formalParam(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-//		if (sym.equals("("))
-//		{
-//			in.next();
-//			parse_ident(in);
-//			while (sym.equals(","))
-//			{
-//				in.next();
-//				parse_ident(in);
-//			}
-//			
-//			if (sym.equals(")"))
-//			{
-//				in.next();
-//			}
-//			else
-//			{
-//				throw new PLSyntaxErrorException("formalParam");
-//			}
-//		}
+		PLParseResult result = null;
+		
+		if (sym.equals("("))
+		{
+			sym = in.next();
+			result = parse_ident(in);
+			
+			while (sym.equals(","))
+			{
+				sym = in.next();
+				result = parse_ident(in);
+			}
+			
+			if (!(sym.equals(")")))
+			{
+				SyntaxError("')' missing from formalParam");
+			}
+			
+			sym = in.next();
+		}
 		
 		
-		return null;
+		return result;
 	}
 
-	private PLParseResult parse_funcBody(PLTokenizer in) throws PLSyntaxErrorException
+	private PLParseResult parse_funcBody(PLTokenizer in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
+		PLParseResult result = null;
+		
+		if (sym.equals("var") || sym.equals("array"))
+		{
+			result = parse_varDecl(in);
+		}
+		
+		if (!(sym.equals("{")))
+		{
+			SyntaxError("'{' missing from funcBody non-terminal.");
+		}
+		
+		// TODO: how to handle optional statSequence???
+		
+		if (!(sym.equals("}")))
+		{
+			SyntaxError("'}' missing from funcBody non-terminal.");
+		}
+		
 //		while (!(sym.equals("{")))
 //		{
 //			parse_varDecl(in);
@@ -396,48 +540,48 @@ public class PLParser
 //			parse_statSequence(in);
 //		}
 		
-		return null;
-	}
-
-	private PLParseResult parse_computation(PLTokenizer in) throws PLSyntaxErrorException
-	{
-		PLParseResult result = null;
-		
-//		if (!(sym.equals("main")))
-//		{
-//			throw new PLSyntaxErrorException("computation");
-//		}
-//		else
-//		{
-//			in.next();
-//			if (!(sym.equals("{")))
-//			{
-//				while (!(sym.equals("function") || sym.equals("procedure")))
-//				{
-//					in.next();
-//					parse_varDecl(in);
-//				}
-//				while (!(sym.equals("{")))
-//				{
-//					in.next();
-//					parse_funcDecl(in);
-//				}
-//			}
-//			
-//			in.next();
-//			parse_statSequence(in);
-//			if (!(sym.equals("}")))
-//			{
-//				throw new PLSyntaxErrorException("computation");
-//			}
-//			else
-//			{
-//				in.next();
-//			}
-//		}
-		
 		return result;
 	}
+
+//	private PLParseResult parse_computation(PLTokenizer in) throws PLSyntaxErrorException
+//	{
+//		PLParseResult result = null;
+//		
+////		if (!(sym.equals("main")))
+////		{
+////			throw new PLSyntaxErrorException("computation");
+////		}
+////		else
+////		{
+////			in.next();
+////			if (!(sym.equals("{")))
+////			{
+////				while (!(sym.equals("function") || sym.equals("procedure")))
+////				{
+////					in.next();
+////					parse_varDecl(in);
+////				}
+////				while (!(sym.equals("{")))
+////				{
+////					in.next();
+////					parse_funcDecl(in);
+////				}
+////			}
+////			
+////			in.next();
+////			parse_statSequence(in);
+////			if (!(sym.equals("}")))
+////			{
+////				throw new PLSyntaxErrorException("computation");
+////			}
+////			else
+////			{
+////				in.next();
+////			}
+////		}
+//		
+//		return result;
+//	}
 
 	// pre-defined functions
 	// InputNum()
