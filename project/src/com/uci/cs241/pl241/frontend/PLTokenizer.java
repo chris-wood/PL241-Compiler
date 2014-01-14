@@ -143,9 +143,12 @@ public class PLTokenizer
 			while (Character.isDigit(nextChar))
 			{
 				token.append(nextChar);
+//				System.out.print(nextChar);
 				if (lineOffset == line.length()){ break; }
 				nextChar = line.charAt(lineOffset++);
 			}
+			lineOffset--;
+//			System.out.print(nextChar);
 //			if (Character.isDigit(nextChar) == false) lineOffset--; 
 //			System.out.println(token.toString());
 		} 
@@ -164,6 +167,7 @@ public class PLTokenizer
 				if (lineOffset == line.length()) break;
 				nextChar = line.charAt(lineOffset++);
 			}
+//			lineOffset--;
 //			if (Character.isDigit(nextChar) == false && Character.isLetter(nextChar)) lineOffset--; 
 //			System.out.println(token.toString() + " - " + lineOffset);
 		} 

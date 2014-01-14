@@ -92,6 +92,7 @@ public class PLParser
 	{
 		// TODO
 		sym = in.next();
+		System.out.println(sym);
 		
 		return null;
 	}
@@ -136,10 +137,12 @@ public class PLParser
 		{
 			if (PLToken.isNumber(sym))
 			{
+				System.out.println("number! " + sym);
 				result = parse_number(in);
 			}
 			else
 			{
+				System.out.println("designator! " + sym);
 				result = parse_designator(in); // only other possibility...
 			}
 		}
@@ -239,7 +242,15 @@ public class PLParser
 			{
 				sym = in.next();
 				
-				// TODO: how to handle conditional check for expression??? same problem with returnStatement
+				if (!(sym.equals(";")) && !(sym.equals("else")) && !(sym.equals("fi")) && !(sym.equals("od")) && !(sym.equals("}")))
+				{
+					result = parse_expression(in);
+					while (sym.equals(";"))
+					{
+						sym = in.next();
+						result = parse_expression(in);
+					}
+				}
 			}
 			
 			// TODO: necessary?
@@ -328,7 +339,11 @@ public class PLParser
 		else
 		{
 			sym = in.next();
-			// TODO: how to handle optional expression?!?!
+			System.out.println("CHecking: " + sym);
+			if (!(sym.equals(";")) && !(sym.equals("else")) && !(sym.equals("fi")) && !(sym.equals("od")) && !(sym.equals("}")))
+			{
+				result = parse_expression(in);
+			}
 		}
 		
 		return result;
@@ -342,6 +357,7 @@ public class PLParser
 		{
 			System.out.println("parsing let statement");
 			result = parse_assignment(in);
+			System.out.println(sym);
 		}
 		else if (sym.equals("call"))
 		{
@@ -357,6 +373,7 @@ public class PLParser
 		}
 		else if (sym.equals("return"))
 		{
+			System.out.println("parsing return statement");
 			result = parse_returnStatement(in);
 		}
 		else
@@ -373,9 +390,12 @@ public class PLParser
 		
 		while (sym.equals(";"))
 		{
+			System.out.println("parsing next statement");
 			sym = in.next();
 			result = parse_statement(in);
 		}
+		
+//		sym = in.next();
 		
 		return result;
 	}
@@ -523,65 +543,18 @@ public class PLParser
 			SyntaxError("'{' missing from funcBody non-terminal.");
 		}
 		
-		// TODO: how to handle optional statSequence???
-		
 		if (!(sym.equals("}")))
 		{
-			SyntaxError("'}' missing from funcBody non-terminal.");
+			// must be a statSequence here
+			result = parse_statSequence(in);
+			if (!(sym.equals("}")))
+			{
+				SyntaxError("'}' missing from statSequence non-terminal in funcBody");
+			}
 		}
-		
-//		while (!(sym.equals("{")))
-//		{
-//			parse_varDecl(in);
-//		}
-//		
-//		if (!(sym.equals("}")))
-//		{
-//			parse_statSequence(in);
-//		}
 		
 		return result;
 	}
-
-//	private PLParseResult parse_computation(PLTokenizer in) throws PLSyntaxErrorException
-//	{
-//		PLParseResult result = null;
-//		
-////		if (!(sym.equals("main")))
-////		{
-////			throw new PLSyntaxErrorException("computation");
-////		}
-////		else
-////		{
-////			in.next();
-////			if (!(sym.equals("{")))
-////			{
-////				while (!(sym.equals("function") || sym.equals("procedure")))
-////				{
-////					in.next();
-////					parse_varDecl(in);
-////				}
-////				while (!(sym.equals("{")))
-////				{
-////					in.next();
-////					parse_funcDecl(in);
-////				}
-////			}
-////			
-////			in.next();
-////			parse_statSequence(in);
-////			if (!(sym.equals("}")))
-////			{
-////				throw new PLSyntaxErrorException("computation");
-////			}
-////			else
-////			{
-////				in.next();
-////			}
-////		}
-//		
-//		return result;
-//	}
 
 	// pre-defined functions
 	// InputNum()
