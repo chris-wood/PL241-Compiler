@@ -14,7 +14,7 @@ public class PLC
 	{
 		if (args.length != 1)
 		{
-			System.err.println("usage: PLInterpreter <program.txt>");
+			System.err.println("usage: PLC <program.txt>");
 			System.exit(-1);
 		}
 

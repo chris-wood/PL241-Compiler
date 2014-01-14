@@ -1,10 +1,12 @@
 package com.uci.cs241.pl241.ir;
 
-public class PLIRNode
+public abstract class PLIRNode
 {
 	private PLIRNode left;
 	private PLIRNode right;
 	private PLIRNode parent;
+	
+	
 	
 	public PLIRNode()
 	{

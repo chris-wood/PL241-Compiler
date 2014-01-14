@@ -2,6 +2,8 @@ package com.uci.cs241.pl241.frontend;
 
 import java.io.IOException;
 
+import com.uci.cs241.pl241.ir.PLParseResult;
+
 public class PLParser
 {
 	// terminals: letter digit relOp
@@ -68,8 +70,6 @@ public class PLParser
 			{
 				SyntaxError("'{' missing in computation non-terminal");
 			}
-			
-//			System.out.println("we're here!");
 		}
 		else
 		{

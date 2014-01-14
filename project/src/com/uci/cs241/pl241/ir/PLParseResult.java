@@ -1,4 +1,5 @@
-package com.uci.cs241.pl241.frontend;
+package com.uci.cs241.pl241.ir;
+
 
 /**
  * Dynamic data structure that stores the intermediate result from the PL241
@@ -13,4 +14,9 @@ public class PLParseResult
 	public int val;
 	public int address;
 	public int regno;
+	
+	public void combine(PLParseResult other)
+	{
+		// TODO
+	}
 }
