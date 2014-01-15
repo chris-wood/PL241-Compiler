@@ -8,7 +8,7 @@ import java.io.IOException;
 public class PLFileHandler
 {
 	// Publicly accessible symbol - front of the file
-	public char sym;
+	public char sym = 1; // valid to start!
 	
 	// Constants
 	public static final int SYM_ERROR = 0;
@@ -34,6 +34,10 @@ public class PLFileHandler
 				{
 					sym = SYM_EOF; 
 				}
+//				if (sym == 0)
+//				{
+//					System.err.println("?!?!?!?!?!");
+//				}
 			}
 			catch (IOException e)
 			{

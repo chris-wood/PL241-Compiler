@@ -1,7 +1,7 @@
 package com.uci.cs241.pl241.frontend;
 
 public class PLToken
-{
+{	
 	private static String[] relStrings = {"==", "!=", "<", "<=", ">", ">="};
 	private static String[] reservedWords = {"let", "call", "if", "then", "else", "fi", "while", "do", 
 		"od", "return", "var", "array", "function", "procedure", "main"};

@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import com.uci.cs241.pl241.frontend.PLEndOfFileException;
 import com.uci.cs241.pl241.frontend.PLParser;
+import com.uci.cs241.pl241.frontend.PLScanner;
 import com.uci.cs241.pl241.frontend.PLSyntaxErrorException;
 import com.uci.cs241.pl241.frontend.PLTokenizer;
 
@@ -17,16 +18,15 @@ public class PLC
 			System.err.println("usage: PLC <program.txt>");
 			System.exit(-1);
 		}
-
-		BufferedReader reader = new BufferedReader(new FileReader(args[0]));
-		PLTokenizer tokenizer = new PLTokenizer(reader);
 		
-//		while (true)
-//		{
-//			System.out.println(tokenizer.next());
-//		}
+		// Scanner test
+		PLScanner scanner = new PLScanner(args[0]);
+		while (true)
+		{
+			System.out.println(scanner.next());
+		}
 		
-		PLParser parser = new PLParser();
-		parser.parse(tokenizer);
+//		PLParser parser = new PLParser();
+//		parser.parse(tokenizer);
 	}
 }
