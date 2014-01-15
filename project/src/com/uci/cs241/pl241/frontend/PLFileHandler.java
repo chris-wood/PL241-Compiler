@@ -7,19 +7,40 @@ import java.io.IOException;
 
 public class PLFileHandler
 {
+	// Publicly accessible symbol - front of the file
+	public char sym;
+	
+	// Constants
+	public static final int SYM_ERROR = 0;
+	public static final int SYM_EOF = 255;
+	
+	// Internal file I/O handler
 	private BufferedReader reader;
-	private char[] buffer = new char[1];
 	
 	public PLFileHandler(String fname) throws FileNotFoundException
 	{
 		reader = new BufferedReader(new FileReader(fname));
+		next();
 	}
 	
-//	public void hasNext()
-	
-	public char readChar() throws IOException
+	public void next()
 	{
-		reader.read(buffer);
-		return buffer[0];
+		if (sym != SYM_ERROR && sym != SYM_EOF)
+		{
+			try
+			{
+				sym = (char)reader.read();
+				if (sym == -1)
+				{
+					sym = SYM_EOF; 
+				}
+			}
+			catch (IOException e)
+			{
+				System.err.println("Error: FileHandler encountered an I/O " +
+						"exception when advanceding to the next symbol.");
+				sym = SYM_ERROR;
+			}
+		}
 	}
 }
