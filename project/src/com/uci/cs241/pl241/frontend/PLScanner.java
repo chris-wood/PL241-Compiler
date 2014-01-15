@@ -17,6 +17,7 @@ public class PLScanner
 	// Internal FileReader helper
 	private PLFileHandler reader;
 	private char lastChar;
+	private static final int IDENT_NOT_FOUND = -1;
 	
 	// Special relational characters
 	private char[] relChars = { '=', '!', '<', '>' };
@@ -64,6 +65,7 @@ public class PLScanner
 	{
 		// Populate the identifier table with reserved keywords
 		identifiers = new ArrayList<String>();
+		populateTable();
 		
 		// Create the file handle and pull the first token into the sym variable
 		reader = new PLFileHandler(fname);
@@ -87,7 +89,43 @@ public class PLScanner
 		return upnext;
 	}
 	
-	public String nextToken() throws PLSyntaxErrorException
+	/**
+	 * Populate the identifier table with reserved keywords.
+	 */
+	private void populateTable()
+	{
+		identifiers.add("let");
+		identifiers.add("call");
+		identifiers.add("if");
+		identifiers.add("then");
+		identifiers.add("else");
+		identifiers.add("fi");
+		identifiers.add("while");
+		identifiers.add("do");
+		identifiers.add("od");
+		identifiers.add("return");
+		identifiers.add("var");
+		identifiers.add("array");
+		identifiers.add("function");
+		identifiers.add("procedure");
+		identifiers.add("main");
+	}
+	
+	private int identToID(String ident)
+	{
+		int index = 0;
+		for (String entry : identifiers)
+		{
+			if (ident.equals(entry))
+			{
+				return index;
+			}
+			index++;
+		}
+		return IDENT_NOT_FOUND;
+	}
+	
+	private String nextToken() throws PLSyntaxErrorException
 	{
 		StringBuilder token = new StringBuilder();
 		
@@ -114,6 +152,9 @@ public class PLScanner
 				reader.next();
 				nextChar = reader.sym;
 			}
+			
+			// Store the last integer read
+			val = Integer.parseInt(token.toString());
 		}
 		else if (Character.isLetter(nextChar))
 		{
@@ -126,6 +167,15 @@ public class PLScanner
 				reader.next();
 				nextChar = reader.sym;
 			}
+			
+			// Lookup the unique identifier and save the ID
+			int tid = identToID(token.toString());
+			if (tid == IDENT_NOT_FOUND)
+			{
+				identifiers.add(token.toString());
+				tid = identifiers.size() - 1;
+			}
+			id = tid;
 		}
 		else if (isRelationalCharacter(nextChar))
 		{

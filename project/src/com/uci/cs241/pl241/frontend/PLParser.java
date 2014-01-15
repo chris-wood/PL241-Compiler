@@ -525,7 +525,6 @@ public class PLParser
 			sym = in.next();
 		}
 		
-		
 		return result;
 	}
 

@@ -17,16 +17,12 @@ public class PLIRBasicBlock
 	
 	public boolean addInstruction(PLIRInstruction inst)
 	{
-		instructions.add(inst);
-		
-		return true;
+		return instructions.add(inst);
 	}
 	
 	public boolean removeInstruction(PLIRInstruction inst)
 	{
-		instructions.remove(inst);
-		
-		return true;
+		return instructions.remove(inst);
 	}
 	
 	public boolean insertInstruction(PLIRInstruction inst, int index)
