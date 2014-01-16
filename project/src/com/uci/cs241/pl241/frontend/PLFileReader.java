@@ -5,7 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
-public class PLFileHandler
+public class PLFileReader
 {
 	// Publicly accessible symbol - front of the file
 	public char sym = 1; // valid to start!
@@ -17,7 +17,7 @@ public class PLFileHandler
 	// Internal file I/O handler
 	private BufferedReader reader;
 	
-	public PLFileHandler(String fname) throws FileNotFoundException
+	public PLFileReader(String fname) throws FileNotFoundException
 	{
 		reader = new BufferedReader(new FileReader(fname));
 		next();

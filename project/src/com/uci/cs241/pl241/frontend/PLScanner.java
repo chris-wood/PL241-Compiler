@@ -15,7 +15,7 @@ public class PLScanner
 	public static List<String> identifiers;
 	
 	// Internal FileReader helper
-	private PLFileHandler reader;
+	private PLFileReader reader;
 	private char lastChar;
 	private static final int IDENT_NOT_FOUND = -1;
 	
@@ -68,7 +68,7 @@ public class PLScanner
 		populateTable();
 		
 		// Create the file handle and pull the first token into the sym variable
-		reader = new PLFileHandler(fname);
+		reader = new PLFileReader(fname);
 		try
 		{
 			nextToken();
