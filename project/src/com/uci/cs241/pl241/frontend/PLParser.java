@@ -12,11 +12,6 @@ public class PLParser
 	
 	private String sym;
 	
-//	public PLParser(PLScanner stream)
-//	{
-//		this.stream = stream;
-//	}
-	
 	public void SyntaxError(String msg) throws PLSyntaxErrorException
 	{
 		throw new PLSyntaxErrorException(msg + ": " + sym);
@@ -27,10 +22,12 @@ public class PLParser
 	{
 		PLParseResult result = null;
 		
-		sym = stream.next();
+		stream.next();
+		sym = stream.symstring;
 		if (sym.equals("main"))
 		{
-			sym = stream.next();
+			stream.next();
+			sym = stream.symstring;
 			
 			if (sym.equals("var") || sym.equals("array"))
 			{
@@ -45,13 +42,15 @@ public class PLParser
 			if (sym.equals("{"))
 			{
 				// eat the sequence of statements that make up the computation
-				sym = stream.next();
+				stream.next();
+				sym = stream.symstring;
 				result = this.parse_statSequence(stream);
 				
 				// parse the close of the computation
 				if (sym.equals("}"))
 				{
-					sym = stream.next();
+					stream.next();
+					sym = stream.symstring;
 					if (sym.equals("."))
 					{
 						
@@ -83,7 +82,7 @@ public class PLParser
 	private PLParseResult parse_ident(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		// TODO
-		sym = in.next();
+		in.next(); sym = in.symstring;
 		
 		return null;
 	}
@@ -91,7 +90,7 @@ public class PLParser
 	private PLParseResult parse_number(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		// TODO
-		sym = in.next();
+		in.next(); sym = in.symstring;
 		System.out.println(sym);
 		
 		return null;
@@ -104,13 +103,13 @@ public class PLParser
 		result = parse_ident(in);
 		while (sym.equals("["))
 		{
-			sym = in.next();
+			in.next(); sym = in.symstring;
 			result = parse_expression(in);
 			if (!(sym.equals("]")))
 			{
 				SyntaxError("']' missing froim designator non-terminal.");
 			}
-			sym = in.next();
+			in.next(); sym = in.symstring;
 		}
 		
 		return null;
@@ -122,7 +121,7 @@ public class PLParser
 		
 		if (sym.equals("("))
 		{
-			sym = in.next();
+			in.next(); sym = in.symstring;
 			result = parse_expression(in);
 			if (!(sym.equals(")")))
 			{
@@ -135,7 +134,7 @@ public class PLParser
 		}
 		else 
 		{
-			if (PLToken.isNumber(sym))
+			if (true) //PLToken.isNumber(sym))
 			{
 				System.out.println("number! " + sym);
 				result = parse_number(in);
@@ -157,7 +156,7 @@ public class PLParser
 		result = parse_factor(in);
 		while (sym.equals("*") || sym.equals("/"))
 		{
-			sym = in.next();
+			in.next(); sym = in.symstring;
 			result = parse_factor(in);
 		}
 		
@@ -171,7 +170,7 @@ public class PLParser
 		result = parse_term(in);
 		while (sym.equals("+") || sym.equals("-"))
 		{
-			sym = in.next();
+			in.next(); sym = in.symstring;
 			result = parse_term(in);
 		}
 		
@@ -185,11 +184,11 @@ public class PLParser
 		result = parse_expression(in);
 		// TODO: combine
 		
-		if (!(PLToken.isRelationalString(sym)))
+		if (true) // TODO (!(PLToken.isRelationalString(sym)))
 		{
 			SyntaxError("Invalid relational character");
 		}
-		sym = in.next();
+		in.next(); sym = in.symstring;
 		
 		// TODO: save the relational code here
 		
@@ -209,11 +208,11 @@ public class PLParser
 		}
 		else
 		{
-			sym = in.next();
+			in.next(); sym = in.symstring;
 			result = parse_designator(in);
 			if (sym.equals("<-"))
 			{
-				sym = in.next();
+				in.next(); sym = in.symstring;
 				result = parse_expression(in);
 			}
 			else
@@ -235,26 +234,26 @@ public class PLParser
 		}
 		else
 		{
-			sym = in.next();
+			in.next(); sym = in.symstring;
 			result = parse_ident(in);
 			
 			if (sym.equals("("))
 			{
-				sym = in.next();
+				in.next(); sym = in.symstring;
 				
 				if (!(sym.equals(";")) && !(sym.equals("else")) && !(sym.equals("fi")) && !(sym.equals("od")) && !(sym.equals("}")))
 				{
 					result = parse_expression(in);
 					while (sym.equals(";"))
 					{
-						sym = in.next();
+						in.next(); sym = in.symstring;
 						result = parse_expression(in);
 					}
 				}
 			}
 			
 			// TODO: necessary?
-			sym = in.next();
+			in.next(); sym = in.symstring;
 		}
 		
 		return result;
@@ -270,19 +269,19 @@ public class PLParser
 		}
 		else
 		{
-			sym = in.next();
+			in.next(); sym = in.symstring;
 			result = parse_relation(in);
 			
 			if (!(sym.equals("then")))
 			{
 				SyntaxError("Missing then clause");
 			}
-			sym = in.next();
+			in.next(); sym = in.symstring;
 			result = parse_statSequence(in);
 			
 			if (sym.equals("else"))
 			{
-				sym = in.next();
+				in.next(); sym = in.symstring;
 				result = parse_statSequence(in);
 			}
 			else if (!(sym.equals("fi")))
@@ -290,7 +289,7 @@ public class PLParser
 				SyntaxError("Missing 'fi' close to if statement");
 			}
 			
-			sym = in.next();
+			in.next(); sym = in.symstring;
 		}
 		
 		return result;
@@ -306,7 +305,7 @@ public class PLParser
 		}
 		else
 		{
-			sym = in.next();
+			in.next(); sym = in.symstring;
 			result = parse_relation(in);
 			
 			if (!(sym.equals("do")))
@@ -314,7 +313,7 @@ public class PLParser
 				SyntaxError("Missing 'do' in while statement");
 			}
 			
-			sym = in.next();
+			in.next(); sym = in.symstring;
 			result = parse_statSequence(in);
 			
 			if (!(sym.equals("od")))
@@ -322,7 +321,7 @@ public class PLParser
 				SyntaxError("Missing 'od' in while statement");
 			}
 			
-			sym = in.next();
+			in.next(); sym = in.symstring;
 		}
 		
 		return result;
@@ -338,7 +337,7 @@ public class PLParser
 		}
 		else
 		{
-			sym = in.next();
+			in.next(); sym = in.symstring;
 			System.out.println("CHecking: " + sym);
 			if (!(sym.equals(";")) && !(sym.equals("else")) && !(sym.equals("fi")) && !(sym.equals("od")) && !(sym.equals("}")))
 			{
@@ -391,11 +390,11 @@ public class PLParser
 		while (sym.equals(";"))
 		{
 			System.out.println("parsing next statement");
-			sym = in.next();
+			in.next(); sym = in.symstring;
 			result = parse_statement(in);
 		}
 		
-//		sym = in.next();
+//		in.next(); sym = in.symstring;
 		
 		return result;
 	}
@@ -406,28 +405,28 @@ public class PLParser
 		
 		if (sym.equals("var"))
 		{
-			sym = in.next();
+			in.next(); sym = in.symstring;
 			return null;
 		}
 		else if (sym.equals("array"))
 		{
-			sym = in.next();
+			in.next(); sym = in.symstring;
 			if (sym.equals("["))
 			{
-				sym = in.next();
+				in.next(); sym = in.symstring;
 				result = parse_number(in);
 				if (sym.equals("]"))
 				{
-					sym = in.next();
+					in.next(); sym = in.symstring;
 					while (sym.equals("["))
 					{
-						sym = in.next();
+						in.next(); sym = in.symstring;
 						result = parse_number(in);
 						if (sym.equals("]") == false)
 						{
 							SyntaxError("']' missing from typeDecl non-terminal");
 						}
-						sym = in.next();
+						in.next(); sym = in.symstring;
 					}
 				}
 				else
@@ -452,20 +451,20 @@ public class PLParser
 	{
 		PLParseResult result = parse_typeDecl(in);
 		result = parse_ident(in);
-//		sym = in.next();
+//		in.next(); sym = in.symstring;
 //		System.out.println("here: " + sym);
 		while (sym.equals(","))
 		{
-			sym = in.next();
+			in.next(); sym = in.symstring;
 			result = parse_ident(in); 
-//			sym = in.next();
+//			in.next(); sym = in.symstring;
 		}
 //		System.out.println(sym);
 		if (sym.equals(";") == false)
 		{
 			SyntaxError("';' missing from varDecl");
 		}
-		sym = in.next();
+		in.next(); sym = in.symstring;
 		
 		return result;
 	}
@@ -476,7 +475,7 @@ public class PLParser
 		
 		if (sym.equals("function") || sym.equals("procedure"))
 		{
-			sym = in.next();
+			in.next(); sym = in.symstring;
 			result = parse_ident(in);
 			
 			if (!(sym.equals(";")))
@@ -484,7 +483,7 @@ public class PLParser
 				result = parse_formalParam(in);
 			}
 			
-			sym = in.next(); // eat semi-colon
+			in.next(); sym = in.symstring; // eat semi-colon
 			result = parse_funcBody(in);
 			
 			if (!(sym.equals(";")))
@@ -492,7 +491,7 @@ public class PLParser
 				SyntaxError("'}' missing from funcDecl non-terminal");
 			}
 			
-			sym = in.next();
+			in.next(); sym = in.symstring;
 		}
 		else
 		{
@@ -508,12 +507,12 @@ public class PLParser
 		
 		if (sym.equals("("))
 		{
-			sym = in.next();
+			in.next(); sym = in.symstring;
 			result = parse_ident(in);
 			
 			while (sym.equals(","))
 			{
-				sym = in.next();
+				in.next(); sym = in.symstring;
 				result = parse_ident(in);
 			}
 			
@@ -522,7 +521,7 @@ public class PLParser
 				SyntaxError("')' missing from formalParam");
 			}
 			
-			sym = in.next();
+			in.next(); sym = in.symstring;
 		}
 		
 		return result;

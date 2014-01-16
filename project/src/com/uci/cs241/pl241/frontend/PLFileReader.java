@@ -34,10 +34,6 @@ public class PLFileReader
 				{
 					sym = SYM_EOF; 
 				}
-//				if (sym == 0)
-//				{
-//					System.err.println("?!?!?!?!?!");
-//				}
 			}
 			catch (IOException e)
 			{

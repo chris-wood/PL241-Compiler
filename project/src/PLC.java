@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import com.uci.cs241.pl241.frontend.PLEndOfFileException;
 import com.uci.cs241.pl241.frontend.PLParser;
@@ -21,10 +22,32 @@ public class PLC
 		
 		// Scanner test
 		PLScanner scanner = new PLScanner(args[0]);
-		while (true)
+		ArrayList<String> tokens = new ArrayList<String>();
+		try
 		{
-			System.out.println(scanner.next());
+			while (true)
+			{
+				scanner.next();
+				tokens.add(scanner.symstring + "(" + scanner.sym + ")");
+			}
+		} 
+		catch (Exception e)
+		{	
 		}
+		
+		// Format and display the tokens
+		StringBuilder builder = new StringBuilder("[");
+		for (String t : tokens)
+		{
+			builder.append("'" + t + "', ");
+		}
+		builder.deleteCharAt(builder.toString().length() - 1).append("]");
+		System.out.println(builder.toString());
+		
+		//// NOW RUN THE PARSER
+		scanner = new PLScanner(args[0]);
+		PLParser parser = new PLParser();
+		parser.parse(scanner);
 		
 //		PLParser parser = new PLParser();
 //		parser.parse(tokenizer);

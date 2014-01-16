@@ -16,8 +16,10 @@ public class PLToken
 	public static final int periodToken = 30;
 	public static final int commaToken = 31;
 	public static final int openBracketToken = 32;
-	public static final int closeBracketToken = 24;
+	public static final int closeBracketToken = 34;
 	public static final int closeParenToken = 35;
+	public static final int openBraceToken = 36;
+	public static final int closeBraceToken = 37;
 	public static final int becomesToken = 40;
 	public static final int thenToken = 41;
 	public static final int doToken = 42;
@@ -42,6 +44,47 @@ public class PLToken
 	public static final int mainToken = 200;
 	public static final int eofToken = 255;
 	
+	public static int tokenToId(String tok)
+	{
+		if (tok.equals("*")) return timesToken;
+		else if (tok.equals("/")) return divToken;
+		else if (tok.equals("+")) return plusToken;
+		else if (tok.equals("-")) return minusToken;
+		else if (tok.equals("=")) return eqlToken;
+		else if (tok.equals("<")) return lssToken;
+		else if (tok.equals(">=")) return geqToken;
+		else if (tok.equals("<=")) return leqToken;
+		else if (tok.equals(">")) return gttToken;
+		else if (tok.equals(".")) return periodToken;
+		else if (tok.equals(",")) return commaToken;
+		else if (tok.equals("[")) return openBracketToken;
+		else if (tok.equals("]")) return closeBracketToken;
+		else if (tok.equals(")")) return closeParenToken;
+		else if (tok.equals("{")) return openBraceToken;
+		else if (tok.equals("}")) return closeBraceToken;
+		else if (tok.equals("<-")) return becomesToken;
+		else if (tok.equals("then")) return thenToken;
+		else if (tok.equals("do")) return doToken;
+		else if (tok.equals("(")) return openParenToken;
+		else if (tok.equals(";")) return semiToken;
+		else if (tok.equals("end")) return endToken;
+		else if (tok.equals("od")) return odToken;
+		else if (tok.equals("fi")) return fiToken;
+		else if (tok.equals("else")) return elseToken;
+		else if (tok.equals("let")) return letToken;
+		else if (tok.equals("call")) return callToken;
+		else if (tok.equals("if")) return ifToken;
+		else if (tok.equals("while")) return whileToken;
+		else if (tok.equals("return")) return returnToken;
+		else if (tok.equals("var")) return varToken;
+		else if (tok.equals("array")) return arrToken;
+		else if (tok.equals("function")) return funcToken;
+		else if (tok.equals("procedure")) return procToken;
+		else if (tok.equals("begin")) return beginToken;
+		else if (tok.equals("main")) return mainToken;
+		else return -1;
+	}
+	
 	
 //	private static String[] relStrings = {"==", "!=", "<", "<=", ">", ">="};
 //	private static String[] reservedWords = {"let", "call", "if", "then", "else", "fi", "while", "do", 
@@ -64,18 +107,18 @@ public class PLToken
 //	public static String procedureToken = "procedure";
 //	public static String mainToken = "main";
 	
-//	public static boolean isNumber(String token)
-//	{
-//		try 
-//		{
-//			int num = Integer.parseInt(token);
-//			return true;
-//		}
-//		catch (NumberFormatException e)
-//		{
-//			return false;
-//		}
-//	}
+	public static boolean isNumber(String token)
+	{
+		try 
+		{
+			int num = Integer.parseInt(token);
+			return true;
+		}
+		catch (NumberFormatException e)
+		{
+			return false;
+		}
+	}
 //	
 //	public static boolean isRelationalString(String token)
 //	{

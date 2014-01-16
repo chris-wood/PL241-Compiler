@@ -8,6 +8,7 @@ public class PLScanner
 {
 	// Publicly accessible fields
 	public int sym;
+	public String symstring;
 	public int val;
 	public int id;
 	
@@ -79,14 +80,43 @@ public class PLScanner
 		}
 	}
 	
-	public String next() throws PLSyntaxErrorException
+	public void next() throws PLSyntaxErrorException
 	{
-		String upnext = nextToken();
-		while (upnext.trim().length() == 0)
+		if (reader.sym == PLFileReader.SYM_ERROR)
 		{
-			upnext = nextToken();
+			sym = PLToken.errorToken;
 		}
-		return upnext;
+		else if (reader.sym == PLFileReader.SYM_EOF)
+		{
+			sym = PLToken.eofToken;
+		}
+		else
+		{
+			String upnext = nextToken();
+			while (upnext.trim().length() == 0)
+			{
+				upnext = nextToken();
+			}
+			symstring = upnext;
+			
+			// Check to see if one of the special tokens
+			int tid = PLToken.tokenToId(upnext);
+			if (tid == -1)
+			{
+				if (PLToken.isNumber(upnext))
+				{
+					sym = PLToken.number;
+				}
+				else
+				{
+					sym = PLToken.ident;
+				}
+			}
+			else
+			{
+				sym = tid;
+			}
+		}
 	}
 	
 	/**
@@ -215,17 +245,13 @@ public class PLScanner
 			// check for the special case of being the start of a comment
 			if (nextChar == '/') 
 			{
-				System.err.println(">>> Tokenizer encountered the start of a line comment");
-				System.err.print("" + lastChar + nextChar);
 				reader.next();
 				nextChar = reader.sym;
 				while (nextChar != '\n')
 				{
-					System.err.print(nextChar);
 					reader.next();
 					nextChar = reader.sym;
 				}
-				System.err.println();
 				reader.next(); // skip over the newline
 				token = new StringBuilder();
 			}
