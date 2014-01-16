@@ -2,10 +2,14 @@ package com.uci.cs241.pl241.frontend;
 
 import java.io.IOException;
 
-import com.uci.cs241.pl241.ir.PLParseResult;
+import com.uci.cs241.pl241.ir.PLIRNode;
+import com.uci.cs241.pl241.ir.PLIRNode;
 
 public class PLParser
 {
+	// NODES
+	// SUBCLASSES: assignment, func/proc, array, block, designator, functionblock, load/store, main, param 
+	
 	// terminals: letter digit relOp
 	
 //	private PLScanner stream;
@@ -18,9 +22,9 @@ public class PLParser
 	}
 	
 	// this is what's called - starting with the computation non-terminal
-	public PLParseResult parse(PLScanner stream) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	public PLIRNode parse(PLScanner stream) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = null;
+		PLIRNode result = null;
 		
 		stream.next();
 		sym = stream.symstring;
@@ -79,7 +83,7 @@ public class PLParser
 	}
 
 	// non-terminals
-	private PLParseResult parse_ident(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_ident(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		// TODO
 		in.next(); sym = in.symstring;
@@ -87,7 +91,7 @@ public class PLParser
 		return null;
 	}
 
-	private PLParseResult parse_number(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_number(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		// TODO
 		in.next(); sym = in.symstring;
@@ -96,9 +100,9 @@ public class PLParser
 		return null;
 	}
 
-	private PLParseResult parse_designator(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_designator(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = null;
+		PLIRNode result = null;
 		
 		result = parse_ident(in);
 		while (sym.equals("["))
@@ -115,9 +119,9 @@ public class PLParser
 		return null;
 	}
 
-	private PLParseResult parse_factor(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_factor(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = null;
+		PLIRNode result = null;
 		
 		if (sym.equals("("))
 		{
@@ -149,9 +153,9 @@ public class PLParser
 		return null;
 	}
 
-	private PLParseResult parse_term(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_term(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = null;
+		PLIRNode result = null;
 		
 		result = parse_factor(in);
 		while (sym.equals("*") || sym.equals("/"))
@@ -163,11 +167,11 @@ public class PLParser
 		return result;
 	}
 
-	private PLParseResult parse_expression(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_expression(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = null;
+//		PLIRNode result = null;
 		
-		result = parse_term(in);
+		PLIRNode result = parse_term(in);
 		while (sym.equals("+") || sym.equals("-"))
 		{
 			in.next(); sym = in.symstring;
@@ -177,9 +181,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLParseResult parse_relation(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_relation(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = null;
+		PLIRNode result = null;
 		
 		result = parse_expression(in);
 		// TODO: combine
@@ -198,9 +202,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLParseResult parse_assignment(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_assignment(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = null;
+		PLIRNode result = null;
 		
 		if (!(sym.equals("let")))
 		{
@@ -224,9 +228,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLParseResult parse_funcCall(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_funcCall(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = null;
+		PLIRNode result = null;
 		
 		if (!(sym.equals("call")))
 		{
@@ -259,9 +263,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLParseResult parse_ifStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_ifStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = null;
+		PLIRNode result = null;
 		
 		if (!(sym.equals("if")))
 		{
@@ -295,9 +299,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLParseResult parse_whileStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_whileStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = null;
+		PLIRNode result = null;
 		
 		if (!(sym.equals("while")))
 		{
@@ -327,9 +331,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLParseResult parse_returnStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_returnStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = null;
+		PLIRNode result = null;
 		
 		if (!(sym.equals("return")))
 		{
@@ -348,9 +352,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLParseResult parse_statement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_statement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = null;
+		PLIRNode result = null;
 		
 		if (sym.equals("let"))
 		{
@@ -383,9 +387,9 @@ public class PLParser
 		return null;
 	}
 
-	private PLParseResult parse_statSequence(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_statSequence(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = parse_statement(in);
+		PLIRNode result = parse_statement(in);
 		
 		while (sym.equals(";"))
 		{
@@ -399,9 +403,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLParseResult parse_typeDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_typeDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = null;
+		PLIRNode result = null;
 		
 		if (sym.equals("var"))
 		{
@@ -447,9 +451,9 @@ public class PLParser
 		return null;
 	}
 
-	private PLParseResult parse_varDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_varDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = parse_typeDecl(in);
+		PLIRNode result = parse_typeDecl(in);
 		result = parse_ident(in);
 //		in.next(); sym = in.symstring;
 //		System.out.println("here: " + sym);
@@ -469,9 +473,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLParseResult parse_funcDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_funcDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = null;
+		PLIRNode result = null;
 		
 		if (sym.equals("function") || sym.equals("procedure"))
 		{
@@ -501,9 +505,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLParseResult parse_formalParam(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_formalParam(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = null;
+		PLIRNode result = null;
 		
 		if (sym.equals("("))
 		{
@@ -527,9 +531,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLParseResult parse_funcBody(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRNode parse_funcBody(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLParseResult result = null;
+		PLIRNode result = null;
 		
 		if (sym.equals("var") || sym.equals("array"))
 		{
