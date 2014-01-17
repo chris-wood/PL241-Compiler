@@ -1,20 +1,21 @@
 package com.uci.cs241.pl241.ir;
 
-public abstract class PLIRNode
+public class PLIRNode
 {
+	public int sym;
 	private PLIRNode left;
 	private PLIRNode right;
 	private PLIRNode parent;
 	
-	
-	
-	public PLIRNode()
+	public PLIRNode(int sym)
 	{
+		this.sym = sym;
 		this.left = this.right = this.parent = null;
 	}
 	
-	public PLIRNode(PLIRNode left, PLIRNode right, PLIRNode parent)
+	public PLIRNode(int sym, PLIRNode left, PLIRNode right, PLIRNode parent)
 	{
+		this.sym = sym;
 		this.left = left;
 		this.right = right;
 		this.parent = parent;

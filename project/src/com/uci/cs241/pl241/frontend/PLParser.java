@@ -15,6 +15,7 @@ public class PLParser
 //	private PLScanner stream;
 	
 	private String sym;
+	private int toksym;
 	
 	public void SyntaxError(String msg) throws PLSyntaxErrorException
 	{
@@ -155,30 +156,38 @@ public class PLParser
 
 	private PLIRNode parse_term(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode result = null;
-		
-		result = parse_factor(in);
-		while (sym.equals("*") || sym.equals("/"))
+		PLIRNode factor = parse_factor(in);
+		if (toksym == PLToken.timesToken || toksym == PLToken.divToken)
 		{
-			in.next(); sym = in.symstring;
-			result = parse_factor(in);
+			PLIRNode termNode = new PLIRNode(toksym);
+			in.next();
+			PLIRNode rightNode = parse_factor(in);
+			termNode.setLeft(factor);
+			termNode.setRight(rightNode);
+			return termNode;
 		}
-		
-		return result;
+		else
+		{
+			return factor;
+		}
 	}
 
 	private PLIRNode parse_expression(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-//		PLIRNode result = null;
-		
-		PLIRNode result = parse_term(in);
-		while (sym.equals("+") || sym.equals("-"))
+		PLIRNode term = parse_term(in);
+		if (toksym == PLToken.plusToken || toksym == PLToken.minusToken)
 		{
-			in.next(); sym = in.symstring;
-			result = parse_term(in);
+			PLIRNode exprNode = new PLIRNode(toksym);
+			in.next();
+			PLIRNode rightNode = parse_term(in);
+			exprNode.setLeft(term);
+			exprNode.setRight(rightNode);
+			return exprNode;
 		}
-		
-		return result;
+		else
+		{
+			return term;
+		}
 	}
 
 	private PLIRNode parse_relation(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
