@@ -22,6 +22,20 @@ public class PLParser
 		throw new PLSyntaxErrorException(msg + ": " + sym);
 	}
 	
+	private void advance(PLScanner in)
+	{
+		try
+		{
+			in.next();
+			toksym = in.sym;
+			sym = in.symstring;
+		}
+		catch (PLSyntaxErrorException e)
+		{
+			e.printStackTrace();
+		}
+	}
+	
 	// this is what's called - starting with the computation non-terminal
 	public PLIRNode parse(PLScanner stream) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
@@ -87,7 +101,7 @@ public class PLParser
 	private PLIRNode parse_ident(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		// TODO
-		in.next(); sym = in.symstring;
+		advance(in);
 		
 		return null;
 	}
@@ -95,7 +109,7 @@ public class PLParser
 	private PLIRNode parse_number(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		// TODO
-		in.next(); sym = in.symstring;
+		advance(in);
 		System.out.println(sym);
 		
 		return null;
@@ -108,7 +122,7 @@ public class PLParser
 		result = parse_ident(in);
 		while (sym.equals("["))
 		{
-			in.next(); sym = in.symstring;
+			advance(in);
 			result = parse_expression(in);
 			if (!(sym.equals("]")))
 			{
@@ -122,36 +136,42 @@ public class PLParser
 
 	private PLIRNode parse_factor(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode result = null;
+		PLIRNode factor = null;
 		
-		if (sym.equals("("))
+		if (toksym == PLToken.openParenToken)
 		{
-			in.next(); sym = in.symstring;
-			result = parse_expression(in);
-			if (!(sym.equals(")")))
+			advance(in);
+			
+			// Parse the inner expression and make sure the parens match afterwards
+			factor = parse_expression(in);
+			if (toksym != PLToken.closeParenToken)
 			{
 				SyntaxError("')' missing from factor non-terminal");
 			}
+			
+			// They do, so eat the token and advance
+			advance(in);
 		}
-		else if (sym.equals("call"))
+		else if (toksym == PLToken.callToken)
 		{
-			result = parse_expression(in);
+			factor = parse_expression(in);
 		}
-		else 
+		else if (toksym == PLToken.number)
 		{
-			if (true) //PLToken.isNumber(sym))
-			{
-				System.out.println("number! " + sym);
-				result = parse_number(in);
-			}
-			else
-			{
-				System.out.println("designator! " + sym);
-				result = parse_designator(in); // only other possibility...
-			}
+			System.out.println("number! " + sym);
+			factor = parse_number(in);
+		}
+		else if (toksym == PLToken.ident)
+		{
+			System.out.println("designator! " + sym);
+			factor = parse_designator(in); // only other possibility...
+		}
+		else
+		{
+			SyntaxError("Invalid case in parse_factor");
 		}
 		
-		return null;
+		return factor;
 	}
 
 	private PLIRNode parse_term(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
@@ -160,7 +180,9 @@ public class PLParser
 		if (toksym == PLToken.timesToken || toksym == PLToken.divToken)
 		{
 			PLIRNode termNode = new PLIRNode(toksym);
-			in.next();
+			advance(in);
+			
+			// Now parse the right factor and build the resulting node
 			PLIRNode rightNode = parse_factor(in);
 			termNode.setLeft(factor);
 			termNode.setRight(rightNode);
@@ -178,7 +200,9 @@ public class PLParser
 		if (toksym == PLToken.plusToken || toksym == PLToken.minusToken)
 		{
 			PLIRNode exprNode = new PLIRNode(toksym);
-			in.next();
+			advance(in);
+			
+			// Now parse the right term and build the resulting node 
 			PLIRNode rightNode = parse_term(in);
 			exprNode.setLeft(term);
 			exprNode.setRight(rightNode);
