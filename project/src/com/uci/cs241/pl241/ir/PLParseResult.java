@@ -14,6 +14,7 @@ public class PLParseResult
 	public int val;
 	public int address;
 	public int regno;
+	public int cond, fixupLocation;
 	
 	public void combine(PLParseResult other)
 	{

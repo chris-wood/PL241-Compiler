@@ -14,6 +14,7 @@ public class PLParser
 	
 //	private PLScanner stream;
 	
+	// Current symbol/token values used for parsing
 	private String sym;
 	private int toksym;
 	

@@ -2,6 +2,8 @@ package com.uci.cs241.pl241.ir;
 
 public class PLIRNode
 {
+	// SUBCLASSES: assignment, func/proc, array, block, designator, functionblock, load/store, main, param 
+	
 	public int sym;
 	private PLIRNode left;
 	private PLIRNode right;

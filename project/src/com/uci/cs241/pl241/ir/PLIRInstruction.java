@@ -32,6 +32,16 @@ public class PLIRInstruction
 		WLN
 	};
 	
+	public PLIRInstruction(PLIRInstructionType opcode, PLIRInstruction left, PLIRInstruction right)
+	{
+		this.opcode = opcode;
+		op1 = left;
+		op2 = right;
+		id = globalId++;
+	}
+	
+	public static int globalId = 0;
+	
 	public static String InstructionString(PLIRInstructionType type)
 	{
 		return type.toString().toLowerCase();
