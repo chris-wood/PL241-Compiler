@@ -10,6 +10,9 @@ public class PLIRBasicBlock
 	public ArrayList<PLIRBasicBlock> treeVertexSet;
 	public int treeSize;
 	
+	public int id;
+	public static int bbid = 0;
+	
 	public PLIRBasicBlock(ArrayList<PLIRBasicBlock> childs, ArrayList<PLIRBasicBlock> parents, PLIRInstruction[] seq)
 	{
 		this.children = new ArrayList<PLIRBasicBlock>();
@@ -29,6 +32,8 @@ public class PLIRBasicBlock
 		{
 			this.instructions.add(seq[i]);;
 		}
+		
+		this.id = bbid++;
 	}
 	
 	public boolean addInstruction(PLIRInstruction inst)
@@ -49,5 +54,24 @@ public class PLIRBasicBlock
 			return true;
 		}
 		return false;
+	}
+	
+	public String toVcgNodeString()
+	{
+		StringBuilder builder = new StringBuilder();
+		builder.append("node: \n");
+		builder.append("{\n");	
+		builder.append("title: \" " + id + "\"  \n");
+		
+		// Build instruction sequence string
+		StringBuilder instBuilder = new StringBuilder();
+		for (PLIRInstruction inst : instructions)
+		{
+			instBuilder.append(inst.toString() + ";");
+		}
+		builder.append("label: \" " + instBuilder.toString() + " \"  \n");
+		
+		builder.append("}\n");
+		return builder.toString();
 	}
 }
