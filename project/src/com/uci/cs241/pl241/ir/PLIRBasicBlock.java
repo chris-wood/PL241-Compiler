@@ -4,14 +4,30 @@ import java.util.ArrayList;
 
 public class PLIRBasicBlock
 {
-	private ArrayList<PLIRInstruction> instructions;
+	public ArrayList<PLIRInstruction> instructions;
+	public ArrayList<PLIRBasicBlock> children;
+	public ArrayList<PLIRBasicBlock> parents;
+	public ArrayList<PLIRBasicBlock> treeVertexSet;
+	public int treeSize;
 	
-	public PLIRBasicBlock(PLIRInstruction[] seq)
+	public PLIRBasicBlock(ArrayList<PLIRBasicBlock> childs, ArrayList<PLIRBasicBlock> parents, PLIRInstruction[] seq)
 	{
-		instructions = new ArrayList(seq.length);
+		this.children = new ArrayList<PLIRBasicBlock>();
+		this.parents = new ArrayList<PLIRBasicBlock>();
+		this.treeVertexSet = new ArrayList<PLIRBasicBlock>();
+		this.instructions = new ArrayList<PLIRInstruction>(seq.length);
+		
+		for (PLIRBasicBlock block : parents)
+		{
+			this.parents.add(block);
+		}	
+		for (PLIRBasicBlock block : childs)
+		{
+			this.children.add(block);
+		}
 		for (int i = 0; i < seq.length; i++)
 		{
-			instructions.add(seq[i]);;
+			this.instructions.add(seq[i]);;
 		}
 	}
 	
