@@ -3,17 +3,21 @@ package com.uci.cs241.pl241.frontend;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.uci.cs241.pl241.ir.PLIRInstruction;
+
 public class PLScope
 {
 	public ArrayList<String> currentScope; // maintain stack of the current scope
 	public HashMap<String, ArrayList<String>> funScopeTable;
 	public HashMap<String, ArrayList<String>> varScopeTable;
+	public HashMap<String, HashMap<String, PLIRInstruction>> symTable;
 	public String name;
 	
 	public PLScope()
 	{
 		funScopeTable = new HashMap<String, ArrayList<String>>();
 		varScopeTable = new HashMap<String, ArrayList<String>>();
+		symTable = new HashMap<String, HashMap<String, PLIRInstruction>>();
 		currentScope = new ArrayList<String>();
 	}
 	
@@ -47,6 +51,53 @@ public class PLScope
 			varScopeTable.put(sym, new ArrayList<String>());
 		}
 		varScopeTable.get(sym).add(scope);
+		
+		// Create scope entry in symbol table
+		if (symTable.containsKey(scope) == false)
+		{
+			symTable.put(scope, new HashMap<String, PLIRInstruction>());
+		}
+		
+		System.out.println("Adding " + sym + " to scope " + scope);
+	}
+	
+	public void addVarToScope(String sym)
+	{
+		addVarToScope(getCurrentScope(), sym);
+	}
+	
+	public void updateSymbol(String sym, PLIRInstruction inst)
+	{
+		String scope = getCurrentScope();
+		if (isVarInScope(scope, sym))
+		{
+			symTable.get(scope).put(sym, inst);
+		}
+		else
+		{
+			System.err.println("Trying to update symbol value of something out of scope: " + scope + ", " + sym);
+			System.exit(-1);
+		}
+	}
+	
+	public boolean isVarInScope(String scope, String sym)
+	{
+		return funScopeTable.get(scope).contains(sym);
+	}
+	
+	public boolean isVarInScope(String sym)
+	{
+		return isVarInScope(getCurrentScope(), sym);
+	}
+	
+	public String getCurrentScope()
+	{
+		return currentScope.get(currentScope.size() - 1);
+	}
+	
+	public PLIRInstruction getCurrentValue(String sym)
+	{
+		return symTable.get(getCurrentScope()).get(sym);
 	}
 	
 }

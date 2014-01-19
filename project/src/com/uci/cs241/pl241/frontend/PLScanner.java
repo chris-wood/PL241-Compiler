@@ -19,6 +19,7 @@ public class PLScanner
 	private PLFileReader reader;
 	private char lastChar;
 	private static final int IDENT_NOT_FOUND = -1;
+	private static int identId = 0;
 	
 	// Special relational characters
 	private char[] relChars = { '=', '!', '<', '>' };
@@ -110,6 +111,7 @@ public class PLScanner
 				else
 				{
 					sym = PLToken.ident;
+					id = identId++;
 				}
 			}
 			else

@@ -55,6 +55,7 @@ public class PLParser
 		{
 			advance(in);
 			scope = new PLScope();
+			scope.pushNewScope("main");
 			
 			if (toksym == PLToken.varToken || toksym == PLToken.arrToken)
 			{
@@ -107,17 +108,14 @@ public class PLParser
 	// non-terminals
 	private PLIRInstruction parse_ident(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		// TODO
+		PLIRInstruction inst = scope.getCurrentValue(sym);
 		advance(in);
-		
-		// TODO: create the node
-		
-		return null;
+		return inst;
 	}
 
 	private PLIRInstruction parse_number(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{	
-		// add 0 tokenValue
+		// Result: add 0 tokenValue
 		PLIRInstruction li = new PLIRInstruction(PLIRInstructionType.ADD, 0, Integer.parseInt(sym)); 
 		advance(in);
 		return li;
@@ -128,27 +126,23 @@ public class PLParser
 		PLIRInstruction result = null;
 		
 		result = parse_ident(in);
-//		while (sym.equals("["))
 		while (toksym == PLToken.openBracketToken)
 		{
 			advance(in);
 			result = parse_expression(in);
-//			if (!(sym.equals("]")))
 			if (toksym != PLToken.closeBracketToken)
 			{
 				SyntaxError("']' missing from designator non-terminal.");
 			}
-//			in.next(); sym = in.symstring;
 			advance(in);
 		}
 		
-		return null;
+		return result;
 	}
 
 	private PLIRInstruction parse_factor(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRInstruction factor = null;
-		
 		if (toksym == PLToken.openParenToken)
 		{
 			advance(in);
@@ -230,7 +224,6 @@ public class PLParser
 		result = parse_expression(in);
 		// TODO: combine
 		
-//		if (true) // TODO (!(PLToken.isRelationalString(sym)))
 		if (PLToken.isRelationalToken(toksym) == false)
 		{
 			SyntaxError("Invalid relational character");
@@ -249,37 +242,35 @@ public class PLParser
 	{
 		PLIRInstruction result = null;
 		
-//		if (!(sym.equals("let")))
 		if (toksym != PLToken.letToken)
 		{
 			throw new PLSyntaxErrorException("assignment");
 		}
 		else
 		{
-//			in.next(); sym = in.symstring;
 			advance(in);
 			String varName = sym;
 			
 			// Check to make sure these variables are in scope before being used
-//			if (scope.isVarInScope())
-			
-			
-			result = parse_designator(in);
-//			if (sym.equals("<-"))
-			if (toksym == PLToken.becomesToken)
+			System.out.println("Is " + varName + " in scope " + scope.getCurrentScope() + "?");
+			if (scope.isVarInScope(varName))
 			{
-				advance(in);
-				result = parse_expression(in);
-				
-				System.out.println("result: " + result.i1 + "," + result.i2);
-				
-				// caw
-				
-//				symTable.updateSymbol(varName, result);
+				result = parse_designator(in);
+				if (toksym == PLToken.becomesToken)
+				{
+					advance(in);
+					result = parse_expression(in);
+					System.out.println("result: " + result.i1 + "," + result.i2);
+					scope.updateSymbol(varName, result); // (SSA ID) := expr
+				}
+				else
+				{
+					SyntaxError("'<-' character missing in assignment statement");
+				}
 			}
 			else
 			{
-				SyntaxError("'<-' character missing in assignment statement");
+				SyntaxError("Variable " + varName + " not in current scope: " + scope.getCurrentScope());
 			}
 		}
 		
@@ -290,7 +281,6 @@ public class PLParser
 	{
 		PLIRInstruction result = null;
 		
-//		if (!(sym.equals("call")))
 		if (toksym != PLToken.callToken)
 		{
 			SyntaxError("Invalid start to funcCall non-terminal");
@@ -300,21 +290,16 @@ public class PLParser
 			advance(in);
 			result = parse_ident(in);
 			
-//			if (sym.equals("("))
 			if (toksym == PLToken.openParenToken)
 			{
-//				in.next(); sym = in.symstring;
 				advance(in);
 				
-//				if (!(sym.equals(";")) && !(sym.equals("else")) && !(sym.equals("fi")) && !(sym.equals("od")) && !(sym.equals("}")))
 				if (toksym != PLToken.semiToken && toksym != PLToken.elseToken
 						&& toksym != PLToken.fiToken && toksym != PLToken.odToken && toksym != PLToken.closeBraceToken)
 				{
 					result = parse_expression(in);
-//					while (sym.equals(";"))
 					while (toksym == PLToken.semiToken);
 					{
-//						in.next(); sym = in.symstring;
 						advance(in);
 						result = parse_expression(in);
 					}
@@ -322,7 +307,6 @@ public class PLParser
 			}
 			
 			// TODO: necessary?
-//			in.next(); sym = in.symstring;
 			advance(in);
 		}
 		
@@ -333,40 +317,32 @@ public class PLParser
 	{
 		PLIRInstruction result = null;
 		
-//		if (!(sym.equals("if")))
 		if (toksym != PLToken.ifToken)
 		{
 			SyntaxError("Invalid start to ifStatement non-terminal");
 		}
 		else
 		{
-//			in.next(); sym = in.symstring;
 			advance(in);
 			result = parse_relation(in);
 			
-//			if (!(sym.equals("then")))
 			if (toksym != PLToken.thenToken)
 			{
 				SyntaxError("Missing then clause");
 			}
-//			in.next(); sym = in.symstring;
 			advance(in);
 			result = parse_statSequence(in);
 			
-//			if (sym.equals("else"))
 			if (toksym == PLToken.elseToken)
 			{
-//				in.next(); sym = in.symstring;
 				advance(in);
 				result = parse_statSequence(in);
 			}
-//			else if (!(sym.equals("fi")))
 			else if (toksym != PLToken.fiToken)
 			{
 				SyntaxError("Missing 'fi' close to if statement");
 			}
 			
-//			in.next(); sym = in.symstring;
 			advance(in);
 		}
 		
@@ -377,34 +353,28 @@ public class PLParser
 	{
 		PLIRInstruction result = null;
 		
-//		if (!(sym.equals("while")))
 		if (toksym != PLToken.whileToken)
 		{
 			SyntaxError("Invalid start to ifStatement non-terminal");
 		}
 		else
 		{
-//			in.next(); sym = in.symstring;
 			advance(in);
 			result = parse_relation(in);
 			
-//			if (!(sym.equals("do")))
 			if (toksym != PLToken.doToken)
 			{
 				SyntaxError("Missing 'do' in while statement");
 			}
 			
-//			in.next(); sym = in.symstring;
 			advance(in);
 			result = parse_statSequence(in);
 			
-//			if (!(sym.equals("od")))
 			if (toksym != PLToken.odToken)
 			{
 				SyntaxError("Missing 'od' in while statement");
 			}
 			
-//			in.next(); sym = in.symstring;
 			advance(in);
 		}
 		
@@ -415,17 +385,13 @@ public class PLParser
 	{
 		PLIRInstruction result = null;
 		
-//		if (!(sym.equals("return")))
 		if (toksym != PLToken.returnToken)
 		{
 			SyntaxError("Invalid start to ifStatement non-terminal");
 		}
 		else
 		{
-//			in.next(); sym = in.symstring;
 			advance(in);
-//			System.out.println("Checking: " + sym);
-//			if (!(sym.equals(";")) && !(sym.equals("else")) && !(sym.equals("fi")) && !(sym.equals("od")) && !(sym.equals("}")))
 			if (toksym != PLToken.semiToken && toksym != PLToken.elseToken
 					&& toksym != PLToken.fiToken && toksym != PLToken.odToken && toksym != PLToken.closeBraceToken)
 			{
@@ -440,32 +406,24 @@ public class PLParser
 	{
 		PLIRInstruction result = null;
 		
-//		if (sym.equals("let"))
 		if (toksym == PLToken.letToken)
 		{
-//			System.out.println("parsing let statement");
 			result = parse_assignment(in);
-//			System.out.println(sym);
 		}
-//		else if (sym.equals("call"))
 		else if (toksym == PLToken.callToken)
 		{
 			result = parse_funcCall(in);
 		}
-//		else if (sym.equals("if"))
 		else if (toksym == PLToken.ifToken)
 		{
 			result = parse_ifStatement(in);
 		}
-//		else if (sym.equals("while"))
 		else if (toksym == PLToken.whileToken)
 		{
 			result = parse_whileStatement(in);
 		}
-//		else if (sym.equals("return"))
 		else if (toksym == PLToken.returnToken)
 		{
-//			System.out.println("parsing return statement");
 			result = parse_returnStatement(in);
 		}
 		else
@@ -480,16 +438,11 @@ public class PLParser
 	{
 		PLIRInstruction result = parse_statement(in);
 		
-//		while (sym.equals(";"))
 		while (toksym == PLToken.semiToken)
 		{
-//			System.out.println("parsing next statement");
-//			in.next(); sym = in.symstring;
 			advance(in);
 			result = parse_statement(in);
 		}
-		
-//		in.next(); sym = in.symstring;
 		
 		return result;
 	}
@@ -498,41 +451,29 @@ public class PLParser
 	{
 		PLIRInstruction result = null;
 		
-//		if (sym.equals("var"))
 		if (toksym == PLToken.varToken)
 		{
-//			in.next(); sym = in.symstring;
 			advance(in);
 			return null;
 		}
-//		else if (sym.equals("array"))
 		else if (toksym == PLToken.arrToken)
 		{
-//			in.next(); sym = in.symstring;
 			advance(in);
-//			if (sym.equals("["))
 			if (toksym == PLToken.openBracketToken)
 			{
-//				in.next(); sym = in.symstring;
 				advance(in);
 				result = parse_number(in);
-//				if (sym.equals("]"))
 				if (toksym == PLToken.closeBracketToken)
 				{
-//					in.next(); sym = in.symstring;
 					advance(in);
-//					while (sym.equals("["))
 					while (toksym == PLToken.openBracketToken)
 					{
-//						in.next(); sym = in.symstring;
 						advance(in);
 						result = parse_number(in);
-//						if (sym.equals("]") == false)
 						if (toksym == PLToken.closeBracketToken)
 						{
 							SyntaxError("']' missing from typeDecl non-terminal");
 						}
-//						in.next(); sym = in.symstring;
 						advance(in);
 					}
 				}
@@ -555,26 +496,20 @@ public class PLParser
 	}
 
 	private PLIRInstruction parse_varDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
-	{
+	{	
 		PLIRInstruction result = parse_typeDecl(in);
+		scope.addVarToScope(sym);
 		result = parse_ident(in);
-//		in.next(); sym = in.symstring;
-//		System.out.println("here: " + sym);
-//		while (sym.equals(","))
 		while (toksym == PLToken.commaToken)
 		{
-//			in.next(); sym = in.symstring;
 			advance(in);
+			scope.addVarToScope(sym);
 			result = parse_ident(in); 
-//			in.next(); sym = in.symstring;
 		}
-//		System.out.println(sym);
-//		if (sym.equals(";") == false)
 		if (toksym != PLToken.semiToken)
 		{
 			SyntaxError("';' missing from varDecl");
 		}
-//		in.next(); sym = in.symstring;
 		advance(in);
 		
 		return result;
@@ -583,31 +518,27 @@ public class PLParser
 	private PLIRInstruction parse_funcDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRInstruction result = null;
-		
-//		if (sym.equals("function") || sym.equals("procedure"))
 		if (toksym == PLToken.funcToken || toksym == PLToken.procToken)
 		{
-//			in.next(); sym = in.symstring;
 			advance(in);
+			scope.pushNewScope(sym);
 			result = parse_ident(in);
 			
-//			if (!(sym.equals(";")))
 			if (toksym != PLToken.semiToken)
 			{
 				result = parse_formalParam(in);
 			}
 			
-//			in.next(); sym = in.symstring; // eat semi-colon
-			advance(in);
+			advance(in);  // eat semi-colon
 			result = parse_funcBody(in);
 			
-//			if (!(sym.equals(";")))
 			if (toksym != PLToken.semiToken)
 			{
 				SyntaxError("'}' missing from funcDecl non-terminal");
 			}
 			
-//			in.next(); sym = in.symstring;
+			String leavingScope = scope.popScope();
+			System.err.println("Leaving scope: " + leavingScope);
 			advance(in);
 		}
 		else
@@ -622,28 +553,21 @@ public class PLParser
 	{
 		PLIRInstruction result = null;
 		
-//		if (sym.equals("("))
 		if (toksym == PLToken.openParenToken)
 		{
-//			in.next(); sym = in.symstring;
 			advance(in);
 			result = parse_ident(in);
-			
-//			while (sym.equals(","))
 			while (toksym == PLToken.commaToken)
 			{
-//				in.next(); sym = in.symstring;
 				advance(in);
 				result = parse_ident(in);
 			}
 			
-//			if (!(sym.equals(")")))
 			if (toksym != PLToken.closeParenToken)
 			{
 				SyntaxError("')' missing from formalParam");
 			}
 			
-//			in.next(); sym = in.symstring;
 			advance(in);
 		}
 		
@@ -654,24 +578,20 @@ public class PLParser
 	{
 		PLIRInstruction result = null;
 		
-//		if (sym.equals("var") || sym.equals("array"))
 		if (toksym == PLToken.varToken || toksym == PLToken.arrToken)
 		{
 			result = parse_varDecl(in);
 		}
 		
-//		if (!(sym.equals("{")))
 		if (toksym != PLToken.openBraceToken)
 		{
 			SyntaxError("'{' missing from funcBody non-terminal.");
 		}
 		
-//		if (!(sym.equals("}")))
 		if (toksym != PLToken.closeBraceToken)
 		{
 			// must be a statSequence here
 			result = parse_statSequence(in);
-//			if (!(sym.equals("}")))
 			if (toksym != PLToken.closeBraceToken)
 			{
 				SyntaxError("'}' missing from statSequence non-terminal in funcBody");
@@ -680,11 +600,4 @@ public class PLParser
 		
 		return result;
 	}
-
-	// pre-defined functions
-	// InputNum()
-
-	// predefined procedures
-	// OutputNum(x)
-	// OutputNewLine()
 }

@@ -3,5 +3,6 @@ main
 var x, y;
 {
     let x <- 51;
+    let y <- x;
     return x
 }.
