@@ -44,7 +44,7 @@ public class PLC
 		builder.deleteCharAt(builder.toString().length() - 1).append("]");
 		System.out.println(builder.toString());
 		
-		//// NOW RUN THE PARSER
+		//// RUN THE PARSER
 		scanner = new PLScanner(args[0]);
 		PLParser parser = new PLParser();
 		parser.parse(scanner);

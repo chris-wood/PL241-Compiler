@@ -2,8 +2,10 @@ package com.uci.cs241.pl241.frontend;
 
 import java.io.IOException;
 
-import com.uci.cs241.pl241.ir.PLIRNode;
-import com.uci.cs241.pl241.ir.PLIRNode;
+import com.uci.cs241.pl241.ir.PLIRInstruction;
+import com.uci.cs241.pl241.ir.PLSymbolTable;
+import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionOperandType;
+import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
 
 public class PLParser
 {
@@ -12,11 +14,18 @@ public class PLParser
 	
 	// terminals: letter digit relOp
 	
-//	private PLScanner stream;
-	
 	// Current symbol/token values used for parsing
 	private String sym;
 	private int toksym;
+	
+	// Other necessary things
+	private PLSymbolTable symTable;
+	private PLScope scope;
+	
+	public PLParser()
+	{
+		symTable = new PLSymbolTable();
+	}
 	
 	public void SyntaxError(String msg) throws PLSyntaxErrorException
 	{
@@ -38,51 +47,36 @@ public class PLParser
 	}
 	
 	// this is what's called - starting with the computation non-terminal
-	public PLIRNode parse(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	public PLIRInstruction parse(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode result = null;
-		
+		PLIRInstruction result = null;
 		advance(in);
-		
-//		stream.next();
-//		sym = stream.symstring;
-		
-//		if (sym.equals("main"))
 		if (toksym == PLToken.mainToken)
 		{
-//			stream.next();
-//			sym = stream.symstring;
 			advance(in);
+			scope = new PLScope();
 			
-//			if (sym.equals("var") || sym.equals("array"))
 			if (toksym == PLToken.varToken || toksym == PLToken.arrToken)
 			{
 				result = this.parse_varDecl(in);
 			}
 			
-//			if (sym.equals("function") || sym.equals("procedure"))
 			if (toksym == PLToken.funcToken || toksym == PLToken.procToken)
 			{
 				result = this.parse_funcDecl(in);
 			}
 			
-//			if (sym.equals("{"))
+
 			if (toksym == PLToken.openBraceToken)
 			{
 				// eat the sequence of statements that make up the computation
-//				in.next();
-//				sym = in.symstring;
 				advance(in);
 				result = this.parse_statSequence(in);
 				
 				// parse the close of the computation
-//				if (sym.equals("}"))
 				if (toksym == PLToken.closeBraceToken)
 				{
-//					in.next();
-//					sym = in.symstring;
 					advance(in);
-//					if (sym.equals("."))
 					if (toksym == PLToken.periodToken)
 					{
 						
@@ -111,26 +105,27 @@ public class PLParser
 	}
 
 	// non-terminals
-	private PLIRNode parse_ident(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_ident(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		// TODO
 		advance(in);
 		
-		return null;
-	}
-
-	private PLIRNode parse_number(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
-	{
-		// TODO
-		advance(in);
-		System.out.println(sym);
+		// TODO: create the node
 		
 		return null;
 	}
 
-	private PLIRNode parse_designator(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_number(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	{	
+		// add 0 tokenValue
+		PLIRInstruction li = new PLIRInstruction(PLIRInstructionType.ADD, 0, Integer.parseInt(sym)); 
+		advance(in);
+		return li;
+	}
+
+	private PLIRInstruction parse_designator(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode result = null;
+		PLIRInstruction result = null;
 		
 		result = parse_ident(in);
 //		while (sym.equals("["))
@@ -141,7 +136,7 @@ public class PLParser
 //			if (!(sym.equals("]")))
 			if (toksym != PLToken.closeBracketToken)
 			{
-				SyntaxError("']' missing froim designator non-terminal.");
+				SyntaxError("']' missing from designator non-terminal.");
 			}
 //			in.next(); sym = in.symstring;
 			advance(in);
@@ -150,9 +145,9 @@ public class PLParser
 		return null;
 	}
 
-	private PLIRNode parse_factor(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_factor(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode factor = null;
+		PLIRInstruction factor = null;
 		
 		if (toksym == PLToken.openParenToken)
 		{
@@ -174,13 +169,11 @@ public class PLParser
 		}
 		else if (toksym == PLToken.number)
 		{
-			System.out.println("number! " + sym);
 			factor = parse_number(in);
 		}
 		else if (toksym == PLToken.ident)
 		{
-			System.out.println("designator! " + sym);
-			factor = parse_designator(in); // only other possibility...
+			factor = parse_designator(in); 
 		}
 		else
 		{
@@ -190,18 +183,18 @@ public class PLParser
 		return factor;
 	}
 
-	private PLIRNode parse_term(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_term(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode factor = parse_factor(in);
+		PLIRInstruction factor = parse_factor(in);
 		if (toksym == PLToken.timesToken || toksym == PLToken.divToken)
 		{
-			PLIRNode termNode = new PLIRNode(toksym);
+			PLIRInstruction termNode = new PLIRInstruction(toksym);
 			advance(in);
 			
 			// Now parse the right factor and build the resulting node
-			PLIRNode rightNode = parse_factor(in);
-			termNode.setLeft(factor);
-			termNode.setRight(rightNode);
+			PLIRInstruction rightNode = parse_factor(in);
+//			termNode.setLeft(factor);
+//			termNode.setRight(rightNode);
 			return termNode;
 		}
 		else
@@ -210,18 +203,18 @@ public class PLParser
 		}
 	}
 
-	private PLIRNode parse_expression(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_expression(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode term = parse_term(in);
+		PLIRInstruction term = parse_term(in);
 		if (toksym == PLToken.plusToken || toksym == PLToken.minusToken)
 		{
-			PLIRNode exprNode = new PLIRNode(toksym);
+			PLIRInstruction exprNode = new PLIRInstruction(toksym);
 			advance(in);
 			
 			// Now parse the right term and build the resulting node 
-			PLIRNode rightNode = parse_term(in);
-			exprNode.setLeft(term);
-			exprNode.setRight(rightNode);
+			PLIRInstruction rightNode = parse_term(in);
+//			exprNode.setLeft(term);
+//			exprNode.setRight(rightNode);
 			return exprNode;
 		}
 		else
@@ -230,9 +223,9 @@ public class PLParser
 		}
 	}
 
-	private PLIRNode parse_relation(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_relation(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode result = null;
+		PLIRInstruction result = null;
 		
 		result = parse_expression(in);
 		// TODO: combine
@@ -252,9 +245,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRNode parse_assignment(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_assignment(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode result = null;
+		PLIRInstruction result = null;
 		
 //		if (!(sym.equals("let")))
 		if (toksym != PLToken.letToken)
@@ -265,12 +258,24 @@ public class PLParser
 		{
 //			in.next(); sym = in.symstring;
 			advance(in);
+			String varName = sym;
+			
+			// Check to make sure these variables are in scope before being used
+//			if (scope.isVarInScope())
+			
+			
 			result = parse_designator(in);
 //			if (sym.equals("<-"))
 			if (toksym == PLToken.becomesToken)
 			{
 				advance(in);
 				result = parse_expression(in);
+				
+				System.out.println("result: " + result.i1 + "," + result.i2);
+				
+				// caw
+				
+//				symTable.updateSymbol(varName, result);
 			}
 			else
 			{
@@ -281,9 +286,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRNode parse_funcCall(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_funcCall(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode result = null;
+		PLIRInstruction result = null;
 		
 //		if (!(sym.equals("call")))
 		if (toksym != PLToken.callToken)
@@ -324,9 +329,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRNode parse_ifStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_ifStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode result = null;
+		PLIRInstruction result = null;
 		
 //		if (!(sym.equals("if")))
 		if (toksym != PLToken.ifToken)
@@ -368,9 +373,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRNode parse_whileStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_whileStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode result = null;
+		PLIRInstruction result = null;
 		
 //		if (!(sym.equals("while")))
 		if (toksym != PLToken.whileToken)
@@ -406,9 +411,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRNode parse_returnStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_returnStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode result = null;
+		PLIRInstruction result = null;
 		
 //		if (!(sym.equals("return")))
 		if (toksym != PLToken.returnToken)
@@ -419,7 +424,7 @@ public class PLParser
 		{
 //			in.next(); sym = in.symstring;
 			advance(in);
-			System.out.println("Checking: " + sym);
+//			System.out.println("Checking: " + sym);
 //			if (!(sym.equals(";")) && !(sym.equals("else")) && !(sym.equals("fi")) && !(sym.equals("od")) && !(sym.equals("}")))
 			if (toksym != PLToken.semiToken && toksym != PLToken.elseToken
 					&& toksym != PLToken.fiToken && toksym != PLToken.odToken && toksym != PLToken.closeBraceToken)
@@ -431,16 +436,16 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRNode parse_statement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_statement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode result = null;
+		PLIRInstruction result = null;
 		
 //		if (sym.equals("let"))
 		if (toksym == PLToken.letToken)
 		{
-			System.out.println("parsing let statement");
+//			System.out.println("parsing let statement");
 			result = parse_assignment(in);
-			System.out.println(sym);
+//			System.out.println(sym);
 		}
 //		else if (sym.equals("call"))
 		else if (toksym == PLToken.callToken)
@@ -460,7 +465,7 @@ public class PLParser
 //		else if (sym.equals("return"))
 		else if (toksym == PLToken.returnToken)
 		{
-			System.out.println("parsing return statement");
+//			System.out.println("parsing return statement");
 			result = parse_returnStatement(in);
 		}
 		else
@@ -471,14 +476,14 @@ public class PLParser
 		return null;
 	}
 
-	private PLIRNode parse_statSequence(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_statSequence(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode result = parse_statement(in);
+		PLIRInstruction result = parse_statement(in);
 		
 //		while (sym.equals(";"))
 		while (toksym == PLToken.semiToken)
 		{
-			System.out.println("parsing next statement");
+//			System.out.println("parsing next statement");
 //			in.next(); sym = in.symstring;
 			advance(in);
 			result = parse_statement(in);
@@ -489,9 +494,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRNode parse_typeDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_typeDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode result = null;
+		PLIRInstruction result = null;
 		
 //		if (sym.equals("var"))
 		if (toksym == PLToken.varToken)
@@ -549,9 +554,9 @@ public class PLParser
 		return null;
 	}
 
-	private PLIRNode parse_varDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_varDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode result = parse_typeDecl(in);
+		PLIRInstruction result = parse_typeDecl(in);
 		result = parse_ident(in);
 //		in.next(); sym = in.symstring;
 //		System.out.println("here: " + sym);
@@ -575,9 +580,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRNode parse_funcDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_funcDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode result = null;
+		PLIRInstruction result = null;
 		
 //		if (sym.equals("function") || sym.equals("procedure"))
 		if (toksym == PLToken.funcToken || toksym == PLToken.procToken)
@@ -613,9 +618,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRNode parse_formalParam(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_formalParam(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode result = null;
+		PLIRInstruction result = null;
 		
 //		if (sym.equals("("))
 		if (toksym == PLToken.openParenToken)
@@ -645,9 +650,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRNode parse_funcBody(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRInstruction parse_funcBody(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRNode result = null;
+		PLIRInstruction result = null;
 		
 //		if (sym.equals("var") || sym.equals("array"))
 		if (toksym == PLToken.varToken || toksym == PLToken.arrToken)
