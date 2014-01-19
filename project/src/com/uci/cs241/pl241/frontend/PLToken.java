@@ -8,7 +8,7 @@ public class PLToken
 	public static final int plusToken = 11;
 	public static final int minusToken = 12;
 	public static final int eqlToken = 20;
-	public static final int newToken = 21;
+	public static final int neqToken = 21;
 	public static final int lssToken = 22;
 	public static final int geqToken = 23;
 	public static final int leqToken = 24;
@@ -50,7 +50,8 @@ public class PLToken
 		else if (tok.equals("/")) return divToken;
 		else if (tok.equals("+")) return plusToken;
 		else if (tok.equals("-")) return minusToken;
-		else if (tok.equals("=")) return eqlToken;
+		else if (tok.equals("==")) return eqlToken;
+		else if (tok.equals("!=")) return neqToken;
 		else if (tok.equals("<")) return lssToken;
 		else if (tok.equals(">=")) return geqToken;
 		else if (tok.equals("<=")) return leqToken;
@@ -85,7 +86,25 @@ public class PLToken
 		else return -1;
 	}
 	
-	
+	public static boolean isRelationalToken(int tok)
+	{
+		if (tok == eqlToken || tok == neqToken || tok == lssToken ||
+				tok == geqToken || tok == leqToken || tok == gttToken)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+		
+//		else if (tok.equals("==")) return eqlToken;
+//		else if (tok.equals("!=")) return neqToken;
+//		else if (tok.equals("<")) return lssToken;
+//		else if (tok.equals(">=")) return geqToken;
+//		else if (tok.equals("<=")) return leqToken;
+//		else if (tok.equals(">")) return gttToken;
+	}
 //	private static String[] relStrings = {"==", "!=", "<", "<=", ">", ">="};
 //	private static String[] reservedWords = {"let", "call", "if", "then", "else", "fi", "while", "do", 
 //		"od", "return", "var", "array", "function", "procedure", "main"};

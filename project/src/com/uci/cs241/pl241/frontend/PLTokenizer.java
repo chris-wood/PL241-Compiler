@@ -38,8 +38,7 @@ public class PLTokenizer
 	{
 		for (int i = 0; i < relStrings.length; i++)
 		{
-			if (s.equals(relChars[i]))
-				return true;
+			if (s.equals(relChars[i])) return true;
 		}
 		return false;
 	}
