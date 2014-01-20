@@ -58,7 +58,7 @@ public class PLSymbolTable
 			symTable.put(scope, new HashMap<String, PLIRInstruction>());
 		}
 		
-		System.out.println("Adding " + sym + " to scope " + scope);
+//		System.out.println("Adding " + sym + " to scope " + scope);
 	}
 	
 	public void addVarToScope(String sym)
@@ -98,6 +98,15 @@ public class PLSymbolTable
 	public PLIRInstruction getCurrentValue(String sym)
 	{
 		return symTable.get(getCurrentScope()).get(sym);
+	}
+	
+	public void displayCurrentScopeSymbols()
+	{
+		String scope = getCurrentScope();
+		for (String var : symTable.get(scope).keySet())
+		{
+			System.out.println("Var: " + var + " => " + symTable.get(scope).get(var).id + ":= " + symTable.get(scope).get(var));
+		}
 	}
 	
 }

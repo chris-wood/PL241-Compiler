@@ -6,6 +6,7 @@ import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
 import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionOperandType;
 import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
+import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
 
 public class PLParser
 {
@@ -211,7 +212,7 @@ public class PLParser
 		{
 //			PLIRBasicBlock exprNode = new PLIRBasicBlock(toksym);
 			int operator = toksym;
-			System.out.println("here now");
+//			System.out.println("here now");
 			PLIRBasicBlock exprNode = new PLIRBasicBlock();
 			advance(in);
 			
@@ -268,7 +269,7 @@ public class PLParser
 			String varName = sym;
 			
 			// Check to make sure these variables are in scope before being used
-			System.out.println("Is " + varName + " in scope " + scope.getCurrentScope() + "?");
+//			System.out.println("Is " + varName + " in scope " + scope.getCurrentScope() + "?");
 			if (scope.isVarInScope(varName))
 			{
 				result = parse_designator(in);
@@ -279,8 +280,10 @@ public class PLParser
 					
 					// The last instruction added to the BB is the one that holds the value for this assignment
 					PLIRInstruction inst = result.instructions.get(result.instructions.size() - 1);
-					System.out.println("result: " + inst.i1 + "," + inst.i2);
+//					System.out.println("result: " + inst.i1 + "," + inst.i2);
 					scope.updateSymbol(varName, inst); // (SSA ID) := expr
+//					scope.displayCurrentScopeSymbols();
+					PLStaticSingleAssignment.displayInstructions();
 				}
 				else
 				{

@@ -5,6 +5,19 @@ import java.util.List;
 
 public class PLIRInstruction
 {
+	// Instruction descriptions
+	public int id;
+	public PLIRInstructionType opcode;
+	public int i1;
+	public PLIRInstruction op1;
+	public PLIRInstructionOperandType op1type;
+	public int i2;
+	public PLIRInstruction op2;
+	public PLIRInstructionOperandType op2type;
+	
+	// Unique identifier for each instruction that's generated
+//	public static ArrayList<PLIRInstruction> ssaInstructions = new ArrayList<PLIRInstruction>();
+	
 	public enum PLIRInstructionType 
 	{
 		NEG,
@@ -37,20 +50,16 @@ public class PLIRInstruction
 	
 	public enum PLIRInstructionOperandType
 	{
-		CONST, VAR, REG, COND
+		CONST, INST
 	};
-	
-	public PLIRInstruction(int tok)
-	{
-		// TODO
-	}
 	
 	public PLIRInstruction(PLIRInstructionType opcode, PLIRInstruction left, PLIRInstruction right)
 	{
 		this.opcode = opcode;
 		op1 = left;
 		op2 = right;
-		id = globalSSAIndex++;
+		op1type = op2type = PLIRInstructionOperandType.INST;
+		id = PLStaticSingleAssignment.addInstruction(this);
 	}
 	
 	public PLIRInstruction(PLIRInstructionType opcode, PLIRInstruction left, PLIRInstructionOperandType leftType, PLIRInstruction right, PLIRInstructionOperandType rightType)
@@ -60,7 +69,7 @@ public class PLIRInstruction
 		op1type = leftType;
 		op2 = right;
 		op2type = rightType;
-		id = globalSSAIndex++;
+		id = PLStaticSingleAssignment.addInstruction(this);
 	}
 	
 	public PLIRInstruction(PLIRInstructionType opcode, PLIRInstruction left, PLIRInstructionOperandType leftType, int right)
@@ -70,7 +79,7 @@ public class PLIRInstruction
 		op1type = leftType;
 		op2 = null;
 		op2type = PLIRInstructionOperandType.CONST;
-		id = globalSSAIndex++;
+		id = PLStaticSingleAssignment.addInstruction(this);
 	}
 	
 	public PLIRInstruction(PLIRInstructionType opcode, int left, int right)
@@ -80,58 +89,88 @@ public class PLIRInstruction
 		op1type = op2type = PLIRInstructionOperandType.CONST;
 		i1 = left;
 		i2 = right;
-		id = globalSSAIndex++;
+		id = PLStaticSingleAssignment.addInstruction(this);
 	}
 	
-	public static int globalSSAIndex = 0;
-	
-	public static String InstructionString(PLIRInstructionType type)
+	@Override
+	public String toString()
 	{
-		return type.toString().toLowerCase();
-	}
-	
-	// Instruction descriptions
-	public int id;
-	public PLIRInstructionType opcode;
-	public int i1;
-	public PLIRInstruction op1;
-	public PLIRInstructionOperandType op1type;
-	public int i2;
-	public PLIRInstruction op2;
-	public PLIRInstructionOperandType op2type;
-	
-	public List<PLIRInstruction> load(PLParseResult result)
-	{
-		List<PLIRInstruction> instructions = new ArrayList<PLIRInstruction>();
-		if (result.kind == PLParseResultKind.VAR)
+		String s = "";
+		
+		switch (opcode)
 		{
-//			result.regno = allocateReg();
-			
-			PLIRInstruction left = null;
-			PLIRInstruction right = null;
-			
-			PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.LOAD, left, PLIRInstructionOperandType.VAR, right, PLIRInstructionOperandType.VAR);
-			instructions.add(inst);
-			result.kind = PLParseResultKind.REG;
-		}
-		else if (result.kind == PLParseResultKind.CONST)
-		{
-			if (result.val == 0)
-			{
-				result.regno = 0;
-			}
-			else
-			{
-//				result.regno = allocateReg();
-				
-				PLIRInstruction left = null;
-				PLIRInstruction right = null;
-				
-				PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.ADD, left, PLIRInstructionOperandType.VAR, right, PLIRInstructionOperandType.VAR);
-				instructions.add(inst);
-			}
+			case ADD:
+				s = "add";
+				break;
+			case ADDA:
+				s = "adda";
+				break;
 		}
 		
-		return instructions;
+		switch (op1type)
+		{
+			case INST:
+				s = s + " (" + op1.id + ")";
+				break;
+			case CONST:
+				s = s + " #" + i1;
+				break;
+		}
+		
+		switch (op2type)
+		{
+			case INST:
+				s = s + " (" + op2.id + ")";
+				break;
+			case CONST:
+				s = s + " #" + i2;
+				break;
+		}
+		
+		return s;
 	}
+	
+	
+	
+	/// OLD BELOW
+	
+//	public static String InstructionString(PLIRInstructionType type)
+//	{
+//		return type.toString().toLowerCase();
+//	}
+//	
+//	public List<PLIRInstruction> load(PLParseResult result)
+//	{
+//		List<PLIRInstruction> instructions = new ArrayList<PLIRInstruction>();
+//		if (result.kind == PLParseResultKind.VAR)
+//		{
+////			result.regno = allocateReg();
+//			
+//			PLIRInstruction left = null;
+//			PLIRInstruction right = null;
+//			
+//			PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.LOAD, left, PLIRInstructionOperandType.VAR, right, PLIRInstructionOperandType.VAR);
+//			instructions.add(inst);
+//			result.kind = PLParseResultKind.REG;
+//		}
+//		else if (result.kind == PLParseResultKind.CONST)
+//		{
+//			if (result.val == 0)
+//			{
+//				result.regno = 0;
+//			}
+//			else
+//			{
+////				result.regno = allocateReg();
+//				
+//				PLIRInstruction left = null;
+//				PLIRInstruction right = null;
+//				
+//				PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.ADD, left, PLIRInstructionOperandType.VAR, right, PLIRInstructionOperandType.VAR);
+//				instructions.add(inst);
+//			}
+//		}
+//		
+//		return instructions;
+//	}
 }
