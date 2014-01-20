@@ -13,6 +13,14 @@ public class PLIRBasicBlock
 	public int id;
 	public static int bbid = 0;
 	
+	public PLIRBasicBlock()
+	{
+		this.children = new ArrayList<PLIRBasicBlock>();
+		this.parents = new ArrayList<PLIRBasicBlock>();
+		this.treeVertexSet = new ArrayList<PLIRBasicBlock>();
+		this.instructions = new ArrayList<PLIRInstruction>();
+	}
+	
 	public PLIRBasicBlock(ArrayList<PLIRBasicBlock> childs, ArrayList<PLIRBasicBlock> parents, PLIRInstruction[] seq)
 	{
 		this.children = new ArrayList<PLIRBasicBlock>();

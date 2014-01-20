@@ -5,7 +5,7 @@ import java.util.HashMap;
 
 import com.uci.cs241.pl241.ir.PLIRInstruction;
 
-public class PLScope
+public class PLSymbolTable
 {
 	public ArrayList<String> currentScope; // maintain stack of the current scope
 	public HashMap<String, ArrayList<String>> funScopeTable;
@@ -13,7 +13,7 @@ public class PLScope
 	public HashMap<String, HashMap<String, PLIRInstruction>> symTable;
 	public String name;
 	
-	public PLScope()
+	public PLSymbolTable()
 	{
 		funScopeTable = new HashMap<String, ArrayList<String>>();
 		varScopeTable = new HashMap<String, ArrayList<String>>();

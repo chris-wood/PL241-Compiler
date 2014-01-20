@@ -45,11 +45,21 @@ public class PLIRInstruction
 		// TODO
 	}
 	
-	public PLIRInstruction(PLIRInstructionType opcode, PLIRInstruction left, PLIRInstructionOperandType leftType, PLIRInstruction right, PLIRInstructionOperandType rightType)
+	public PLIRInstruction(PLIRInstructionType opcode, PLIRInstruction left, PLIRInstruction right)
 	{
 		this.opcode = opcode;
 		op1 = left;
 		op2 = right;
+		id = globalSSAIndex++;
+	}
+	
+	public PLIRInstruction(PLIRInstructionType opcode, PLIRInstruction left, PLIRInstructionOperandType leftType, PLIRInstruction right, PLIRInstructionOperandType rightType)
+	{
+		this.opcode = opcode;
+		op1 = left;
+		op1type = leftType;
+		op2 = right;
+		op2type = rightType;
 		id = globalSSAIndex++;
 	}
 	

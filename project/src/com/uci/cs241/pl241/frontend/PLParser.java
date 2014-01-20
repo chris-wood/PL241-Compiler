@@ -2,8 +2,8 @@ package com.uci.cs241.pl241.frontend;
 
 import java.io.IOException;
 
+import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
-import com.uci.cs241.pl241.ir.PLSymbolTable;
 import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionOperandType;
 import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
 
@@ -20,7 +20,7 @@ public class PLParser
 	
 	// Other necessary things
 	private PLSymbolTable symTable;
-	private PLScope scope;
+	private PLSymbolTable scope;
 	
 	public PLParser()
 	{
@@ -47,14 +47,14 @@ public class PLParser
 	}
 	
 	// this is what's called - starting with the computation non-terminal
-	public PLIRInstruction parse(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	public PLIRBasicBlock parse(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRInstruction result = null;
+		PLIRBasicBlock result = null;
 		advance(in);
 		if (toksym == PLToken.mainToken)
 		{
 			advance(in);
-			scope = new PLScope();
+			scope = new PLSymbolTable();
 			scope.pushNewScope("main");
 			
 			if (toksym == PLToken.varToken || toksym == PLToken.arrToken)
@@ -106,24 +106,28 @@ public class PLParser
 	}
 
 	// non-terminals
-	private PLIRInstruction parse_ident(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_ident(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRInstruction inst = scope.getCurrentValue(sym);
 		advance(in);
-		return inst;
+		PLIRBasicBlock block = new PLIRBasicBlock();
+		block.instructions.add(inst);
+		return block;
 	}
 
-	private PLIRInstruction parse_number(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_number(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{	
 		// Result: add 0 tokenValue
 		PLIRInstruction li = new PLIRInstruction(PLIRInstructionType.ADD, 0, Integer.parseInt(sym)); 
 		advance(in);
-		return li;
+		PLIRBasicBlock block = new PLIRBasicBlock();
+		block.instructions.add(li);
+		return block;
 	}
 
-	private PLIRInstruction parse_designator(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_designator(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRInstruction result = null;
+		PLIRBasicBlock result = null;
 		
 		result = parse_ident(in);
 		while (toksym == PLToken.openBracketToken)
@@ -140,9 +144,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRInstruction parse_factor(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_factor(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRInstruction factor = null;
+		PLIRBasicBlock factor = null;
 		if (toksym == PLToken.openParenToken)
 		{
 			advance(in);
@@ -177,16 +181,19 @@ public class PLParser
 		return factor;
 	}
 
-	private PLIRInstruction parse_term(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_term(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRInstruction factor = parse_factor(in);
+		PLIRBasicBlock factor = parse_factor(in);
 		if (toksym == PLToken.timesToken || toksym == PLToken.divToken)
 		{
-			PLIRInstruction termNode = new PLIRInstruction(toksym);
+//			PLIRBasicBlock termNode = new PLIRBasicBlock(toksym);
+			PLIRBasicBlock termNode = new PLIRBasicBlock();
 			advance(in);
 			
 			// Now parse the right factor and build the resulting node
-			PLIRInstruction rightNode = parse_factor(in);
+			PLIRBasicBlock rightNode = parse_factor(in);
+			
+			
 //			termNode.setLeft(factor);
 //			termNode.setRight(rightNode);
 			return termNode;
@@ -197,16 +204,26 @@ public class PLParser
 		}
 	}
 
-	private PLIRInstruction parse_expression(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_expression(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRInstruction term = parse_term(in);
+		PLIRBasicBlock term = parse_term(in);
 		if (toksym == PLToken.plusToken || toksym == PLToken.minusToken)
 		{
-			PLIRInstruction exprNode = new PLIRInstruction(toksym);
+//			PLIRBasicBlock exprNode = new PLIRBasicBlock(toksym);
+			int operator = toksym;
+			System.out.println("here now");
+			PLIRBasicBlock exprNode = new PLIRBasicBlock();
 			advance(in);
 			
 			// Now parse the right term and build the resulting node 
-			PLIRInstruction rightNode = parse_term(in);
+			PLIRBasicBlock rightNode = parse_term(in);
+			
+			PLIRInstruction leftValue = term.instructions.get(term.instructions.size() - 1);
+			PLIRInstruction rightValue = rightNode.instructions.get(rightNode.instructions.size() - 1);
+			PLIRInstructionType opcode = operator == PLToken.plusToken ? PLIRInstructionType.ADD : PLIRInstructionType.SUB; 
+			PLIRInstruction exprInst = new PLIRInstruction(opcode, leftValue, rightValue);
+			exprNode.addInstruction(exprInst);
+			
 //			exprNode.setLeft(term);
 //			exprNode.setRight(rightNode);
 			return exprNode;
@@ -217,30 +234,29 @@ public class PLParser
 		}
 	}
 
-	private PLIRInstruction parse_relation(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_relation(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRInstruction result = null;
+		PLIRBasicBlock result = null;
 		
 		result = parse_expression(in);
-		// TODO: combine
-		
 		if (PLToken.isRelationalToken(toksym) == false)
 		{
 			SyntaxError("Invalid relational character");
 		}
+		
+		// TOOD: save the relational code
+		
+		// Eat the relational token
 		advance(in);
 		
-		// TODO: save the relational code here
-		
-		// TODO: combine
 		result = parse_expression(in);
 		
 		return result;
 	}
 
-	private PLIRInstruction parse_assignment(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_assignment(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRInstruction result = null;
+		PLIRBasicBlock result = null;
 		
 		if (toksym != PLToken.letToken)
 		{
@@ -260,8 +276,11 @@ public class PLParser
 				{
 					advance(in);
 					result = parse_expression(in);
-					System.out.println("result: " + result.i1 + "," + result.i2);
-					scope.updateSymbol(varName, result); // (SSA ID) := expr
+					
+					// The last instruction added to the BB is the one that holds the value for this assignment
+					PLIRInstruction inst = result.instructions.get(result.instructions.size() - 1);
+					System.out.println("result: " + inst.i1 + "," + inst.i2);
+					scope.updateSymbol(varName, inst); // (SSA ID) := expr
 				}
 				else
 				{
@@ -277,9 +296,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRInstruction parse_funcCall(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_funcCall(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRInstruction result = null;
+		PLIRBasicBlock result = null;
 		
 		if (toksym != PLToken.callToken)
 		{
@@ -313,9 +332,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRInstruction parse_ifStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_ifStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRInstruction result = null;
+		PLIRBasicBlock result = null;
 		
 		if (toksym != PLToken.ifToken)
 		{
@@ -349,9 +368,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRInstruction parse_whileStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_whileStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRInstruction result = null;
+		PLIRBasicBlock result = null;
 		
 		if (toksym != PLToken.whileToken)
 		{
@@ -381,9 +400,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRInstruction parse_returnStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_returnStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRInstruction result = null;
+		PLIRBasicBlock result = null;
 		
 		if (toksym != PLToken.returnToken)
 		{
@@ -402,9 +421,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRInstruction parse_statement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_statement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRInstruction result = null;
+		PLIRBasicBlock result = null;
 		
 		if (toksym == PLToken.letToken)
 		{
@@ -434,9 +453,9 @@ public class PLParser
 		return null;
 	}
 
-	private PLIRInstruction parse_statSequence(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_statSequence(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRInstruction result = parse_statement(in);
+		PLIRBasicBlock result = parse_statement(in);
 		
 		while (toksym == PLToken.semiToken)
 		{
@@ -447,9 +466,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRInstruction parse_typeDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_typeDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRInstruction result = null;
+		PLIRBasicBlock result = null;
 		
 		if (toksym == PLToken.varToken)
 		{
@@ -495,9 +514,9 @@ public class PLParser
 		return null;
 	}
 
-	private PLIRInstruction parse_varDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_varDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{	
-		PLIRInstruction result = parse_typeDecl(in);
+		PLIRBasicBlock result = parse_typeDecl(in);
 		scope.addVarToScope(sym);
 		result = parse_ident(in);
 		while (toksym == PLToken.commaToken)
@@ -515,9 +534,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRInstruction parse_funcDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_funcDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRInstruction result = null;
+		PLIRBasicBlock result = null;
 		if (toksym == PLToken.funcToken || toksym == PLToken.procToken)
 		{
 			advance(in);
@@ -549,9 +568,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRInstruction parse_formalParam(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_formalParam(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRInstruction result = null;
+		PLIRBasicBlock result = null;
 		
 		if (toksym == PLToken.openParenToken)
 		{
@@ -574,9 +593,9 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRInstruction parse_funcBody(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_funcBody(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRInstruction result = null;
+		PLIRBasicBlock result = null;
 		
 		if (toksym == PLToken.varToken || toksym == PLToken.arrToken)
 		{

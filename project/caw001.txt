@@ -3,6 +3,6 @@ main
 var x, y;
 {
     let x <- 51;
-    let y <- x;
+    let y <- x + 1;
     return x
 }.
