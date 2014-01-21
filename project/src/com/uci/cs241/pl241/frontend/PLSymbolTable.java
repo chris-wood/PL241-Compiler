@@ -7,7 +7,7 @@ import com.uci.cs241.pl241.ir.PLIRInstruction;
 
 public class PLSymbolTable
 {
-	public ArrayList<String> currentScope; // maintain stack of the current scope
+	public ArrayList<String> currentScope; // stack of the current scope
 	public HashMap<String, ArrayList<String>> funScopeTable;
 	public HashMap<String, ArrayList<String>> varScopeTable;
 	public HashMap<String, HashMap<String, PLIRInstruction>> symTable;
@@ -75,7 +75,8 @@ public class PLSymbolTable
 		}
 		else
 		{
-			System.err.println("Trying to update symbol value of something out of scope: " + scope + ", " + sym);
+			System.err.println("Trying to update symbol value of something " + 
+					"out of scope: " + scope + ", " + sym);
 			System.exit(-1);
 		}
 	}
@@ -105,7 +106,9 @@ public class PLSymbolTable
 		String scope = getCurrentScope();
 		for (String var : symTable.get(scope).keySet())
 		{
-			System.out.println("Var: " + var + " => " + symTable.get(scope).get(var).id + ":= " + symTable.get(scope).get(var));
+			System.out.println("Var: " + var + " => " + 
+				symTable.get(scope).get(var).id + ":= " + 
+				symTable.get(scope).get(var));
 		}
 	}
 	

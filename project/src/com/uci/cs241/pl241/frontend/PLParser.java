@@ -1,6 +1,7 @@
 package com.uci.cs241.pl241.frontend;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
@@ -73,7 +74,7 @@ public class PLParser
 			{
 				// eat the sequence of statements that make up the computation
 				advance(in);
-				result = this.parse_statSequence(in);
+				result = parse_statSequence(in);
 				
 				// parse the close of the computation
 				if (toksym == PLToken.closeBraceToken)
@@ -102,6 +103,8 @@ public class PLParser
 		{
 			SyntaxError("Computation does not begin with main keyword");
 		}
+		
+		PLStaticSingleAssignment.displayInstructions();
 		
 		return result;
 	}
@@ -280,10 +283,7 @@ public class PLParser
 					
 					// The last instruction added to the BB is the one that holds the value for this assignment
 					PLIRInstruction inst = result.instructions.get(result.instructions.size() - 1);
-//					System.out.println("result: " + inst.i1 + "," + inst.i2);
 					scope.updateSymbol(varName, inst); // (SSA ID) := expr
-//					scope.displayCurrentScopeSymbols();
-					PLStaticSingleAssignment.displayInstructions();
 				}
 				else
 				{
@@ -310,6 +310,9 @@ public class PLParser
 		else
 		{
 			advance(in);
+			
+			// Save function identifier in case it's a predefined function with a special instruction
+			String funcName = sym;
 			result = parse_ident(in);
 			
 			if (toksym == PLToken.openParenToken)
@@ -317,18 +320,44 @@ public class PLParser
 				advance(in);
 				
 				if (toksym != PLToken.semiToken && toksym != PLToken.elseToken
-						&& toksym != PLToken.fiToken && toksym != PLToken.odToken && toksym != PLToken.closeBraceToken)
+						&& toksym != PLToken.fiToken && toksym != PLToken.odToken 
+						&& toksym != PLToken.closeBraceToken && toksym != PLToken.closeParenToken)
 				{
 					result = parse_expression(in);
-					while (toksym == PLToken.semiToken);
+					
+					// Special case for single parameter
+					if (toksym == PLToken.commaToken && funcName.equals("OutputNum"))
 					{
-						advance(in);
-						result = parse_expression(in);
+						SyntaxError("Function OutputNum only takes a single parameter");
 					}
+					else if (toksym != PLToken.commaToken && funcName.equals("OutputNum"))
+					{
+						PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.WRITE, result.instructions.get(result.instructions.size() - 1));
+						// TODO: this is the instruction that outputs the number, but where does it go in the BB?
+					}
+					else
+					{
+						// Read in the rest of the instructions
+						while (toksym == PLToken.commaToken)
+						{
+							advance(in);
+							result = parse_expression(in);
+						}
+					}
+				}
+				else if (toksym == PLToken.closeParenToken && funcName.equals("InputNum"))
+				{
+					PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.READ);
+					// TODO: this is the instruction that outputs the number, but where does it go in the BB?
+				}
+				else if (toksym == PLToken.closeParenToken && funcName.equals("OutputNewLine"))
+				{
+					PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.WLN);
+					// TODO: this is the instruction that outputs the number, but where does it go in the BB?
 				}
 			}
 			
-			// TODO: necessary?
+			// Eat the last token and proceed
 			advance(in);
 		}
 		
@@ -337,7 +366,11 @@ public class PLParser
 
 	private PLIRBasicBlock parse_ifStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRBasicBlock result = null;
+//		PLIRBasicBlock branches[] = new PLIRBasicBlock[2]; // only two possible branches, possibly with a null second (else) branch
+//		branches[0] = null;
+//		branches[1] = null;
+		
+		PLIRBasicBlock entry = null;
 		
 		if (toksym != PLToken.ifToken)
 		{
@@ -346,19 +379,29 @@ public class PLParser
 		else
 		{
 			advance(in);
-			result = parse_relation(in);
+			entry = parse_relation(in);
 			
 			if (toksym != PLToken.thenToken)
 			{
 				SyntaxError("Missing then clause");
 			}
 			advance(in);
-			result = parse_statSequence(in);
+//			branches[0] = parse_statSequence(in);
+			PLIRBasicBlock thenBlock = parse_statSequence(in);
+			entry.children.add(thenBlock);
+			
+			// Artificial join node
+			PLIRBasicBlock joinNode = new PLIRBasicBlock();
+			thenBlock.children.add(joinNode);
+			entry.exitNode = entry.joinNode = joinNode;
 			
 			if (toksym == PLToken.elseToken)
 			{
 				advance(in);
-				result = parse_statSequence(in);
+				PLIRBasicBlock elseBlock = parse_statSequence(in);
+				entry.children.add(elseBlock);
+				elseBlock.children.add(joinNode);
+//				branches[1] = parse_statSequence(in);
 			}
 			else if (toksym != PLToken.fiToken)
 			{
@@ -368,7 +411,7 @@ public class PLParser
 			advance(in);
 		}
 		
-		return result;
+		return entry;
 	}
 
 	private PLIRBasicBlock parse_whileStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
@@ -390,7 +433,7 @@ public class PLParser
 			}
 			
 			advance(in);
-			result = parse_statSequence(in);
+			result  = parse_statSequence(in);
 			
 			if (toksym != PLToken.odToken)
 			{
@@ -438,6 +481,12 @@ public class PLParser
 		}
 		else if (toksym == PLToken.ifToken)
 		{
+//			PLIRBasicBlock[] branches = parse_ifStatement(in);
+//			result.add(branches[0]);
+//			if (branches[1] != null)
+//			{
+//				result.add(branches[1]);
+//			}
 			result = parse_ifStatement(in);
 		}
 		else if (toksym == PLToken.whileToken)
@@ -448,12 +497,12 @@ public class PLParser
 		{
 			result = parse_returnStatement(in);
 		}
-		else
+		else 
 		{
-			throw new PLSyntaxErrorException("invalid start of a statement");
+			SyntaxError("invalid start of a statement");
 		}
 		
-		return null;
+		return result;
 	}
 
 	private PLIRBasicBlock parse_statSequence(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException

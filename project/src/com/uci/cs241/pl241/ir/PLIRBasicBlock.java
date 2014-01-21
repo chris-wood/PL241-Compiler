@@ -8,6 +8,14 @@ public class PLIRBasicBlock
 	public ArrayList<PLIRBasicBlock> children;
 	public ArrayList<PLIRBasicBlock> parents;
 	public ArrayList<PLIRBasicBlock> treeVertexSet;
+	
+	// These are set if we encounter branches, and must be handled accordingly
+	// By default, they are null, so simple checks to see if they're null will help us determine whether we merge block 
+	// instructions and where to place phi-instructions
+	public PLIRBasicBlock joinNode;
+	public PLIRBasicBlock exitNode;
+	
+	// TODO: need to compute this for the dominator tree algorithm!!!
 	public int treeSize;
 	
 	public int id;

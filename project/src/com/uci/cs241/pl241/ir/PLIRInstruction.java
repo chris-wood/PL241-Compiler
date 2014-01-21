@@ -50,8 +50,26 @@ public class PLIRInstruction
 	
 	public enum PLIRInstructionOperandType
 	{
-		CONST, INST
+		CONST, INST, NULL
 	};
+	
+	public PLIRInstruction(PLIRInstructionType opcode)
+	{
+		this.opcode = opcode;
+		op1 = op2 = null;
+		op1type = op2type = PLIRInstructionOperandType.NULL;
+		id = PLStaticSingleAssignment.addInstruction(this);
+	}
+	
+	public PLIRInstruction(PLIRInstructionType opcode, PLIRInstruction singleOperand)
+	{
+		this.opcode = opcode;
+		op1 = singleOperand;
+		op2 = null;
+		op1type = PLIRInstructionOperandType.INST; 
+		op2type = PLIRInstructionOperandType.NULL;
+		id = PLStaticSingleAssignment.addInstruction(this);
+	}
 	
 	public PLIRInstruction(PLIRInstructionType opcode, PLIRInstruction left, PLIRInstruction right)
 	{
@@ -92,6 +110,21 @@ public class PLIRInstruction
 		id = PLStaticSingleAssignment.addInstruction(this);
 	}
 	
+	public static PLIRInstruction createInputInstruction()
+	{
+		return null;
+	}
+	
+	public static PLIRInstruction createOutputNumInstruction(PLIRInstruction val)
+	{
+		return null;
+	}
+	
+	public static PLIRInstruction createOutputLineInstruction()
+	{
+		return null;
+	}
+	
 	@Override
 	public String toString()
 	{
@@ -104,6 +137,15 @@ public class PLIRInstruction
 				break;
 			case ADDA:
 				s = "adda";
+				break;
+			case WRITE:
+				s = "write";
+				break;
+			case READ:
+				s = "read";
+				break;
+			case WLN:
+				s = "wln";
 				break;
 		}
 		
