@@ -97,13 +97,13 @@ public class PLIRInstruction
 			op1type = OperandType.CONST;
 			i1 = singleOperand.tempVal;
 		}
-		if (singleOperand.wasIdent)
-		{
-			System.err.println("WAS AN IDENTIFIER!!!: " + singleOperand.origIdent);
-			op1type = OperandType.INST;
-			this.wasIdent = true;
-			this.origIdent = singleOperand.origIdent;
-		}
+//		if (singleOperand.wasIdent)
+//		{
+//			System.err.println("WAS AN IDENTIFIER!!!: " + singleOperand.origIdent);
+//			op1type = OperandType.INST;
+//			this.wasIdent = true;
+//			this.origIdent = singleOperand.origIdent;
+//		}
 		
 //		id = PLStaticSingleAssignment.addInstruction(this); 
 		forceGenerate(); // always generate right away...

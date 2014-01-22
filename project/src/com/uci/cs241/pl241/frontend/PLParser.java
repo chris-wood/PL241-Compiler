@@ -65,13 +65,15 @@ public class PLParser
 			scope = new PLSymbolTable();
 			scope.pushNewScope("main");
 			
-			if (toksym == PLToken.varToken || toksym == PLToken.arrToken)
+			while (toksym == PLToken.varToken || toksym == PLToken.arrToken)
 			{
+				// TODO: merge
 				result = this.parse_varDecl(in);
 			}
 			
 			if (toksym == PLToken.funcToken || toksym == PLToken.procToken)
 			{
+				// TODO: merge
 				result = this.parse_funcDecl(in);
 			}
 			
@@ -155,6 +157,9 @@ public class PLParser
 		while (toksym == PLToken.openBracketToken)
 		{
 			advance(in);
+			
+			// TODO: merge
+			
 			result = parse_expression(in);
 			if (toksym != PLToken.closeBracketToken)
 			{

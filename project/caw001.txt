@@ -1,11 +1,13 @@
 //Simple parsing test
 main
-var a, b, c, d;
+var a, b, c, d; array[4] arr; 
 {
     let a <- 51;
     let b <- a + 1 + 2 + 3 + 4 + 5;
     let c <- 1 * 8 + (6 * 4); 
     let d <- call InputNum();
+    let arr[0] <- 0;
+    call OutputNum(arr[0]);
     call OutputNum(a);
     call OutputNewLine();
     call OutputNum(b);
