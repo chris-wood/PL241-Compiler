@@ -118,7 +118,18 @@ public class PLParser
 	private PLIRBasicBlock parse_ident(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRInstruction inst = scope.getCurrentValue(sym);
+		
+		// Memorize the ident we saw here
 		String symName = sym;
+		if (inst != null)
+		{
+			System.err.println("inst " + sym + " from scope: " + inst);
+			inst.wasIdent = true;
+			inst.origIdent = sym;
+		}
+		
+		// Eat the symbol, create the block with the single instruction, add the ident to the list
+		// of used identifiers, and return
 		advance(in);
 		PLIRBasicBlock block = new PLIRBasicBlock();
 		block.instructions.add(inst);
@@ -276,7 +287,7 @@ public class PLParser
 		// Build the comparison instruction with the memorized condition
 		PLIRInstruction leftInst = left.instructions.get(left.instructions.size() - 1);
 		PLIRInstruction rightInst = right.instructions.get(right.instructions.size() - 1);
-		PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.CMP, leftInst, rightInst);
+		PLIRInstruction inst = PLIRInstruction.create_cmp(leftInst, rightInst);
 		inst.condcode = condcode;
 		inst.fixupLocation = 0;
 		
@@ -286,10 +297,14 @@ public class PLParser
 		relation.addInstruction(rightInst);
 		relation.addInstruction(inst);
 		
+		// 
+		
 		// Save whatever values are used in these expressions
 		// TODO: need a merge BBs method
+		debug(left.usedIdents.size() + " !!!");
 		for (String sym : left.usedIdents.keySet())
 		{
+			debug("adding " + sym + " with " + left.usedIdents.get(sym).toString());
 			relation.addUsedValue(sym, left.usedIdents.get(sym));
 		}
 		for (String sym : right.usedIdents.keySet())
@@ -573,30 +588,77 @@ public class PLParser
 			
 			int offset = 0;
 			ArrayList<String> sharedModifiers = new ArrayList<String>();
+			ArrayList<String> filteredModifiers = new ArrayList<String>();
 			for (String i1 : body.modifiedIdents.keySet())
 			{
-				for (String i2 : entry.modifiedIdents.keySet())
+				sharedModifiers.add(i1);
+			}
+			debug("body modified size = " + body.modifiedIdents.size());
+			debug("entry used size = " + entry.usedIdents.size());
+			for (String i2 : entry.usedIdents.keySet())
+			{
+				for (String i1 : sharedModifiers)
 				{
-					if (i1.equals(i2) && sharedModifiers.contains(i1) == false)
+					debug("comparing " + i1 + " and " + i2);
+					if (i1.equals(i2) && filteredModifiers.contains(i2) == false)
 					{
-						debug("adding: " + i1);
-						sharedModifiers.add(i1);
+						filteredModifiers.add(i2);
 					}
 				}
 			}
-			debug("(while loop) Inserting " + sharedModifiers.size() + " phis");
-			for (String var : sharedModifiers)
+			debug("(while loop) Inserting " + filteredModifiers.size() + " phis");
+			for (String var : filteredModifiers)
 			{
 				offset++;
-				PLIRInstruction thenInst = body.modifiedIdents.get(var);
-				debug(thenInst.toString());
-				PLIRInstruction elseInst = entry.modifiedIdents.get(var);
-				debug(elseInst.toString());
-				PLIRInstruction phi = PLIRInstruction.create_phi(thenInst, elseInst);
+				PLIRInstruction bodyInst = body.modifiedIdents.get(var);
+				debug(bodyInst.toString());
+				PLIRInstruction entryInst = entry.usedIdents.get(var);
+				debug(entryInst.toString());
+				PLIRInstruction phi = PLIRInstruction.create_phi(entryInst, bodyInst);
 				entry.joinNode.insertInstruction(phi, 0);
 				
 				// The current value in scope needs to be updated now with the result of the phi
 				scope.updateSymbol(var, phi);
+				
+				// Now loop through the entry and fix instructions as needed
+				// Those fixed are replaced with the result of this phi if they have used or modified the sym...
+				// TODO: this can possibly be recursive...
+				PLIRInstruction cmpInst = entry.instructions.get(entry.instructions.size() - 1);
+				debug("patching up phis: " + cmpInst.toString());
+				debug(phi.toString());
+				if (cmpInst.op1 != null && cmpInst.op1.origIdent.equals(var))
+				{
+					debug("match left");
+//					cmpInst.op1 = phi;
+					cmpInst.replaceLeftOperand(phi);
+//					PLStaticSingleAssignment.updateInstruction(cmpInst.id, cmpInst);
+//					System.exit(-1);
+				}
+				if (cmpInst.op2 != null && cmpInst.op2.origIdent.equals(var))
+				{
+					debug("match right");
+//					cmpInst.op2 = phi;
+					cmpInst.replaceRightOperand(phi);
+//					PLStaticSingleAssignment.updateInstruction(cmpInst.id, cmpInst);
+//					System.exit(-1);
+				}
+				
+				// Now loop through the body and fix instructions as needed
+				// TODO: this can possibly be recursive...
+				for (PLIRInstruction bInst : body.instructions)
+				{
+					System.err.println(bInst.toString());
+					if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
+					{
+						debug("match body left: " + bInst.toString());
+						bInst.replaceLeftOperand(phi);
+					}
+					if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
+					{
+						debug("match body right");
+						bInst.replaceRightOperand(phi);
+					}
+				}
 			}
 			
 			////////////////////////////////////////////
@@ -611,6 +673,8 @@ public class PLParser
 				SyntaxError("Missing 'od' in while statement");
 			}
 			advance(in);
+			
+			result = entry;
 		}
 		else if (toksym == PLToken.returnToken)
 		{
@@ -631,7 +695,17 @@ public class PLParser
 		while (toksym == PLToken.semiToken)
 		{
 			advance(in);
-			result = parse_statement(in);
+			PLIRBasicBlock nextBlock = parse_statement(in);
+			
+			// TODO: merge the blocks here...
+			for (String sym : nextBlock.modifiedIdents.keySet())
+			{
+				result.addModifiedValue(sym, nextBlock.modifiedIdents.get(sym));
+			}
+			for (String sym : nextBlock.usedIdents.keySet())
+			{
+				result.addUsedValue(sym, nextBlock.usedIdents.get(sym));
+			}
 		}
 		
 		return result;

@@ -64,6 +64,12 @@ public class PLIRBasicBlock
 	public void addUsedValue(String ident, PLIRInstruction inst)
 	{
 		usedIdents.put(ident, inst);
+//		System.err.println(if i)
+		if (ident.equals("a"))
+		{
+			System.err.println(inst);
+//			System.err.println("inst: " + inst.toString());
+		}
 	}
 	
 	public void addModifiedValue(String ident, PLIRInstruction inst)

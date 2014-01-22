@@ -11,11 +11,17 @@ public class PLStaticSingleAssignment
 	{
 		if (inst.toString().equals("read"))
 		{
-			int i = 0;
+			int i = 0; // catch a break
 		}
 		boolean success = instructions.add(inst);
 		if (!success) return -1;
 		return globalSSAIndex++;
+	}
+	
+	public static void updateInstruction(int id, PLIRInstruction inst)
+	{
+		System.err.println("Replacing: " + instructions.get(id).toString() + " with " + inst.toString());
+		instructions.set(id, inst);
 	}
 	
 	public static void displayInstructions()

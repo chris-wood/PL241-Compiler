@@ -24,6 +24,8 @@ public class PLIRInstruction
 	public int tempVal;
 	public int condcode;
 	public int fixupLocation;
+	public boolean wasIdent = false;
+	public String origIdent = "";
 	
 	// Unique identifier for each instruction that's generated
 //	public static ArrayList<PLIRInstruction> ssaInstructions = new ArrayList<PLIRInstruction>();
@@ -94,6 +96,13 @@ public class PLIRInstruction
 		{
 			op1type = OperandType.CONST;
 			i1 = singleOperand.tempVal;
+		}
+		if (singleOperand.wasIdent)
+		{
+			System.err.println("WAS AN IDENTIFIER!!!: " + singleOperand.origIdent);
+			op1type = OperandType.INST;
+			this.wasIdent = true;
+			this.origIdent = singleOperand.origIdent;
 		}
 		
 //		id = PLStaticSingleAssignment.addInstruction(this); 
@@ -332,11 +341,57 @@ public class PLIRInstruction
 		}
 	}
 	
+	public void replaceLeftOperand(PLIRInstruction newLeft)
+	{
+		op1 = newLeft;
+		op1type = OperandType.INST;
+	}
+	
+	public void replaceRightOperand(PLIRInstruction newRight)
+	{
+		op2 = newRight;
+		op2type = OperandType.INST;
+	}
+	
+	public static PLIRInstruction create_cmp(PLIRInstruction left, PLIRInstruction right)
+	{
+		PLIRInstruction inst = new PLIRInstruction();
+		inst.opcode = PLIRInstructionType.CMP;
+		inst.kind = ResultKind.VAR;
+		
+		if (left.kind == ResultKind.CONST)
+		{
+			inst.op1 = left;
+			inst.op1type = OperandType.CONST;
+			inst.i1 = left.tempVal;
+		}
+		else
+		{
+			inst.op1 = left;
+			inst.op1type = OperandType.INST;
+		}
+		
+		if (right.kind == ResultKind.CONST)
+		{
+			inst.op2 = right;
+			inst.op2type = OperandType.CONST;
+			inst.i2 = right.tempVal;
+		}
+		else
+		{
+			inst.op2 = right;
+			inst.op2type = OperandType.INST;
+		}
+		
+		inst.forceGenerate();
+		
+		return inst;
+	}
+	
 	public static PLIRInstruction create_phi(PLIRInstruction b1, PLIRInstruction b2)
 	{
 		PLIRInstruction inst = new PLIRInstruction();
 		inst.opcode = PLIRInstructionType.PHI;
-		
 		inst.kind = ResultKind.VAR;
 		
 		if (b1.kind == ResultKind.CONST)
@@ -363,9 +418,9 @@ public class PLIRInstruction
 			inst.op2type = OperandType.INST;
 		}
 		
-		inst.id = PLStaticSingleAssignment.addInstruction(inst);
-		inst.generated = true;
-//		inst.forceGenerate();
+//		inst.id = PLStaticSingleAssignment.addInstruction(inst);
+//		inst.generated = true;
+		inst.forceGenerate();
 		
 		return inst;
 	}
