@@ -190,16 +190,38 @@ public class PLParser
 		PLIRBasicBlock factor = parse_factor(in);
 		if (toksym == PLToken.timesToken || toksym == PLToken.divToken)
 		{
-//			PLIRBasicBlock termNode = new PLIRBasicBlock(toksym);
+////			PLIRBasicBlock termNode = new PLIRBasicBlock(toksym);
+//			PLIRBasicBlock termNode = new PLIRBasicBlock();
+//			advance(in);
+//			
+//			// Now parse the right factor and build the resulting node
+//			PLIRBasicBlock rightNode = parse_factor(in);
+//			
+//			
+////			termNode.setLeft(factor);
+////			termNode.setRight(rightNode);
+//			return termNode;
+			
+			int operator = toksym;
+//			System.out.println("here now");
 			PLIRBasicBlock termNode = new PLIRBasicBlock();
 			advance(in);
 			
-			// Now parse the right factor and build the resulting node
-			PLIRBasicBlock rightNode = parse_factor(in);
+			// Now parse the right term and build the resulting node 
+			PLIRBasicBlock rightNode = parse_term(in);
+			
+			// Form the expression instruction
+			PLIRInstruction leftValue = factor.instructions.get(factor.instructions.size() - 1);
+			PLIRInstruction rightValue = rightNode.instructions.get(rightNode.instructions.size() - 1);
+			PLIRInstructionType opcode = operator == PLToken.timesToken ? PLIRInstructionType.MUL : PLIRInstructionType.DIV;
 			
 			
-//			termNode.setLeft(factor);
-//			termNode.setRight(rightNode);
+			PLIRInstruction termInst = new PLIRInstruction(opcode, leftValue, rightValue);
+			termInst.forceGenerate();
+			termNode.addInstruction(termInst);
+			
+//			exprNode.setLeft(term);
+//			exprNode.setRight(rightNode);
 			return termNode;
 		}
 		else
