@@ -107,13 +107,13 @@ public class PLIRInstruction
 		
 		if (left.kind == ResultKind.CONST)
 		{
-			System.err.println("left operand is a constant");
+//			System.err.println("left operand is a constant");
 			op1type = OperandType.CONST;
 			i1 = left.tempVal;
 		}
 		if (right.kind == ResultKind.CONST)
 		{
-			System.err.println("right operand is a constant");
+//			System.err.println("right operand is a constant");
 			op2type = OperandType.CONST;
 			i2 = right.tempVal;
 		}
@@ -153,12 +153,8 @@ public class PLIRInstruction
 		if (opcode == PLIRInstructionType.CMP)
 		{
 			kind = ResultKind.COND;
-			
 			forceGenerate();
-			System.err.println("not implemented 1: " + i2);
-//			System.exit(-1);
 		}
-		
 		if (kind == ResultKind.CONST)
 		{
 			forceGenerate();
@@ -175,13 +171,11 @@ public class PLIRInstruction
 		
 		if (left.kind == ResultKind.CONST)
 		{
-			System.err.println("left operand is a constant");
 			op1type = OperandType.CONST;
 			i1 = left.tempVal;
 		}
 		if (right.kind == ResultKind.CONST)
 		{
-			System.err.println("right operand is a constant");
 			op2type = OperandType.CONST;
 			i2 = right.tempVal;
 		}
@@ -221,8 +215,7 @@ public class PLIRInstruction
 		if (opcode == PLIRInstructionType.CMP)
 		{
 			kind = ResultKind.COND;
-			System.err.println("not implemented 2");
-			System.exit(-1);
+			forceGenerate();
 		}
 		
 		if (kind == ResultKind.CONST)
@@ -279,8 +272,7 @@ public class PLIRInstruction
 		if (opcode == PLIRInstructionType.CMP)
 		{
 			kind = ResultKind.COND;
-			System.err.println("not implemented 3");
-			System.exit(-1);
+			forceGenerate();
 		}
 		
 		if (kind == ResultKind.CONST)
@@ -333,38 +325,40 @@ public class PLIRInstruction
 		if (!generated)
 		{
 			kind = ResultKind.VAR;
-			id = PLStaticSingleAssignment.addInstruction(this);
 			generated = true;
+			id = PLStaticSingleAssignment.addInstruction(this);
 		}
 	}
 	
 	public static PLIRInstruction create_branch(PLIRInstruction cmp, int token)
 	{	
 		PLIRInstruction inst = new PLIRInstruction();
-		inst.op1 = inst.op2 = null;
-		inst.op1type = OperandType.ADDRESS;
-		inst.i1 = cmp.fixupLocation;
-		inst.op2type = OperandType.ADDRESS;
+		inst.op2 = null;
+		inst.op2type = OperandType.CONST; // op2 will be an offset
 		
+		inst.op1type = OperandType.ADDRESS;
+		inst.i1 = cmp.id;
+		
+		// TODO: this needs to be the negated version of the condcode for the logic to work out
 		switch (token)
 		{
 		case PLToken.eqlToken:
-			inst.opcode = PLIRInstructionType.BEQ;
-			break;
-		case PLToken.neqToken:
 			inst.opcode = PLIRInstructionType.BNE;
 			break;
-		case PLToken.lssToken:
-			inst.opcode = PLIRInstructionType.BLT;
+		case PLToken.neqToken:
+			inst.opcode = PLIRInstructionType.BEQ;
 			break;
-		case PLToken.geqToken:
+		case PLToken.lssToken:
 			inst.opcode = PLIRInstructionType.BGE;
 			break;
+		case PLToken.geqToken:
+			inst.opcode = PLIRInstructionType.BLT;
+			break;
 		case PLToken.leqToken:
-			inst.opcode = PLIRInstructionType.BLE;
+			inst.opcode = PLIRInstructionType.BGT;
 			break;
 		case PLToken.gttToken:
-			inst.opcode = PLIRInstructionType.BGT;
+			inst.opcode = PLIRInstructionType.BLE;
 			break;
 		}
 		
@@ -372,14 +366,14 @@ public class PLIRInstruction
 		return inst;
 	}
 	
-	public static PLIRInstruction create_BEQ(PLIRInstruction cmp, int loc)
+	public static PLIRInstruction create_BEQ(int loc)
 	{	
 		PLIRInstruction inst = new PLIRInstruction();
 		inst.i2 = loc;
-		inst.i1 = cmp.fixupLocation;
+//		inst.i1 = cmp.fixupLocation;
 		inst.op1 = inst.op2 = null;
-		inst.op1type = OperandType.ADDRESS;
-		inst.op2type = OperandType.ADDRESS;
+		inst.op1type = OperandType.CONST; // op1 will be 0
+		inst.op2type = OperandType.CONST; // op2 will be an offset
 		inst.opcode = PLIRInstructionType.BEQ;
 		inst.forceGenerate();
 		return inst;
@@ -442,6 +436,15 @@ public class PLIRInstruction
 			case BLT:
 				s = "blt";
 				break;
+			case BGE:
+				s = "bge";
+				break;
+			case BLE:
+				s = "ble";
+				break;
+			case BGT:
+				s = "bgt";
+				break;
 			// TODO: fill in the remaining ones here
 		}
 		
@@ -451,8 +454,10 @@ public class PLIRInstruction
 				s = s + " (" + op1.id + ")";
 				break;
 			case CONST:
-			case ADDRESS:
 				s = s + " #" + i1;
+				break;
+			case ADDRESS:
+				s = s + " (" + i1 + ")";
 				break;
 		}
 		
@@ -462,55 +467,13 @@ public class PLIRInstruction
 				s = s + " (" + op2.id + ")";
 				break;
 			case CONST:
-			case ADDRESS:
 				s = s + " #" + i2;
+				break;
+			case ADDRESS:
+				s = s + " (" + i2 + ")";
 				break;
 		}
 		
 		return s;
 	}
-	
-	
-	
-	/// OLD BELOW
-	
-//	public static String InstructionString(PLIRInstructionType type)
-//	{
-//		return type.toString().toLowerCase();
-//	}
-//	
-//	public List<PLIRInstruction> load(PLParseResult result)
-//	{
-//		List<PLIRInstruction> instructions = new ArrayList<PLIRInstruction>();
-//		if (result.kind == PLParseResultKind.VAR)
-//		{
-////			result.regno = allocateReg();
-//			
-//			PLIRInstruction left = null;
-//			PLIRInstruction right = null;
-//			
-//			PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.LOAD, left, PLIRInstructionOperandType.VAR, right, PLIRInstructionOperandType.VAR);
-//			instructions.add(inst);
-//			result.kind = PLParseResultKind.REG;
-//		}
-//		else if (result.kind == PLParseResultKind.CONST)
-//		{
-//			if (result.val == 0)
-//			{
-//				result.regno = 0;
-//			}
-//			else
-//			{
-////				result.regno = allocateReg();
-//				
-//				PLIRInstruction left = null;
-//				PLIRInstruction right = null;
-//				
-//				PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.ADD, left, PLIRInstructionOperandType.VAR, right, PLIRInstructionOperandType.VAR);
-//				instructions.add(inst);
-//			}
-//		}
-//		
-//		return instructions;
-//	}
 }

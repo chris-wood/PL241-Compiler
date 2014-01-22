@@ -270,8 +270,6 @@ public class PLParser
 	private PLIRBasicBlock parse_relation(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRBasicBlock left = parse_expression(in);
-		
-		System.err.println("Expression: " + left.instructions.get(left.instructions.size() - 1).toString());
 		if (PLToken.isRelationalToken(toksym) == false)
 		{
 			SyntaxError("Invalid relational character");
@@ -284,18 +282,18 @@ public class PLParser
 		advance(in);
 		
 		PLIRBasicBlock right = parse_expression(in);
-		System.err.println("if right: " + right.instructions.get(right.instructions.size() - 1).toString());
 		
+		// Build the comparison instruction
 		PLIRInstruction leftInst = left.instructions.get(left.instructions.size() - 1);
 		PLIRInstruction rightInst = right.instructions.get(right.instructions.size() - 1);
 		PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.CMP, leftInst, rightInst);
 		inst.condcode = condcode;
-		inst.fixupLocation = PLStaticSingleAssignment.globalSSAIndex;
+		inst.fixupLocation = 0;
 		
-		System.err.println("condcode = " + condcode);
-		System.err.println("fixup = " + inst.fixupLocation);
-		
+		// Create the relation block containing the instruction
 		PLIRBasicBlock relation = new PLIRBasicBlock();
+		relation.addInstruction(leftInst);
+		relation.addInstruction(rightInst);
 		relation.addInstruction(inst);
 		
 		return relation;
@@ -406,53 +404,6 @@ public class PLParser
 		return result;
 	}
 
-//	private PLIRBasicBlock parse_ifStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
-//	{
-//		PLIRBasicBlock entry = null;
-//		System.err.println("start of if");
-//		
-//		if (toksym != PLToken.ifToken)
-//		{
-//			SyntaxError("Invalid start to ifStatement non-terminal");
-//		}
-//		else
-//		{
-//			advance(in);
-//			entry = parse_relation(in);
-//			System.err.println("here: " + entry.instructions.get(entry.instructions.size() - 1).fixupLocation);
-////			entry.instructions.get(entry.instructions.size() - 1).forceGenerate();
-//			
-//			if (toksym != PLToken.thenToken)
-//			{
-//				SyntaxError("Missing then clause");
-//			}
-//			advance(in);
-//			PLIRBasicBlock thenBlock = parse_statSequence(in);
-//			entry.children.add(thenBlock);
-//			
-//			// Artificial join node
-//			PLIRBasicBlock joinNode = new PLIRBasicBlock();
-//			thenBlock.children.add(joinNode);
-//			entry.exitNode = entry.joinNode = joinNode;
-//			
-//			if (toksym == PLToken.elseToken)
-//			{
-//				advance(in);
-//				PLIRBasicBlock elseBlock = parse_statSequence(in);
-//				entry.children.add(elseBlock);
-//				elseBlock.children.add(joinNode);
-//			}
-//			else if (toksym != PLToken.fiToken)
-//			{
-//				SyntaxError("Missing 'fi' close to if statement");
-//			}
-//			
-//			advance(in);
-//		}
-//		
-//		return entry;
-//	}
-
 	private PLIRBasicBlock parse_whileStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRBasicBlock result = null;
@@ -516,7 +467,6 @@ public class PLParser
 		}
 		else if (toksym == PLToken.callToken)
 		{
-//			System.err.println("call....");
 			result = parse_funcCall(in);
 		}
 		else if (toksym == PLToken.ifToken)
@@ -528,33 +478,34 @@ public class PLParser
 			
 			PLIRBasicBlock entry = parse_relation(in);
 			PLIRInstruction x = entry.instructions.get(entry.instructions.size() - 1);
-			
-			System.err.println("rawr: " + x.fixupLocation);
-//			x.forceGenerate();
-			
 			CondNegBraFwd(x);
+			
+			// Check for follow through branch
 			if (toksym != PLToken.thenToken)
 			{
 				SyntaxError("Missing then clause");
 			}
 			advance(in);
+			
+			// Parse the follow-through and add it as the first child of the entry block
 			PLIRBasicBlock thenBlock = parse_statSequence(in);
 			entry.children.add(thenBlock);
 			
-			// Artificial join node
+			// Create the artificual join node and make it a child of the follow-through branch,
+			// and also the exit/join block of the entry block
 			PLIRBasicBlock joinNode = new PLIRBasicBlock();
 			thenBlock.children.add(joinNode);
 			entry.exitNode = entry.joinNode = joinNode;
 			
+			// Check for an else branch
 			if (toksym == PLToken.elseToken)
 			{
-				System.err.println("parsing the else branch");
 				UnCondBraFwd(follow);
 				Fixup(x.fixupLocation);
 				advance(in);
+				
+				// Parse the else block
 				PLIRBasicBlock elseBlock = parse_statSequence(in);
-				System.err.println("else: " + elseBlock.instructions.get(elseBlock.instructions.size() - 1).toString());
-				elseBlock.instructions.get(elseBlock.instructions.size() - 1).forceGenerate();
 				entry.children.add(elseBlock);
 				elseBlock.children.add(joinNode);
 			}
@@ -568,11 +519,13 @@ public class PLParser
 			{
 				SyntaxError("Missing 'fi' close to if statement");
 			}
+			
 			advance(in);
+			
+			System.err.println("Fixing: " + follow.fixupLocation);
 			Fixup(follow.fixupLocation);
 			
 			result = entry;
-//			result = parse_ifStatement(in);
 		}
 		else if (toksym == PLToken.whileToken)
 		{
@@ -584,7 +537,7 @@ public class PLParser
 		}
 		else 
 		{
-			SyntaxError("invalid start of a statement");
+			SyntaxError("Invalid start of a statement");
 		}
 		
 		return result;
@@ -757,34 +710,25 @@ public class PLParser
 		return result;
 	}
 	
+	// per spec
 	private void CondNegBraFwd(PLIRInstruction x)
 	{
-		x.fixupLocation = PLStaticSingleAssignment.globalSSAIndex ;
-		System.err.println("generating follow through branch... " + x.condcode + "  " + x.fixupLocation);
-		
-//		public static final int eqlToken = 20;
-//		public static final int neqToken = 21;
-//		public static final int lssToken = 22;
-//		public static final int geqToken = 23;
-//		public static final int leqToken = 24;
-//		public static final int gttToken = 25;
-		PLIRInstruction inst = PLIRInstruction.create_branch(x, x.condcode);
-		// TODO: what to do here? switch on the condition and insert the appropriate instruction
+		x.fixupLocation = PLStaticSingleAssignment.globalSSAIndex;
+		PLIRInstruction.create_branch(x, x.condcode);
 	}
 	
+	// per spec
 	private void UnCondBraFwd(PLIRInstruction x)
 	{
-		// TODO: insert BEQ instruction, but what are the operands?
-		System.err.println("generating else branch...");
-		PLIRInstruction inst = PLIRInstruction.create_BEQ(x, x.fixupLocation);
+		PLIRInstruction.create_BEQ(x.fixupLocation);
 		x.fixupLocation = PLStaticSingleAssignment.globalSSAIndex - 1;
 	}
-	
+
+	// set the address to which we jump...
+	// buffer[loc] = (pc - loc);
+	// per spec
 	private void Fixup(int loc)
 	{
-		// set the address to which we jump...
-		// buffer[loc] = (pc - loc);
-		System.err.println("fixing up...: " + loc);
 		PLStaticSingleAssignment.instructions.get(loc).i2 = (PLStaticSingleAssignment.globalSSAIndex - loc);
 	}
 }

@@ -15,8 +15,10 @@ var a, b, c, d;
     call OutputNum(d);
     call OutputNewLine();
     
-    if 0 < 5 then
-    call OutputNum(1)
+    if 0 == 5 then
+    call OutputNum(1);
+    call OutputNewLine();
+    call OutputNewLine()
     else
     call OutputNum(0)
     fi
