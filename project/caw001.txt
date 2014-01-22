@@ -3,9 +3,9 @@ main
 var a, b, c, d;
 {
     let a <- 51;
-    let b <- a + 1;
-    let c <- 1 * 8 + (6 * 4);
-    let d <- a + c;
+    let b <- a + 1 + 2 + 3 + 4 + 5;
+    let c <- 1 * 8 + (6 * 4); 
+    let d <- call InputNum();
     call OutputNum(a);
     call OutputNewLine();
     call OutputNum(b);
@@ -15,11 +15,18 @@ var a, b, c, d;
     call OutputNum(d);
     call OutputNewLine();
     
-    if 0 == 5 then
-    call OutputNum(1);
-    call OutputNewLine();
-    call OutputNewLine()
-    else
-    call OutputNum(0)
-    fi
+if d == 1 then
+call OutputNum(0)
+else
+call OutputNum(1)
+fi;
+
+let b <- 100;
+if b == 0 then
+let b <- 1
+else
+let b <- 0
+fi;
+
+call OutputNum(b)
 }.

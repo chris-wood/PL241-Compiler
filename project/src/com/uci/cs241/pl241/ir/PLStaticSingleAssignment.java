@@ -9,6 +9,10 @@ public class PLStaticSingleAssignment
 	
 	public static int addInstruction(PLIRInstruction inst)
 	{
+		if (inst.toString().equals("read"))
+		{
+			int i = 0;
+		}
 		boolean success = instructions.add(inst);
 		if (!success) return -1;
 		return globalSSAIndex++;

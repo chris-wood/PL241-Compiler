@@ -70,7 +70,7 @@ public class PLIRInstruction
 	
 	public PLIRInstruction()
 	{
-		// blank slate to be filled in by the parser...
+		// blank slate to be filled in by the parser or static factory methods in this class	
 	}
 	
 	public PLIRInstruction(PLIRInstructionType opcode)
@@ -78,7 +78,8 @@ public class PLIRInstruction
 		this.opcode = opcode;
 		op1 = op2 = null;
 		op1type = op2type = OperandType.NULL;
-		id = PLStaticSingleAssignment.addInstruction(this); // always generate right away...
+//		id = PLStaticSingleAssignment.addInstruction(this); 
+		forceGenerate(); // always generate right away...
 	}
 	
 	public PLIRInstruction(PLIRInstructionType opcode, PLIRInstruction singleOperand)
@@ -95,7 +96,8 @@ public class PLIRInstruction
 			i1 = singleOperand.tempVal;
 		}
 		
-		id = PLStaticSingleAssignment.addInstruction(this); // always generate right away...
+//		id = PLStaticSingleAssignment.addInstruction(this); 
+		forceGenerate(); // always generate right away...
 	}
 	
 	public PLIRInstruction(PLIRInstructionType opcode, PLIRInstruction left, PLIRInstruction right)
@@ -107,7 +109,7 @@ public class PLIRInstruction
 		
 		if (left.kind == ResultKind.CONST)
 		{
-//			System.err.println("left operand is a constant");
+			System.err.println("left operand is a constant: " +  left.toString());
 			op1type = OperandType.CONST;
 			i1 = left.tempVal;
 		}
@@ -330,6 +332,44 @@ public class PLIRInstruction
 		}
 	}
 	
+	public static PLIRInstruction create_phi(PLIRInstruction b1, PLIRInstruction b2)
+	{
+		PLIRInstruction inst = new PLIRInstruction();
+		inst.opcode = PLIRInstructionType.PHI;
+		
+		inst.kind = ResultKind.VAR;
+		
+		if (b1.kind == ResultKind.CONST)
+		{
+			inst.op1 = null;
+			inst.op1type = OperandType.CONST;
+			inst.i1 = b1.tempVal;
+		}
+		else
+		{
+			inst.op1 = b1;
+			inst.op1type = OperandType.INST;
+		}
+		
+		if (b2.kind == ResultKind.CONST)
+		{
+			inst.op2 = null;
+			inst.op2type = OperandType.CONST;
+			inst.i2 = b2.tempVal;
+		}
+		else
+		{
+			inst.op2 = b2;
+			inst.op2type = OperandType.INST;
+		}
+		
+		inst.id = PLStaticSingleAssignment.addInstruction(inst);
+		inst.generated = true;
+//		inst.forceGenerate();
+		
+		return inst;
+	}
+	
 	public static PLIRInstruction create_branch(PLIRInstruction cmp, int token)
 	{	
 		PLIRInstruction inst = new PLIRInstruction();
@@ -339,7 +379,7 @@ public class PLIRInstruction
 		inst.op1type = OperandType.ADDRESS;
 		inst.i1 = cmp.id;
 		
-		// TODO: this needs to be the negated version of the condcode for the logic to work out
+		// We negate the logic in order to make fall-through work correctly
 		switch (token)
 		{
 		case PLToken.eqlToken:
@@ -362,7 +402,8 @@ public class PLIRInstruction
 			break;
 		}
 		
-		inst.forceGenerate();
+		inst.id = PLStaticSingleAssignment.addInstruction(inst);
+//		inst.forceGenerate();
 		return inst;
 	}
 	
@@ -392,11 +433,6 @@ public class PLIRInstruction
 	public static PLIRInstruction createOutputLineInstruction()
 	{
 		return null;
-	}
-	
-	public static PLIRInstruction createBlankInstruction()
-	{
-		return new PLIRInstruction();
 	}
 	
 	@Override
@@ -444,6 +480,9 @@ public class PLIRInstruction
 				break;
 			case BGT:
 				s = "bgt";
+				break;
+			case PHI:
+				s = "phi";
 				break;
 			// TODO: fill in the remaining ones here
 		}

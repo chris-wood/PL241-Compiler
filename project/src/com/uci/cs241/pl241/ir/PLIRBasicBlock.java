@@ -1,6 +1,7 @@
 package com.uci.cs241.pl241.ir;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class PLIRBasicBlock
 {
@@ -8,6 +9,9 @@ public class PLIRBasicBlock
 	public ArrayList<PLIRBasicBlock> children;
 	public ArrayList<PLIRBasicBlock> parents;
 	public ArrayList<PLIRBasicBlock> treeVertexSet;
+	
+	// To be used when inserting phi functions in join nodes
+	public HashMap<String, PLIRInstruction> modifiedIdents;
 	
 	// These are set if we encounter branches, and must be handled accordingly
 	// By default, they are null, so simple checks to see if they're null will help us determine whether we merge block 
@@ -27,6 +31,7 @@ public class PLIRBasicBlock
 		this.parents = new ArrayList<PLIRBasicBlock>();
 		this.treeVertexSet = new ArrayList<PLIRBasicBlock>();
 		this.instructions = new ArrayList<PLIRInstruction>();
+		this.modifiedIdents = new HashMap<String, PLIRInstruction>();
 	}
 	
 	public PLIRBasicBlock(ArrayList<PLIRBasicBlock> childs, ArrayList<PLIRBasicBlock> parents, PLIRInstruction[] seq)
@@ -35,6 +40,7 @@ public class PLIRBasicBlock
 		this.parents = new ArrayList<PLIRBasicBlock>();
 		this.treeVertexSet = new ArrayList<PLIRBasicBlock>();
 		this.instructions = new ArrayList<PLIRInstruction>(seq.length);
+		this.modifiedIdents = new HashMap<String, PLIRInstruction>();
 		
 		for (PLIRBasicBlock block : parents)
 		{
@@ -52,6 +58,11 @@ public class PLIRBasicBlock
 		this.id = bbid++;
 	}
 	
+	public void addModifiedValue(String ident, PLIRInstruction inst)
+	{
+		modifiedIdents.put(ident, inst);
+	}
+	
 	public boolean addInstruction(PLIRInstruction inst)
 	{
 		return instructions.add(inst);
@@ -64,7 +75,7 @@ public class PLIRBasicBlock
 	
 	public boolean insertInstruction(PLIRInstruction inst, int index)
 	{
-		if (0 < index && index < instructions.size())
+		if (0 <= index && index < instructions.size())
 		{
 			instructions.add(index, inst);
 			return true;

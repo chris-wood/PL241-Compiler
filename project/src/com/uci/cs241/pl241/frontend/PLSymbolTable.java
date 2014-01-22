@@ -11,6 +11,7 @@ public class PLSymbolTable
 	public HashMap<String, ArrayList<String>> funScopeTable;
 	public HashMap<String, ArrayList<String>> varScopeTable;
 	public HashMap<String, HashMap<String, PLIRInstruction>> symTable;
+	public HashMap<String, ArrayList<PLIRInstruction>> prevSymTable;
 	public String name;
 	
 	public PLSymbolTable()
@@ -18,6 +19,7 @@ public class PLSymbolTable
 		funScopeTable = new HashMap<String, ArrayList<String>>();
 		varScopeTable = new HashMap<String, ArrayList<String>>();
 		symTable = new HashMap<String, HashMap<String, PLIRInstruction>>();
+		prevSymTable = new HashMap<String, ArrayList<PLIRInstruction>>();
 		currentScope = new ArrayList<String>();
 	}
 	
@@ -79,6 +81,13 @@ public class PLSymbolTable
 					"out of scope: " + scope + ", " + sym);
 			System.exit(-1);
 		}
+		
+		// Check to see if the old value needs to be replaced 
+		if (prevSymTable.containsKey(sym) == false)
+		{
+			prevSymTable.put(sym,  new ArrayList<PLIRInstruction>());
+		}
+		prevSymTable.get(sym).add(inst);
 	}
 	
 	public boolean isVarInScope(String scope, String sym)

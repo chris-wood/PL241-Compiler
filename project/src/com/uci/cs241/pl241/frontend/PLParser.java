@@ -7,6 +7,7 @@ import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
 import com.uci.cs241.pl241.ir.PLIRInstruction.OperandType;
 import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
+import com.uci.cs241.pl241.ir.PLIRInstruction.ResultKind;
 import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
 
 public class PLParser
@@ -27,6 +28,11 @@ public class PLParser
 	public PLParser()
 	{
 		symTable = new PLSymbolTable();
+	}
+	
+	public void debug(String msg)
+	{
+		System.err.println(">>> " + msg);
 	}
 	
 	public void SyntaxError(String msg) throws PLSyntaxErrorException
@@ -166,7 +172,7 @@ public class PLParser
 		}
 		else if (toksym == PLToken.callToken)
 		{
-			factor = parse_expression(in);
+			factor = parse_funcCall(in);
 		}
 		else if (toksym == PLToken.number)
 		{
@@ -174,6 +180,7 @@ public class PLParser
 		}
 		else if (toksym == PLToken.ident)
 		{
+			debug("parsing designator: " + sym);
 			factor = parse_designator(in); 
 		}
 		else
@@ -189,20 +196,7 @@ public class PLParser
 		PLIRBasicBlock factor = parse_factor(in);
 		if (toksym == PLToken.timesToken || toksym == PLToken.divToken)
 		{
-////			PLIRBasicBlock termNode = new PLIRBasicBlock(toksym);
-//			PLIRBasicBlock termNode = new PLIRBasicBlock();
-//			advance(in);
-//			
-//			// Now parse the right factor and build the resulting node
-//			PLIRBasicBlock rightNode = parse_factor(in);
-//			
-//			
-////			termNode.setLeft(factor);
-////			termNode.setRight(rightNode);
-//			return termNode;
-			
 			int operator = toksym;
-//			System.out.println("here now");
 			PLIRBasicBlock termNode = new PLIRBasicBlock();
 			advance(in);
 			
@@ -234,35 +228,31 @@ public class PLParser
 		PLIRBasicBlock term = parse_term(in);
 		if (toksym == PLToken.plusToken || toksym == PLToken.minusToken)
 		{
-//			PLIRBasicBlock exprNode = new PLIRBasicBlock(toksym);
 			int operator = toksym;
-//			System.out.println("here now");
 			PLIRBasicBlock exprNode = new PLIRBasicBlock();
 			advance(in);
 			
 			// Now parse the right term and build the resulting node 
-			PLIRBasicBlock rightNode = parse_term(in);
+			PLIRBasicBlock rightNode = parse_expression(in);
 			
 			// Form the expression instruction
 			PLIRInstruction leftValue = term.instructions.get(term.instructions.size() - 1);
 			PLIRInstruction rightValue = rightNode.instructions.get(rightNode.instructions.size() - 1);
 			PLIRInstructionType opcode = operator == PLToken.plusToken ? PLIRInstructionType.ADD : PLIRInstructionType.SUB;
 			
-			
 			PLIRInstruction exprInst = new PLIRInstruction(opcode, leftValue, rightValue);
 			exprInst.forceGenerate();
 			exprNode.addInstruction(exprInst);
 			
-//			exprNode.setLeft(term);
-//			exprNode.setRight(rightNode);
 			return exprNode;
 		}
 		else
 		{
-			for (PLIRInstruction inst : term.instructions)
-			{
-				inst.forceGenerate();
-			}
+//			System.err.println(term.instructions);
+//			for (PLIRInstruction inst : term.instructions)
+//			{
+//				inst.forceGenerate();
+//			}
 			return term;
 		}
 	}
@@ -275,7 +265,7 @@ public class PLParser
 			SyntaxError("Invalid relational character");
 		}
 		
-		// TOOD: save the relational code
+		// Save the relational code
 		int condcode = toksym;
 		
 		// Eat the relational token
@@ -283,7 +273,7 @@ public class PLParser
 		
 		PLIRBasicBlock right = parse_expression(in);
 		
-		// Build the comparison instruction
+		// Build the comparison instruction with the memorized condition
 		PLIRInstruction leftInst = left.instructions.get(left.instructions.size() - 1);
 		PLIRInstruction rightInst = right.instructions.get(right.instructions.size() - 1);
 		PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.CMP, leftInst, rightInst);
@@ -324,6 +314,7 @@ public class PLParser
 					// The last instruction added to the BB is the one that holds the value for this assignment
 					PLIRInstruction inst = result.instructions.get(result.instructions.size() - 1);
 					scope.updateSymbol(varName, inst); // (SSA ID) := expr
+					result.addModifiedValue(varName, inst);
 				}
 				else
 				{
@@ -388,48 +379,20 @@ public class PLParser
 				else if (toksym == PLToken.closeParenToken && funcName.equals("InputNum"))
 				{
 					PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.READ);
+					result = new PLIRBasicBlock();
+					result.addInstruction(inst);
 					// TODO: this is the instruction that outputs the number, but where does it go in the BB?
 				}
 				else if (toksym == PLToken.closeParenToken && funcName.equals("OutputNewLine"))
 				{
 					PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.WLN);
+					result = new PLIRBasicBlock();
+					result.addInstruction(inst);
 					// TODO: this is the instruction that outputs the number, but where does it go in the BB?
 				}
 			}
 			
 			// Eat the last token and proceed
-			advance(in);
-		}
-		
-		return result;
-	}
-
-	private PLIRBasicBlock parse_whileStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
-	{
-		PLIRBasicBlock result = null;
-		
-		if (toksym != PLToken.whileToken)
-		{
-			SyntaxError("Invalid start to ifStatement non-terminal");
-		}
-		else
-		{
-			advance(in);
-			result = parse_relation(in);
-			
-			if (toksym != PLToken.doToken)
-			{
-				SyntaxError("Missing 'do' in while statement");
-			}
-			
-			advance(in);
-			result  = parse_statSequence(in);
-			
-			if (toksym != PLToken.odToken)
-			{
-				SyntaxError("Missing 'od' in while statement");
-			}
-			
 			advance(in);
 		}
 		
@@ -476,6 +439,7 @@ public class PLParser
 			
 			advance(in);
 			
+			// Parse the condition relation
 			PLIRBasicBlock entry = parse_relation(in);
 			PLIRInstruction x = entry.instructions.get(entry.instructions.size() - 1);
 			CondNegBraFwd(x);
@@ -498,38 +462,101 @@ public class PLParser
 			entry.exitNode = entry.joinNode = joinNode;
 			
 			// Check for an else branch
+			int offset = 0;
 			if (toksym == PLToken.elseToken)
 			{
 				UnCondBraFwd(follow);
-				Fixup(x.fixupLocation);
 				advance(in);
 				
 				// Parse the else block
 				PLIRBasicBlock elseBlock = parse_statSequence(in);
 				entry.children.add(elseBlock);
 				elseBlock.children.add(joinNode);
+				
+				// Check for necessary phis to be inserted in the join block
+				// We need phis for variables that were modified in both branches so we fall through with the right value
+				ArrayList<String> sharedModifiers = new ArrayList<String>();
+				for (String i1 : thenBlock.modifiedIdents.keySet())
+				{
+					for (String i2 : elseBlock.modifiedIdents.keySet())
+					{
+						if (i1.equals(i2) && sharedModifiers.contains(i1) == false)
+						{
+							debug("adding: " + i1);
+							sharedModifiers.add(i1);
+						}
+					}
+				}
+				debug("Inserting " + sharedModifiers.size() + " phis");
+				for (String var : sharedModifiers)
+				{
+					offset++;
+					PLIRInstruction thenInst = thenBlock.modifiedIdents.get(var);
+					debug(thenInst.toString());
+					PLIRInstruction elseInst = elseBlock.modifiedIdents.get(var);
+					debug(elseInst.toString());
+					PLIRInstruction phi = PLIRInstruction.create_phi(thenInst, elseInst);
+					joinNode.insertInstruction(phi, 0);
+					
+					// The current value in scope needs to be updated now with the result of the phi
+					scope.updateSymbol(var, phi);
+				}
+				
+				debug("fixing entry HERHERE");
+				Fixup(x.fixupLocation, -offset);
 			}
 			else
 			{
-				Fixup(x.fixupLocation);
+				Fixup(x.fixupLocation, -offset);
 			}
 			
-			// Check for fi token
+			// Check for fi token and then eat it
 			if (toksym != PLToken.fiToken)
 			{
 				SyntaxError("Missing 'fi' close to if statement");
 			}
-			
 			advance(in);
 			
-			System.err.println("Fixing: " + follow.fixupLocation);
-			Fixup(follow.fixupLocation);
+			// Fixup the follow-through branch
+			debug("fixing follow");
+			Fixup(follow.fixupLocation, -offset);
 			
+			// Save the resulting basic block
 			result = entry;
 		}
 		else if (toksym == PLToken.whileToken)
 		{
-			result = parse_whileStatement(in);
+			
+			// TODO: need to create entry/exit/join nodes and the pointers here
+			
+			advance(in);
+			int loopLocation = PLStaticSingleAssignment.globalSSAIndex;
+			
+			// Parse the condition (relation) for the loop
+			PLIRBasicBlock entry = parse_relation(in);
+			PLIRInstruction x = entry.instructions.get(entry.instructions.size() - 1);
+			CondNegBraFwd(x);
+			
+			// Check for the do token and then eat it
+			if (toksym != PLToken.doToken)
+			{
+				SyntaxError("Missing 'do' in while statement");
+			}
+			advance(in);
+			
+			// Build the BB of the statement sequence
+			result  = parse_statSequence(in);
+			
+			// Insert the unconditional branch at (location - pc)
+			PLIRInstruction.create_BEQ(loopLocation - PLStaticSingleAssignment.globalSSAIndex);
+			Fixup(x.fixupLocation, 0); // no offset?
+			
+			// Check for the closing od token and then eat it
+			if (toksym != PLToken.odToken)
+			{
+				SyntaxError("Missing 'od' in while statement");
+			}
+			advance(in);
 		}
 		else if (toksym == PLToken.returnToken)
 		{
@@ -725,10 +752,11 @@ public class PLParser
 	}
 
 	// set the address to which we jump...
-	// buffer[loc] = (pc - loc);
-	// per spec
-	private void Fixup(int loc)
+	// buffer[loc] = (pc - loc) + offset;
+	// MODIFIED FROM SPEC - OFFSET NEEDED TO BE INTRODUCED
+	private void Fixup(int loc, int offset)
 	{
-		PLStaticSingleAssignment.instructions.get(loc).i2 = (PLStaticSingleAssignment.globalSSAIndex - loc);
+		debug("Fixing: " + loc + ", " + (PLStaticSingleAssignment.globalSSAIndex - loc + offset) + ", " + offset);
+		PLStaticSingleAssignment.instructions.get(loc).i2 = (PLStaticSingleAssignment.globalSSAIndex - loc + offset);
 	}
 }
