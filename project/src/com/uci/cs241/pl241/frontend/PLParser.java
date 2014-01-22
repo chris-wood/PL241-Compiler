@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
-import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionOperandType;
+import com.uci.cs241.pl241.ir.PLIRInstruction.OperandType;
 import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
 import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
 
@@ -222,10 +222,14 @@ public class PLParser
 			// Now parse the right term and build the resulting node 
 			PLIRBasicBlock rightNode = parse_term(in);
 			
+			// Form the expression instruction
 			PLIRInstruction leftValue = term.instructions.get(term.instructions.size() - 1);
 			PLIRInstruction rightValue = rightNode.instructions.get(rightNode.instructions.size() - 1);
-			PLIRInstructionType opcode = operator == PLToken.plusToken ? PLIRInstructionType.ADD : PLIRInstructionType.SUB; 
+			PLIRInstructionType opcode = operator == PLToken.plusToken ? PLIRInstructionType.ADD : PLIRInstructionType.SUB;
+			
+			
 			PLIRInstruction exprInst = new PLIRInstruction(opcode, leftValue, rightValue);
+			exprInst.forceGenerate();
 			exprNode.addInstruction(exprInst);
 			
 //			exprNode.setLeft(term);
@@ -234,6 +238,10 @@ public class PLParser
 		}
 		else
 		{
+			for (PLIRInstruction inst : term.instructions)
+			{
+				inst.forceGenerate();
+			}
 			return term;
 		}
 	}
@@ -272,7 +280,6 @@ public class PLParser
 			String varName = sym;
 			
 			// Check to make sure these variables are in scope before being used
-//			System.out.println("Is " + varName + " in scope " + scope.getCurrentScope() + "?");
 			if (scope.isVarInScope(varName))
 			{
 				result = parse_designator(in);
@@ -366,10 +373,6 @@ public class PLParser
 
 	private PLIRBasicBlock parse_ifStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-//		PLIRBasicBlock branches[] = new PLIRBasicBlock[2]; // only two possible branches, possibly with a null second (else) branch
-//		branches[0] = null;
-//		branches[1] = null;
-		
 		PLIRBasicBlock entry = null;
 		
 		if (toksym != PLToken.ifToken)
@@ -386,7 +389,6 @@ public class PLParser
 				SyntaxError("Missing then clause");
 			}
 			advance(in);
-//			branches[0] = parse_statSequence(in);
 			PLIRBasicBlock thenBlock = parse_statSequence(in);
 			entry.children.add(thenBlock);
 			
@@ -401,7 +403,6 @@ public class PLParser
 				PLIRBasicBlock elseBlock = parse_statSequence(in);
 				entry.children.add(elseBlock);
 				elseBlock.children.add(joinNode);
-//				branches[1] = parse_statSequence(in);
 			}
 			else if (toksym != PLToken.fiToken)
 			{

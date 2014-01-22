@@ -1,4 +1,4 @@
-package com.uci.cs241.pl241.ir;
+package com.uci.cs241.pl241.frontend;
 
 
 /**
@@ -13,7 +13,6 @@ public class PLParseResult
 	public PLParseResultKind kind;
 	public int val;
 	public int address;
-	public int regno;
 	public int cond, fixupLocation;
 	
 	public void combine(PLParseResult other)
