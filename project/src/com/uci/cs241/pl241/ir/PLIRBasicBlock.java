@@ -12,6 +12,7 @@ public class PLIRBasicBlock
 	
 	// To be used when inserting phi functions in join nodes
 	public HashMap<String, PLIRInstruction> modifiedIdents;
+	public HashMap<String, PLIRInstruction> usedIdents;
 	
 	// These are set if we encounter branches, and must be handled accordingly
 	// By default, they are null, so simple checks to see if they're null will help us determine whether we merge block 
@@ -32,6 +33,7 @@ public class PLIRBasicBlock
 		this.treeVertexSet = new ArrayList<PLIRBasicBlock>();
 		this.instructions = new ArrayList<PLIRInstruction>();
 		this.modifiedIdents = new HashMap<String, PLIRInstruction>();
+		this.usedIdents = new HashMap<String, PLIRInstruction>();
 	}
 	
 	public PLIRBasicBlock(ArrayList<PLIRBasicBlock> childs, ArrayList<PLIRBasicBlock> parents, PLIRInstruction[] seq)
@@ -41,6 +43,7 @@ public class PLIRBasicBlock
 		this.treeVertexSet = new ArrayList<PLIRBasicBlock>();
 		this.instructions = new ArrayList<PLIRInstruction>(seq.length);
 		this.modifiedIdents = new HashMap<String, PLIRInstruction>();
+		this.usedIdents = new HashMap<String, PLIRInstruction>();
 		
 		for (PLIRBasicBlock block : parents)
 		{
@@ -56,6 +59,11 @@ public class PLIRBasicBlock
 		}
 		
 		this.id = bbid++;
+	}
+	
+	public void addUsedValue(String ident, PLIRInstruction inst)
+	{
+		usedIdents.put(ident, inst);
 	}
 	
 	public void addModifiedValue(String ident, PLIRInstruction inst)

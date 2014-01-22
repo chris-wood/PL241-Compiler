@@ -114,19 +114,23 @@ public class PLParser
 		return result;
 	}
 
-	// non-terminals
+	// non-terminal
 	private PLIRBasicBlock parse_ident(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRInstruction inst = scope.getCurrentValue(sym);
+		String symName = sym;
 		advance(in);
 		PLIRBasicBlock block = new PLIRBasicBlock();
 		block.instructions.add(inst);
+		block.addUsedValue(symName, inst);
 		return block;
 	}
 
+	// non-terminal
 	private PLIRBasicBlock parse_number(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{	
 		// Result: add 0 tokenValue
+		// this just puts an immediate value in a temporary variable (no moves!)
 		PLIRInstruction li = new PLIRInstruction(PLIRInstructionType.ADD, 0, Integer.parseInt(sym)); 
 		advance(in);
 		PLIRBasicBlock block = new PLIRBasicBlock();
@@ -136,9 +140,7 @@ public class PLParser
 
 	private PLIRBasicBlock parse_designator(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRBasicBlock result = null;
-		
-		result = parse_ident(in);
+		PLIRBasicBlock result = parse_ident(in);
 		while (toksym == PLToken.openBracketToken)
 		{
 			advance(in);
@@ -180,8 +182,7 @@ public class PLParser
 		}
 		else if (toksym == PLToken.ident)
 		{
-			debug("parsing designator: " + sym);
-			factor = parse_designator(in); 
+			factor = parse_designator(in);
 		}
 		else
 		{
@@ -207,7 +208,6 @@ public class PLParser
 			PLIRInstruction leftValue = factor.instructions.get(factor.instructions.size() - 1);
 			PLIRInstruction rightValue = rightNode.instructions.get(rightNode.instructions.size() - 1);
 			PLIRInstructionType opcode = operator == PLToken.timesToken ? PLIRInstructionType.MUL : PLIRInstructionType.DIV;
-			
 			
 			PLIRInstruction termInst = new PLIRInstruction(opcode, leftValue, rightValue);
 			termInst.forceGenerate();
@@ -285,6 +285,17 @@ public class PLParser
 		relation.addInstruction(leftInst);
 		relation.addInstruction(rightInst);
 		relation.addInstruction(inst);
+		
+		// Save whatever values are used in these expressions
+		// TODO: need a merge BBs method
+		for (String sym : left.usedIdents.keySet())
+		{
+			relation.addUsedValue(sym, left.usedIdents.get(sym));
+		}
+		for (String sym : right.usedIdents.keySet())
+		{
+			relation.addUsedValue(sym, right.usedIdents.get(sym));
+		}
 		
 		return relation;
 	}
@@ -364,7 +375,8 @@ public class PLParser
 					else if (toksym != PLToken.commaToken && funcName.equals("OutputNum"))
 					{
 						PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.WRITE, result.instructions.get(result.instructions.size() - 1));
-						// TODO: this is the instruction that outputs the number, but where does it go in the BB?
+						result = new PLIRBasicBlock();
+						result.addInstruction(inst);
 					}
 					else
 					{
@@ -372,6 +384,9 @@ public class PLParser
 						while (toksym == PLToken.commaToken)
 						{
 							advance(in);
+							
+							// TODO: we should really merge the BBs here
+							
 							result = parse_expression(in);
 						}
 					}
@@ -381,14 +396,12 @@ public class PLParser
 					PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.READ);
 					result = new PLIRBasicBlock();
 					result.addInstruction(inst);
-					// TODO: this is the instruction that outputs the number, but where does it go in the BB?
 				}
 				else if (toksym == PLToken.closeParenToken && funcName.equals("OutputNewLine"))
 				{
 					PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.WLN);
 					result = new PLIRBasicBlock();
 					result.addInstruction(inst);
-					// TODO: this is the instruction that outputs the number, but where does it go in the BB?
 				}
 			}
 			
@@ -455,7 +468,7 @@ public class PLParser
 			PLIRBasicBlock thenBlock = parse_statSequence(in);
 			entry.children.add(thenBlock);
 			
-			// Create the artificual join node and make it a child of the follow-through branch,
+			// Create the artificial join node and make it a child of the follow-through branch,
 			// and also the exit/join block of the entry block
 			PLIRBasicBlock joinNode = new PLIRBasicBlock();
 			thenBlock.children.add(joinNode);
@@ -487,7 +500,7 @@ public class PLParser
 						}
 					}
 				}
-				debug("Inserting " + sharedModifiers.size() + " phis");
+				debug("(if statement) Inserting " + sharedModifiers.size() + " phis");
 				for (String var : sharedModifiers)
 				{
 					offset++;
@@ -502,7 +515,7 @@ public class PLParser
 					scope.updateSymbol(var, phi);
 				}
 				
-				debug("fixing entry HERHERE");
+				debug("fixing entry");
 				Fixup(x.fixupLocation, -offset);
 			}
 			else
@@ -525,10 +538,8 @@ public class PLParser
 			result = entry;
 		}
 		else if (toksym == PLToken.whileToken)
-		{
-			
-			// TODO: need to create entry/exit/join nodes and the pointers here
-			
+		{	
+			// Eat the while token and then save the current PC
 			advance(in);
 			int loopLocation = PLStaticSingleAssignment.globalSSAIndex;
 			
@@ -545,7 +556,50 @@ public class PLParser
 			advance(in);
 			
 			// Build the BB of the statement sequence
-			result  = parse_statSequence(in);
+			PLIRBasicBlock body = parse_statSequence(in);
+			entry.children.add(body);
+			
+			// Create the exit block and hook it in along with the join node
+			PLIRBasicBlock exit = new PLIRBasicBlock();
+			body.children.add(exit);
+			entry.children.add(exit);
+			entry.joinNode = entry; // the entry is itself the join node for a while loop (see paper)
+			entry.exitNode = exit; // exit is the fall through branch, second child (see paper)
+			
+			////////////////////////////////////////////
+			// We've passed through the body and know what variables are updated, now we need to insert phis
+			// Phis are inserted when variables in the relation are modified in the loop body
+			// Left phi value is entry instruction, right phi value is instruction computed in loop body
+			
+			int offset = 0;
+			ArrayList<String> sharedModifiers = new ArrayList<String>();
+			for (String i1 : body.modifiedIdents.keySet())
+			{
+				for (String i2 : entry.modifiedIdents.keySet())
+				{
+					if (i1.equals(i2) && sharedModifiers.contains(i1) == false)
+					{
+						debug("adding: " + i1);
+						sharedModifiers.add(i1);
+					}
+				}
+			}
+			debug("(while loop) Inserting " + sharedModifiers.size() + " phis");
+			for (String var : sharedModifiers)
+			{
+				offset++;
+				PLIRInstruction thenInst = body.modifiedIdents.get(var);
+				debug(thenInst.toString());
+				PLIRInstruction elseInst = entry.modifiedIdents.get(var);
+				debug(elseInst.toString());
+				PLIRInstruction phi = PLIRInstruction.create_phi(thenInst, elseInst);
+				entry.joinNode.insertInstruction(phi, 0);
+				
+				// The current value in scope needs to be updated now with the result of the phi
+				scope.updateSymbol(var, phi);
+			}
+			
+			////////////////////////////////////////////
 			
 			// Insert the unconditional branch at (location - pc)
 			PLIRInstruction.create_BEQ(loopLocation - PLStaticSingleAssignment.globalSSAIndex);

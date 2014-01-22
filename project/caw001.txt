@@ -28,5 +28,11 @@ else
 let b <- 0
 fi;
 
-call OutputNum(b)
+call OutputNum(b);
+
+let a <- 0;
+while a < 5 do
+let a <- a + 1;
+call OutputNum(a)
+od
 }.
