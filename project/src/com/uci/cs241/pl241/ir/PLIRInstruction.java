@@ -107,11 +107,13 @@ public class PLIRInstruction
 		
 		if (left.kind == ResultKind.CONST)
 		{
+			System.err.println("left operand is a constant");
 			op1type = OperandType.CONST;
 			i1 = left.tempVal;
 		}
 		if (right.kind == ResultKind.CONST)
 		{
+			System.err.println("right operand is a constant");
 			op2type = OperandType.CONST;
 			i2 = right.tempVal;
 		}
@@ -151,7 +153,9 @@ public class PLIRInstruction
 		if (opcode == PLIRInstructionType.CMP)
 		{
 			kind = ResultKind.COND;
-//			System.err.println("not implemented 1");
+			
+			forceGenerate();
+			System.err.println("not implemented 1: " + i2);
 //			System.exit(-1);
 		}
 		
@@ -171,11 +175,13 @@ public class PLIRInstruction
 		
 		if (left.kind == ResultKind.CONST)
 		{
+			System.err.println("left operand is a constant");
 			op1type = OperandType.CONST;
 			i1 = left.tempVal;
 		}
 		if (right.kind == ResultKind.CONST)
 		{
+			System.err.println("right operand is a constant");
 			op2type = OperandType.CONST;
 			i2 = right.tempVal;
 		}
@@ -332,11 +338,12 @@ public class PLIRInstruction
 		}
 	}
 	
-	public static PLIRInstruction create_branch(int token)
-	{
+	public static PLIRInstruction create_branch(PLIRInstruction cmp, int token)
+	{	
 		PLIRInstruction inst = new PLIRInstruction();
 		inst.op1 = inst.op2 = null;
-		inst.op1type = OperandType.CONST;
+		inst.op1type = OperandType.ADDRESS;
+		inst.i1 = cmp.fixupLocation;
 		inst.op2type = OperandType.ADDRESS;
 		
 		switch (token)
@@ -365,13 +372,15 @@ public class PLIRInstruction
 		return inst;
 	}
 	
-	public static PLIRInstruction create_BEQ(int x, int loc)
-	{
+	public static PLIRInstruction create_BEQ(PLIRInstruction cmp, int loc)
+	{	
 		PLIRInstruction inst = new PLIRInstruction();
 		inst.i2 = loc;
+		inst.i1 = cmp.fixupLocation;
 		inst.op1 = inst.op2 = null;
-		inst.op1type = OperandType.INST;
+		inst.op1type = OperandType.ADDRESS;
 		inst.op2type = OperandType.ADDRESS;
+		inst.opcode = PLIRInstructionType.BEQ;
 		inst.forceGenerate();
 		return inst;
 	}
@@ -420,6 +429,9 @@ public class PLIRInstruction
 				break;
 			case END:
 				s = "end";
+				break;
+			case CMP:
+				s = "cmp";
 				break;
 			case BEQ:
 				s = "beq";

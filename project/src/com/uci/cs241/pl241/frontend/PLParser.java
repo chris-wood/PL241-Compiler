@@ -13,8 +13,8 @@ public class PLParser
 {
 	// NODES
 	// SUBCLASSES: assignment, func/proc, array, block, designator, functionblock, load/store, main, param 
-	
-	// terminals: letter digit relOp
+
+
 	
 	// Current symbol/token values used for parsing
 	private String sym;
@@ -284,13 +284,17 @@ public class PLParser
 		advance(in);
 		
 		PLIRBasicBlock right = parse_expression(in);
+		System.err.println("if right: " + right.instructions.get(right.instructions.size() - 1).toString());
 		
 		PLIRInstruction leftInst = left.instructions.get(left.instructions.size() - 1);
 		PLIRInstruction rightInst = right.instructions.get(right.instructions.size() - 1);
 		PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.CMP, leftInst, rightInst);
 		inst.condcode = condcode;
-		inst.fixupLocation = 0;
+		inst.fixupLocation = PLStaticSingleAssignment.globalSSAIndex;
+		
 		System.err.println("condcode = " + condcode);
+		System.err.println("fixup = " + inst.fixupLocation);
+		
 		PLIRBasicBlock relation = new PLIRBasicBlock();
 		relation.addInstruction(inst);
 		
@@ -402,49 +406,52 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRBasicBlock parse_ifStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
-	{
-		PLIRBasicBlock entry = null;
-		
-		if (toksym != PLToken.ifToken)
-		{
-			SyntaxError("Invalid start to ifStatement non-terminal");
-		}
-		else
-		{
-			advance(in);
-			entry = parse_relation(in);
-			
-			if (toksym != PLToken.thenToken)
-			{
-				SyntaxError("Missing then clause");
-			}
-			advance(in);
-			PLIRBasicBlock thenBlock = parse_statSequence(in);
-			entry.children.add(thenBlock);
-			
-			// Artificial join node
-			PLIRBasicBlock joinNode = new PLIRBasicBlock();
-			thenBlock.children.add(joinNode);
-			entry.exitNode = entry.joinNode = joinNode;
-			
-			if (toksym == PLToken.elseToken)
-			{
-				advance(in);
-				PLIRBasicBlock elseBlock = parse_statSequence(in);
-				entry.children.add(elseBlock);
-				elseBlock.children.add(joinNode);
-			}
-			else if (toksym != PLToken.fiToken)
-			{
-				SyntaxError("Missing 'fi' close to if statement");
-			}
-			
-			advance(in);
-		}
-		
-		return entry;
-	}
+//	private PLIRBasicBlock parse_ifStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+//	{
+//		PLIRBasicBlock entry = null;
+//		System.err.println("start of if");
+//		
+//		if (toksym != PLToken.ifToken)
+//		{
+//			SyntaxError("Invalid start to ifStatement non-terminal");
+//		}
+//		else
+//		{
+//			advance(in);
+//			entry = parse_relation(in);
+//			System.err.println("here: " + entry.instructions.get(entry.instructions.size() - 1).fixupLocation);
+////			entry.instructions.get(entry.instructions.size() - 1).forceGenerate();
+//			
+//			if (toksym != PLToken.thenToken)
+//			{
+//				SyntaxError("Missing then clause");
+//			}
+//			advance(in);
+//			PLIRBasicBlock thenBlock = parse_statSequence(in);
+//			entry.children.add(thenBlock);
+//			
+//			// Artificial join node
+//			PLIRBasicBlock joinNode = new PLIRBasicBlock();
+//			thenBlock.children.add(joinNode);
+//			entry.exitNode = entry.joinNode = joinNode;
+//			
+//			if (toksym == PLToken.elseToken)
+//			{
+//				advance(in);
+//				PLIRBasicBlock elseBlock = parse_statSequence(in);
+//				entry.children.add(elseBlock);
+//				elseBlock.children.add(joinNode);
+//			}
+//			else if (toksym != PLToken.fiToken)
+//			{
+//				SyntaxError("Missing 'fi' close to if statement");
+//			}
+//			
+//			advance(in);
+//		}
+//		
+//		return entry;
+//	}
 
 	private PLIRBasicBlock parse_whileStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
@@ -509,6 +516,7 @@ public class PLParser
 		}
 		else if (toksym == PLToken.callToken)
 		{
+//			System.err.println("call....");
 			result = parse_funcCall(in);
 		}
 		else if (toksym == PLToken.ifToken)
@@ -520,6 +528,10 @@ public class PLParser
 			
 			PLIRBasicBlock entry = parse_relation(in);
 			PLIRInstruction x = entry.instructions.get(entry.instructions.size() - 1);
+			
+			System.err.println("rawr: " + x.fixupLocation);
+//			x.forceGenerate();
+			
 			CondNegBraFwd(x);
 			if (toksym != PLToken.thenToken)
 			{
@@ -536,10 +548,13 @@ public class PLParser
 			
 			if (toksym == PLToken.elseToken)
 			{
+				System.err.println("parsing the else branch");
 				UnCondBraFwd(follow);
 				Fixup(x.fixupLocation);
 				advance(in);
 				PLIRBasicBlock elseBlock = parse_statSequence(in);
+				System.err.println("else: " + elseBlock.instructions.get(elseBlock.instructions.size() - 1).toString());
+				elseBlock.instructions.get(elseBlock.instructions.size() - 1).forceGenerate();
 				entry.children.add(elseBlock);
 				elseBlock.children.add(joinNode);
 			}
@@ -744,8 +759,8 @@ public class PLParser
 	
 	private void CondNegBraFwd(PLIRInstruction x)
 	{
-		x.fixupLocation = PLStaticSingleAssignment.globalSSAIndex;
-		System.err.println("generating follow through branch... " + x.condcode);
+		x.fixupLocation = PLStaticSingleAssignment.globalSSAIndex ;
+		System.err.println("generating follow through branch... " + x.condcode + "  " + x.fixupLocation);
 		
 //		public static final int eqlToken = 20;
 //		public static final int neqToken = 21;
@@ -753,7 +768,7 @@ public class PLParser
 //		public static final int geqToken = 23;
 //		public static final int leqToken = 24;
 //		public static final int gttToken = 25;
-		PLIRInstruction inst = PLIRInstruction.create_branch(x.condcode);
+		PLIRInstruction inst = PLIRInstruction.create_branch(x, x.condcode);
 		// TODO: what to do here? switch on the condition and insert the appropriate instruction
 	}
 	
@@ -761,7 +776,7 @@ public class PLParser
 	{
 		// TODO: insert BEQ instruction, but what are the operands?
 		System.err.println("generating else branch...");
-		PLIRInstruction inst = PLIRInstruction.create_BEQ(0, x.fixupLocation);
+		PLIRInstruction inst = PLIRInstruction.create_BEQ(x, x.fixupLocation);
 		x.fixupLocation = PLStaticSingleAssignment.globalSSAIndex - 1;
 	}
 	
