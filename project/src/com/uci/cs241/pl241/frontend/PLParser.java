@@ -82,7 +82,8 @@ public class PLParser
 					advance(in);
 					if (toksym == PLToken.periodToken)
 					{
-						
+						PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.END);
+						PLStaticSingleAssignment.displayInstructions();
 					}
 					else
 					{
@@ -103,8 +104,6 @@ public class PLParser
 		{
 			SyntaxError("Computation does not begin with main keyword");
 		}
-		
-		PLStaticSingleAssignment.displayInstructions();
 		
 		return result;
 	}
@@ -270,22 +269,32 @@ public class PLParser
 
 	private PLIRBasicBlock parse_relation(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRBasicBlock result = null;
+		PLIRBasicBlock left = parse_expression(in);
 		
-		result = parse_expression(in);
+		System.err.println("Expression: " + left.instructions.get(left.instructions.size() - 1).toString());
 		if (PLToken.isRelationalToken(toksym) == false)
 		{
 			SyntaxError("Invalid relational character");
 		}
 		
 		// TOOD: save the relational code
+		int condcode = toksym;
 		
 		// Eat the relational token
 		advance(in);
 		
-		result = parse_expression(in);
+		PLIRBasicBlock right = parse_expression(in);
 		
-		return result;
+		PLIRInstruction leftInst = left.instructions.get(left.instructions.size() - 1);
+		PLIRInstruction rightInst = right.instructions.get(right.instructions.size() - 1);
+		PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.CMP, leftInst, rightInst);
+		inst.condcode = condcode;
+		inst.fixupLocation = 0;
+		System.err.println("condcode = " + condcode);
+		PLIRBasicBlock relation = new PLIRBasicBlock();
+		relation.addInstruction(inst);
+		
+		return relation;
 	}
 
 	private PLIRBasicBlock parse_assignment(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
@@ -504,13 +513,51 @@ public class PLParser
 		}
 		else if (toksym == PLToken.ifToken)
 		{
-//			PLIRBasicBlock[] branches = parse_ifStatement(in);
-//			result.add(branches[0]);
-//			if (branches[1] != null)
-//			{
-//				result.add(branches[1]);
-//			}
-			result = parse_ifStatement(in);
+			PLIRInstruction follow = new PLIRInstruction();
+			follow.fixupLocation = 0;
+			
+			advance(in);
+			
+			PLIRBasicBlock entry = parse_relation(in);
+			PLIRInstruction x = entry.instructions.get(entry.instructions.size() - 1);
+			CondNegBraFwd(x);
+			if (toksym != PLToken.thenToken)
+			{
+				SyntaxError("Missing then clause");
+			}
+			advance(in);
+			PLIRBasicBlock thenBlock = parse_statSequence(in);
+			entry.children.add(thenBlock);
+			
+			// Artificial join node
+			PLIRBasicBlock joinNode = new PLIRBasicBlock();
+			thenBlock.children.add(joinNode);
+			entry.exitNode = entry.joinNode = joinNode;
+			
+			if (toksym == PLToken.elseToken)
+			{
+				UnCondBraFwd(follow);
+				Fixup(x.fixupLocation);
+				advance(in);
+				PLIRBasicBlock elseBlock = parse_statSequence(in);
+				entry.children.add(elseBlock);
+				elseBlock.children.add(joinNode);
+			}
+			else
+			{
+				Fixup(x.fixupLocation);
+			}
+			
+			// Check for fi token
+			if (toksym != PLToken.fiToken)
+			{
+				SyntaxError("Missing 'fi' close to if statement");
+			}
+			advance(in);
+			Fixup(follow.fixupLocation);
+			
+			result = entry;
+//			result = parse_ifStatement(in);
 		}
 		else if (toksym == PLToken.whileToken)
 		{
@@ -693,5 +740,36 @@ public class PLParser
 		}
 		
 		return result;
+	}
+	
+	private void CondNegBraFwd(PLIRInstruction x)
+	{
+		x.fixupLocation = PLStaticSingleAssignment.globalSSAIndex;
+		System.err.println("generating follow through branch... " + x.condcode);
+		
+//		public static final int eqlToken = 20;
+//		public static final int neqToken = 21;
+//		public static final int lssToken = 22;
+//		public static final int geqToken = 23;
+//		public static final int leqToken = 24;
+//		public static final int gttToken = 25;
+		PLIRInstruction inst = PLIRInstruction.create_branch(x.condcode);
+		// TODO: what to do here? switch on the condition and insert the appropriate instruction
+	}
+	
+	private void UnCondBraFwd(PLIRInstruction x)
+	{
+		// TODO: insert BEQ instruction, but what are the operands?
+		System.err.println("generating else branch...");
+		PLIRInstruction inst = PLIRInstruction.create_BEQ(0, x.fixupLocation);
+		x.fixupLocation = PLStaticSingleAssignment.globalSSAIndex - 1;
+	}
+	
+	private void Fixup(int loc)
+	{
+		// set the address to which we jump...
+		// buffer[loc] = (pc - loc);
+		System.err.println("fixing up...: " + loc);
+		PLStaticSingleAssignment.instructions.get(loc).i2 = (PLStaticSingleAssignment.globalSSAIndex - loc);
 	}
 }

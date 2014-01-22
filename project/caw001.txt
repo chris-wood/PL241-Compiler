@@ -5,9 +5,17 @@ var a, b, c, d;
     let a <- 51;
     let b <- a + 1;
     let c <- 1 * 8 + (6 * 4);
+    let d <- a + c;
     call OutputNum(a);
     call OutputNewLine();
     call OutputNum(b);
     call OutputNewLine();
-    call OutputNum(c)
+    call OutputNum(c);
+    call OutputNewLine();
+    call OutputNum(d);
+    call OutputNewLine();
+    
+    if 0 < 1 then
+    call OutputNum(1337)
+    fi
 }.

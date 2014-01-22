@@ -3,6 +3,8 @@ package com.uci.cs241.pl241.ir;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.uci.cs241.pl241.frontend.PLToken;
+
 public class PLIRInstruction
 {
 	// Instruction descriptions
@@ -63,17 +65,19 @@ public class PLIRInstruction
 	
 	public enum OperandType
 	{
-		CONST, INST, NULL
+		CONST, INST, NULL, ADDRESS
 	};
+	
+	public PLIRInstruction()
+	{
+		// blank slate to be filled in by the parser...
+	}
 	
 	public PLIRInstruction(PLIRInstructionType opcode)
 	{
 		this.opcode = opcode;
 		op1 = op2 = null;
 		op1type = op2type = OperandType.NULL;
-		
-		
-		
 		id = PLStaticSingleAssignment.addInstruction(this); // always generate right away...
 	}
 	
@@ -136,21 +140,19 @@ public class PLIRInstruction
 				tempVal = i1 / i2;
 				kind = ResultKind.CONST;
 				break;
-			default:
-				System.err.println("Instruction is not arithmetic or condition, the result is not constant...");
-				System.exit(-1);
 			}
-		}
-		else if (opcode == PLIRInstructionType.CMP)
-		{
-			kind = ResultKind.COND;
-			System.err.println("not implemented");
-			System.exit(-1);
 		}
 		else
 		{
 			left.forceGenerate();
 			right.forceGenerate();
+		}
+		
+		if (opcode == PLIRInstructionType.CMP)
+		{
+			kind = ResultKind.COND;
+//			System.err.println("not implemented 1");
+//			System.exit(-1);
 		}
 		
 		if (kind == ResultKind.CONST)
@@ -202,21 +204,19 @@ public class PLIRInstruction
 				tempVal = i1 / i2;
 				kind = ResultKind.CONST;
 				break;
-			default:
-				System.err.println("Instruction is not arithmetic or condition, the result is not constant...");
-				System.exit(-1);
 			}
-		}
-		else if (opcode == PLIRInstructionType.CMP)
-		{
-			kind = ResultKind.COND;
-			System.err.println("not implemented");
-			System.exit(-1);
 		}
 		else
 		{
 			left.forceGenerate();
 			right.forceGenerate();
+		}
+		
+		if (opcode == PLIRInstructionType.CMP)
+		{
+			kind = ResultKind.COND;
+			System.err.println("not implemented 2");
+			System.exit(-1);
 		}
 		
 		if (kind == ResultKind.CONST)
@@ -263,20 +263,18 @@ public class PLIRInstruction
 				tempVal = i1 / right;
 				kind = ResultKind.CONST;
 				break;
-			default:
-				System.err.println("Instruction is not arithmetic or condition, the result is not constant...");
-				System.exit(-1);
 			}
-		}
-		else if (opcode == PLIRInstructionType.CMP)
-		{
-			kind = ResultKind.COND;
-			System.err.println("not implemented");
-			System.exit(-1);
 		}
 		else
 		{
 			left.forceGenerate();
+		}
+		
+		if (opcode == PLIRInstructionType.CMP)
+		{
+			kind = ResultKind.COND;
+			System.err.println("not implemented 3");
+			System.exit(-1);
 		}
 		
 		if (kind == ResultKind.CONST)
@@ -311,9 +309,6 @@ public class PLIRInstruction
 			tempVal = i1 / i2;
 			kind = ResultKind.CONST;
 			break;
-		default:
-			System.err.println("Instruction is not arithmetic or condition, the result is not constant...");
-			System.exit(-1);
 		}
 
 		if (kind != ResultKind.CONST)
@@ -337,6 +332,50 @@ public class PLIRInstruction
 		}
 	}
 	
+	public static PLIRInstruction create_branch(int token)
+	{
+		PLIRInstruction inst = new PLIRInstruction();
+		inst.op1 = inst.op2 = null;
+		inst.op1type = OperandType.CONST;
+		inst.op2type = OperandType.ADDRESS;
+		
+		switch (token)
+		{
+		case PLToken.eqlToken:
+			inst.opcode = PLIRInstructionType.BEQ;
+			break;
+		case PLToken.neqToken:
+			inst.opcode = PLIRInstructionType.BNE;
+			break;
+		case PLToken.lssToken:
+			inst.opcode = PLIRInstructionType.BLT;
+			break;
+		case PLToken.geqToken:
+			inst.opcode = PLIRInstructionType.BGE;
+			break;
+		case PLToken.leqToken:
+			inst.opcode = PLIRInstructionType.BLE;
+			break;
+		case PLToken.gttToken:
+			inst.opcode = PLIRInstructionType.BGT;
+			break;
+		}
+		
+		inst.forceGenerate();
+		return inst;
+	}
+	
+	public static PLIRInstruction create_BEQ(int x, int loc)
+	{
+		PLIRInstruction inst = new PLIRInstruction();
+		inst.i2 = loc;
+		inst.op1 = inst.op2 = null;
+		inst.op1type = OperandType.INST;
+		inst.op2type = OperandType.ADDRESS;
+		inst.forceGenerate();
+		return inst;
+	}
+	
 	public static PLIRInstruction createInputInstruction()
 	{
 		return null;
@@ -350,6 +389,11 @@ public class PLIRInstruction
 	public static PLIRInstruction createOutputLineInstruction()
 	{
 		return null;
+	}
+	
+	public static PLIRInstruction createBlankInstruction()
+	{
+		return new PLIRInstruction();
 	}
 	
 	@Override
@@ -374,6 +418,19 @@ public class PLIRInstruction
 			case WLN:
 				s = "wln";
 				break;
+			case END:
+				s = "end";
+				break;
+			case BEQ:
+				s = "beq";
+				break;
+			case BNE:
+				s = "bne";
+				break;
+			case BLT:
+				s = "blt";
+				break;
+			// TODO: fill in the remaining ones here
 		}
 		
 		switch (op1type)
@@ -382,6 +439,7 @@ public class PLIRInstruction
 				s = s + " (" + op1.id + ")";
 				break;
 			case CONST:
+			case ADDRESS:
 				s = s + " #" + i1;
 				break;
 		}
@@ -392,6 +450,7 @@ public class PLIRInstruction
 				s = s + " (" + op2.id + ")";
 				break;
 			case CONST:
+			case ADDRESS:
 				s = s + " #" + i2;
 				break;
 		}
