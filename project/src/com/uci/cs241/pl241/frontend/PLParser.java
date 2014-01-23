@@ -2,6 +2,7 @@ package com.uci.cs241.pl241.frontend;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
@@ -14,8 +15,6 @@ public class PLParser
 {
 	// NODES
 	// SUBCLASSES: assignment, func/proc, array, block, designator, functionblock, load/store, main, param 
-
-
 	
 	// Current symbol/token values used for parsing
 	private String sym;
@@ -24,6 +23,9 @@ public class PLParser
 	// Other necessary things
 	private PLSymbolTable symTable;
 	private PLSymbolTable scope;
+	
+	public enum IdentType {VAR, ARRAY};
+	private HashMap<String, IdentType> identTypeMap = new HashMap<String, IdentType>();
 	
 	public PLParser()
 	{
@@ -119,6 +121,9 @@ public class PLParser
 	// non-terminal
 	private PLIRBasicBlock parse_ident(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
+		
+		// TODO: if sym is array, create two instructions (adda and load), else just use what's in the symbol table
+		
 		PLIRInstruction inst = scope.getCurrentValue(sym);
 		
 		// Memorize the ident we saw here
@@ -133,9 +138,12 @@ public class PLParser
 		// Eat the symbol, create the block with the single instruction, add the ident to the list
 		// of used identifiers, and return
 		advance(in);
+		
+		
 		PLIRBasicBlock block = new PLIRBasicBlock();
 		block.instructions.add(inst);
 		block.addUsedValue(symName, inst);
+		
 		return block;
 	}
 
@@ -432,27 +440,6 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRBasicBlock parse_returnStatement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
-	{
-		PLIRBasicBlock result = null;
-		
-		if (toksym != PLToken.returnToken)
-		{
-			SyntaxError("Invalid start to ifStatement non-terminal");
-		}
-		else
-		{
-			advance(in);
-			if (toksym != PLToken.semiToken && toksym != PLToken.elseToken
-					&& toksym != PLToken.fiToken && toksym != PLToken.odToken && toksym != PLToken.closeBraceToken)
-			{
-				result = parse_expression(in);
-			}
-		}
-		
-		return result;
-	}
-
 	private PLIRBasicBlock parse_statement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRBasicBlock result = null;
@@ -666,6 +653,8 @@ public class PLParser
 				}
 			}
 			
+			// TODO: need to make the PHI parameters point to the appropriate SSA values
+			
 			////////////////////////////////////////////
 			
 			// Insert the unconditional branch at (location - pc)
@@ -683,7 +672,14 @@ public class PLParser
 		}
 		else if (toksym == PLToken.returnToken)
 		{
-			result = parse_returnStatement(in);
+			advance(in);
+			if (toksym != PLToken.semiToken && toksym != PLToken.elseToken
+					&& toksym != PLToken.fiToken && toksym != PLToken.odToken && toksym != PLToken.closeBraceToken)
+			{
+				result = parse_expression(in);
+			}
+			
+			// TODO: what to do with this statement now?
 		}
 		else 
 		{
@@ -766,13 +762,27 @@ public class PLParser
 
 	private PLIRBasicBlock parse_varDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{	
+		IdentType type = IdentType.VAR;
+		if (toksym == PLToken.varToken)
+		{
+			type = IdentType.VAR;
+		}
+		else if (toksym == PLToken.arrToken)
+		{
+			type = IdentType.ARRAY;
+		}
+		
 		PLIRBasicBlock result = parse_typeDecl(in);
+		
+		identTypeMap.put(sym, type);
 		scope.addVarToScope(sym);
 		result = parse_ident(in);
+		
 		while (toksym == PLToken.commaToken)
 		{
 			advance(in);
 			scope.addVarToScope(sym);
+			identTypeMap.put(sym, type);
 			result = parse_ident(in); 
 		}
 		if (toksym != PLToken.semiToken)
