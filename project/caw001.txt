@@ -1,11 +1,19 @@
-//Simple parsing test
+// Partial parsing test to incrementally test all compiler features
 main
-var a, b, c, d; array[4] arr; 
+var a, b, c, d; array[4] arr;
+
+// stupid function to return a constant
+function one;
+{
+return 1
+};
+ 
 {
     let a <- 51;
     let b <- a + 1 + 2 + 3 + 4 + 5;
     let c <- 1 * 8 + (6 * 4); 
     let d <- call InputNum();
+    call OutputNum(call one);
     call OutputNum(a);
     call OutputNum(b);
     call OutputNum(c);

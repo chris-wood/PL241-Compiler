@@ -108,7 +108,8 @@ public class PLSymbolTable
 	
 	public PLIRInstruction getCurrentValue(String sym)
 	{
-		return symTable.get(getCurrentScope()).get(sym);
+		if (symTable.get(getCurrentScope()) == null) return null;
+		else return symTable.get(getCurrentScope()).get(sym);
 	}
 	
 	public void displayCurrentScopeSymbols()

@@ -75,10 +75,11 @@ public class PLParser
 				result = this.parse_varDecl(in);
 			}
 			
-			if (toksym == PLToken.funcToken || toksym == PLToken.procToken)
+			while (toksym == PLToken.funcToken || toksym == PLToken.procToken)
 			{
-				// TODO: merge
+				// TODO: merge together, but make a separate BB from the ones above, and tie the BB to the procedure/function name
 				result = this.parse_funcDecl(in);
+				
 			}
 			
 
@@ -193,7 +194,6 @@ public class PLParser
 		// of used identifiers, and return
 		advance(in);
 		
-		
 		block = new PLIRBasicBlock();
 		block.instructions.add(inst);
 		block.addUsedValue(symName, inst);
@@ -252,7 +252,16 @@ public class PLParser
 		}
 		else if (toksym == PLToken.callToken)
 		{
+			// If a factor is a function call, we need to use the return value (there must be one!)
 			factor = parse_funcCall(in);
+			if (factor.hasReturn == false)
+			{
+				SyntaxError("Function that was invoked had no return value!");
+			}
+			else
+			{
+				
+			}
 		}
 		else if (toksym == PLToken.number)
 		{
@@ -407,7 +416,7 @@ public class PLParser
 					// The last instruction added to the BB is the one that holds the value for this assignment
 					PLIRInstruction inst = result.instructions.get(result.instructions.size() - 1);
 					
-					// If we aren't deferring generation, replace with the current value in scope
+					// If we aren't deferring generation because of a potential PHI usage, just replace with the current value in scope
 					if (deferredPhiIdents.contains(varName) == false)
 					{
 						scope.updateSymbol(varName, inst); // (SSA ID) := expr
@@ -417,7 +426,6 @@ public class PLParser
 						inst.kind = ResultKind.VAR;
 						inst.generated = false;
 						inst.forceGenerate();
-//						System.err.println("here");
 					}
 					result.addModifiedValue(varName, inst);
 				}
@@ -489,6 +497,7 @@ public class PLParser
 				{
 					PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.READ);
 					result = new PLIRBasicBlock();
+					result.hasReturn = true; // special case... this is a machine instruction, not a user-defined function
 					result.addInstruction(inst);
 				}
 				else if (toksym == PLToken.closeParenToken && funcName.equals("OutputNewLine"))
@@ -621,7 +630,6 @@ public class PLParser
 			PLIRInstruction x = entry.instructions.get(entry.instructions.size() - 1);
 			CondNegBraFwd(x);
 			PLIRInstruction bgeInst = PLStaticSingleAssignment.instructions.get(PLStaticSingleAssignment.globalSSAIndex - 1);
-//			x = bgeInst;
 			
 			// Determine which identifiers are used in the entry/join node so we can defer generation (if PHIs are needed)
 			deferredPhiIdents.clear();
@@ -694,45 +702,31 @@ public class PLParser
 				// Now loop through the entry and fix instructions as needed
 				// Those fixed are replaced with the result of this phi if they have used or modified the sym...
 				// TODO: this can possibly be recursive...?
-//				PLIRInstruction cmpInst = entry.instructions.get(entry.instructions.size() - 1);
 				debug("patching up phis: " + cmpInst.toString());
 				debug(phi.toString());
 				if (cmpInst.op1 != null && cmpInst.op1.origIdent.equals(var))
 				{
-					debug("match left");
-//					cmpInst.op1 = phi;
 					cmpInst.replaceLeftOperand(phi);
-//					PLStaticSingleAssignment.updateInstruction(cmpInst.id, cmpInst);
-//					System.exit(-1);
 				}
 				if (cmpInst.op2 != null && cmpInst.op2.origIdent.equals(var))
 				{
-					debug("match right");
-//					cmpInst.op2 = phi;
 					cmpInst.replaceRightOperand(phi);
-//					PLStaticSingleAssignment.updateInstruction(cmpInst.id, cmpInst);
-//					System.exit(-1);
 				}
 				
 				// Now loop through the body and fix instructions as needed
 				// TODO: this can possibly be recursive...
 				for (PLIRInstruction bInst : body.instructions)
 				{
-					System.err.println(bInst.toString());
 					if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
 					{
-						debug("match body left: " + bInst.toString());
 						bInst.replaceLeftOperand(phi);
 					}
 					if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
 					{
-						debug("match body right");
 						bInst.replaceRightOperand(phi);
 					}
 				}
 			}
-			
-			// TODO: need to make the PHI parameters point to the appropriate SSA values
 			
 			////////////////////////////////////////////
 			
@@ -741,8 +735,7 @@ public class PLParser
 			
 			// Fixup the conditional branch at the appropriate location
 			bgeInst.fixupLocation = x.fixupLocation;
-			debug("updating the branch jump in: " + bgeInst.toString());
-			Fixup(bgeInst.fixupLocation, 0); // no offset?
+			Fixup(bgeInst.fixupLocation, 0); 
 			
 			// Check for the closing od token and then eat it
 			if (toksym != PLToken.odToken)
@@ -775,12 +768,27 @@ public class PLParser
 
 	private PLIRBasicBlock parse_statSequence(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
+		boolean isReturn = toksym == PLToken.returnToken;
 		PLIRBasicBlock result = parse_statement(in);
+		if (isReturn)
+		{
+			// TODO: move into BB.setResult()
+			result.returnInst = result.instructions.get(result.instructions.size() - 1);
+			result.hasReturn = true;
+		}
 		
 		while (toksym == PLToken.semiToken)
 		{
 			advance(in);
+			isReturn = toksym == PLToken.returnToken;
 			PLIRBasicBlock nextBlock = parse_statement(in);
+			
+			if (isReturn)
+			{
+				// TODO: move into BB.setResult()
+				result.returnInst = result.instructions.get(result.instructions.size() - 1);
+				result.hasReturn = true;
+			}
 			
 			// merge the blocks here...
 			for (String sym : nextBlock.modifiedIdents.keySet())
@@ -895,6 +903,7 @@ public class PLParser
 		if (toksym == PLToken.funcToken || toksym == PLToken.procToken)
 		{
 			advance(in);
+			scope.addVarToScope(sym);
 			scope.pushNewScope(sym);
 			result = parse_ident(in);
 			
@@ -908,7 +917,7 @@ public class PLParser
 			
 			if (toksym != PLToken.semiToken)
 			{
-				SyntaxError("'}' missing from funcDecl non-terminal");
+				SyntaxError("';' missing from funcDecl non-terminal");
 			}
 			
 			String leavingScope = scope.popScope();
@@ -962,6 +971,9 @@ public class PLParser
 			SyntaxError("'{' missing from funcBody non-terminal.");
 		}
 		
+		// eat the open brace '{'
+		advance(in);
+		
 		if (toksym != PLToken.closeBraceToken)
 		{
 			// must be a statSequence here
@@ -970,6 +982,7 @@ public class PLParser
 			{
 				SyntaxError("'}' missing from statSequence non-terminal in funcBody");
 			}
+			advance(in);
 		}
 		
 		return result;

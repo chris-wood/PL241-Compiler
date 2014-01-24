@@ -20,6 +20,10 @@ public class PLIRBasicBlock
 	public PLIRBasicBlock joinNode;
 	public PLIRBasicBlock exitNode;
 	
+	// Return instruction
+	public boolean hasReturn = false;
+	public PLIRInstruction returnInst;
+	
 	// TODO: need to compute this for the dominator tree algorithm!!!
 	public int treeSize;
 	
