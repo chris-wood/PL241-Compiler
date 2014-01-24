@@ -27,7 +27,7 @@ public class PLParser
 	public enum IdentType {VAR, ARRAY};
 	private HashMap<String, IdentType> identTypeMap = new HashMap<String, IdentType>();
 	
-	private ArrayList<String> deferredIdents = new ArrayList<String>();
+	private ArrayList<String> deferredPhiIdents = new ArrayList<String>();
 	
 	public PLParser()
 	{
@@ -408,13 +408,14 @@ public class PLParser
 					PLIRInstruction inst = result.instructions.get(result.instructions.size() - 1);
 					
 					// If we aren't deferring generation, replace with the current value in scope
-					if (deferredIdents.contains(varName) == false)
+					if (deferredPhiIdents.contains(varName) == false)
 					{
 						scope.updateSymbol(varName, inst); // (SSA ID) := expr
 					}
-					else // else, make the current instruction in scope a variable (not constant)
+					else // else, force the current instruction to be generated so it can be used in a phi later
 					{
 						inst.kind = ResultKind.VAR;
+						inst.generated = false;
 						inst.forceGenerate();
 //						System.err.println("here");
 					}
@@ -623,10 +624,10 @@ public class PLParser
 //			x = bgeInst;
 			
 			// Determine which identifiers are used in the entry/join node so we can defer generation (if PHIs are needed)
-			deferredIdents.clear();
+			deferredPhiIdents.clear();
 			for (String i2 : entry.usedIdents.keySet())
 			{
-				deferredIdents.add(i2);
+				deferredPhiIdents.add(i2);
 			}
 			
 			// Check for the do token and then eat it
@@ -781,7 +782,7 @@ public class PLParser
 			advance(in);
 			PLIRBasicBlock nextBlock = parse_statement(in);
 			
-			// TODO: merge the blocks here...
+			// merge the blocks here...
 			for (String sym : nextBlock.modifiedIdents.keySet())
 			{
 				result.addModifiedValue(sym, nextBlock.modifiedIdents.get(sym));
@@ -789,6 +790,10 @@ public class PLParser
 			for (String sym : nextBlock.usedIdents.keySet())
 			{
 				result.addUsedValue(sym, nextBlock.usedIdents.get(sym));
+			}
+			for (PLIRInstruction inst : nextBlock.instructions)
+			{
+				result.instructions.add(inst);
 			}
 		}
 		
