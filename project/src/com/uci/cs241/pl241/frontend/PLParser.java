@@ -27,6 +27,8 @@ public class PLParser
 	public enum IdentType {VAR, ARRAY};
 	private HashMap<String, IdentType> identTypeMap = new HashMap<String, IdentType>();
 	
+	private ArrayList<String> deferredIdents = new ArrayList<String>();
+	
 	public PLParser()
 	{
 		symTable = new PLSymbolTable();
@@ -121,13 +123,65 @@ public class PLParser
 	// non-terminal
 	private PLIRBasicBlock parse_ident(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
+		String symName = sym;
+		PLIRBasicBlock block = null;
 		
-		// TODO: if sym is array, create two instructions (adda and load), else just use what's in the symbol table
+		if (identTypeMap.containsKey(sym))
+		{
+			switch (identTypeMap.get(sym))
+			{
+			case ARRAY:
+//				PLIRInstruction inst = scope.getCurrentValue(sym);
+				PLIRInstruction instArray = new PLIRInstruction();
+				
+				// Memorize the ident we saw here
+				if (instArray != null)
+				{
+//					System.err.println("inst " + sym + " from scope: " + instArray);
+					instArray.wasIdent = true;
+					instArray.origIdent = sym;
+				}
+				
+				// Eat the symbol, create the block with the single instruction, add the ident to the list
+				// of used identifiers, and return
+				advance(in);
+				
+				block = new PLIRBasicBlock();
+				block.instructions.add(instArray);
+				block.addUsedValue(symName, instArray);
+				
+				return block;
+			case VAR:
+				
+				PLIRInstruction inst = scope.getCurrentValue(sym);
+				
+				// Memorize the ident we saw here
+				if (inst != null)
+				{
+					System.err.println("inst " + sym + " from scope: " + inst);
+					inst.wasIdent = true;
+					inst.origIdent = sym;
+				}
+				
+				// Eat the symbol, create the block with the single instruction, add the ident to the list
+				// of used identifiers, and return
+				advance(in);
+				
+				block = new PLIRBasicBlock();
+				block.instructions.add(inst);
+				block.addUsedValue(symName, inst);
+				
+				return block;
+			}
+		}
+		else
+		{
+			debug("Previously unencountered identifier: " + sym);
+		}
 		
 		PLIRInstruction inst = scope.getCurrentValue(sym);
 		
 		// Memorize the ident we saw here
-		String symName = sym;
 		if (inst != null)
 		{
 			System.err.println("inst " + sym + " from scope: " + inst);
@@ -140,7 +194,7 @@ public class PLParser
 		advance(in);
 		
 		
-		PLIRBasicBlock block = new PLIRBasicBlock();
+		block = new PLIRBasicBlock();
 		block.instructions.add(inst);
 		block.addUsedValue(symName, inst);
 		
@@ -352,7 +406,18 @@ public class PLParser
 					
 					// The last instruction added to the BB is the one that holds the value for this assignment
 					PLIRInstruction inst = result.instructions.get(result.instructions.size() - 1);
-					scope.updateSymbol(varName, inst); // (SSA ID) := expr
+					
+					// If we aren't deferring generation, replace with the current value in scope
+					if (deferredIdents.contains(varName) == false)
+					{
+						scope.updateSymbol(varName, inst); // (SSA ID) := expr
+					}
+					else // else, make the current instruction in scope a variable (not constant)
+					{
+						inst.kind = ResultKind.VAR;
+						inst.forceGenerate();
+//						System.err.println("here");
+					}
 					result.addModifiedValue(varName, inst);
 				}
 				else
@@ -515,7 +580,7 @@ public class PLParser
 					debug(thenInst.toString());
 					PLIRInstruction elseInst = elseBlock.modifiedIdents.get(var);
 					debug(elseInst.toString());
-					PLIRInstruction phi = PLIRInstruction.create_phi(thenInst, elseInst);
+					PLIRInstruction phi = PLIRInstruction.create_phi(thenInst, elseInst, PLStaticSingleAssignment.globalSSAIndex);
 					joinNode.insertInstruction(phi, 0);
 					
 					// The current value in scope needs to be updated now with the result of the phi
@@ -554,6 +619,15 @@ public class PLParser
 			PLIRBasicBlock entry = parse_relation(in);
 			PLIRInstruction x = entry.instructions.get(entry.instructions.size() - 1);
 			CondNegBraFwd(x);
+			PLIRInstruction bgeInst = PLStaticSingleAssignment.instructions.get(PLStaticSingleAssignment.globalSSAIndex - 1);
+//			x = bgeInst;
+			
+			// Determine which identifiers are used in the entry/join node so we can defer generation (if PHIs are needed)
+			deferredIdents.clear();
+			for (String i2 : entry.usedIdents.keySet())
+			{
+				deferredIdents.add(i2);
+			}
 			
 			// Check for the do token and then eat it
 			if (toksym != PLToken.doToken)
@@ -565,6 +639,8 @@ public class PLParser
 			// Build the BB of the statement sequence
 			PLIRBasicBlock body = parse_statSequence(in);
 			entry.children.add(body);
+			PLIRInstruction cmpInst = entry.instructions.get(entry.instructions.size() - 1);
+			bgeInst.op1 = cmpInst;
 			
 			// Create the exit block and hook it in along with the join node
 			PLIRBasicBlock exit = new PLIRBasicBlock();
@@ -606,16 +682,18 @@ public class PLParser
 				debug(bodyInst.toString());
 				PLIRInstruction entryInst = entry.usedIdents.get(var);
 				debug(entryInst.toString());
-				PLIRInstruction phi = PLIRInstruction.create_phi(entryInst, bodyInst);
-				entry.joinNode.insertInstruction(phi, 0);
+				
+				// Inject the phi at the appropriate spot in the join node...
+				PLIRInstruction phi = PLIRInstruction.create_phi(entryInst, bodyInst, loopLocation);
+				entry.joinNode.insertInstruction(phi, 0); 
 				
 				// The current value in scope needs to be updated now with the result of the phi
 				scope.updateSymbol(var, phi);
 				
 				// Now loop through the entry and fix instructions as needed
 				// Those fixed are replaced with the result of this phi if they have used or modified the sym...
-				// TODO: this can possibly be recursive...
-				PLIRInstruction cmpInst = entry.instructions.get(entry.instructions.size() - 1);
+				// TODO: this can possibly be recursive...?
+//				PLIRInstruction cmpInst = entry.instructions.get(entry.instructions.size() - 1);
 				debug("patching up phis: " + cmpInst.toString());
 				debug(phi.toString());
 				if (cmpInst.op1 != null && cmpInst.op1.origIdent.equals(var))
@@ -659,7 +737,11 @@ public class PLParser
 			
 			// Insert the unconditional branch at (location - pc)
 			PLIRInstruction.create_BEQ(loopLocation - PLStaticSingleAssignment.globalSSAIndex);
-			Fixup(x.fixupLocation, 0); // no offset?
+			
+			// Fixup the conditional branch at the appropriate location
+			bgeInst.fixupLocation = x.fixupLocation;
+			debug("updating the branch jump in: " + bgeInst.toString());
+			Fixup(bgeInst.fixupLocation, 0); // no offset?
 			
 			// Check for the closing od token and then eat it
 			if (toksym != PLToken.odToken)
@@ -668,6 +750,7 @@ public class PLParser
 			}
 			advance(in);
 			
+			// the result of parsing this basic block is the entry node, which doubles as the join and exit node
 			result = entry;
 		}
 		else if (toksym == PLToken.returnToken)
@@ -679,7 +762,7 @@ public class PLParser
 				result = parse_expression(in);
 			}
 			
-			// TODO: what to do with this statement now?
+			// TODO: what to do with this statement now??!?!
 		}
 		else 
 		{
@@ -719,11 +802,16 @@ public class PLParser
 		if (toksym == PLToken.varToken)
 		{
 			advance(in);
-			return null;
+			
+			IdentType type = IdentType.VAR;
+			identTypeMap.put(sym, type);
+			scope.addVarToScope(sym);
 		}
 		else if (toksym == PLToken.arrToken)
 		{
 			advance(in);
+			IdentType type = IdentType.ARRAY;
+			
 			if (toksym == PLToken.openBracketToken)
 			{
 				advance(in);
@@ -741,6 +829,11 @@ public class PLParser
 						}
 						advance(in);
 					}
+					
+					// Symbol name here, finally...
+					debug("adding array: " + sym);
+					identTypeMap.put(sym, type);
+					scope.addVarToScope(sym);
 				}
 				else
 				{
@@ -773,9 +866,6 @@ public class PLParser
 		}
 		
 		PLIRBasicBlock result = parse_typeDecl(in);
-		
-		identTypeMap.put(sym, type);
-		scope.addVarToScope(sym);
 		result = parse_ident(in);
 		
 		while (toksym == PLToken.commaToken)

@@ -9,13 +9,27 @@ public class PLStaticSingleAssignment
 	
 	public static int addInstruction(PLIRInstruction inst)
 	{
-		if (inst.toString().equals("read"))
-		{
-			int i = 0; // catch a break
-		}
+//		if (inst.toString().equals("read"))
+//		{
+//			int i = 0; // catch a break
+//		}
 		boolean success = instructions.add(inst);
 		if (!success) return -1;
-		return globalSSAIndex++;
+		globalSSAIndex++;
+		return globalSSAIndex;
+	}
+	
+	public static int injectInstruction(PLIRInstruction inst, int loc)
+	{
+		for (int i = loc; i < instructions.size(); i++)
+		{
+			PLIRInstruction next = instructions.get(i);
+			next.id++;
+			next.fixupLocation++;
+		}
+		instructions.add(loc,inst);
+		globalSSAIndex++;
+		return loc + 1;
 	}
 	
 	public static void updateInstruction(int id, PLIRInstruction inst)
@@ -27,11 +41,10 @@ public class PLStaticSingleAssignment
 	public static void displayInstructions()
 	{
 		StringBuilder builder = new StringBuilder();
-		int index = 0;
 		System.out.println("Instructions:");
 		for (PLIRInstruction inst : instructions)
 		{
-			builder.append((index++) + " := " + inst.toString() + "\n");
+			builder.append(inst.id + " := " + inst.toString() + "\n");
 		}
 		System.out.println(builder.toString());
 	}

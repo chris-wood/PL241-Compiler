@@ -6,14 +6,9 @@ var a, b, c, d; array[4] arr;
     let b <- a + 1 + 2 + 3 + 4 + 5;
     let c <- 1 * 8 + (6 * 4); 
     let d <- call InputNum();
-    let arr[0] <- 0;
-    call OutputNum(arr[0]);
     call OutputNum(a);
-    call OutputNewLine();
     call OutputNum(b);
-    call OutputNewLine();
     call OutputNum(c);
-    call OutputNewLine();
     call OutputNum(d);
     call OutputNewLine();
     
@@ -35,6 +30,7 @@ call OutputNum(b);
 let a <- 0;
 while a < 5 do
 let a <- a + 1;
-call OutputNum(a)
+call OutputNum(a);
+call OutputNewLine()
 od
 }.

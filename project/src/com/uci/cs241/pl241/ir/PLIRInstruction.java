@@ -326,6 +326,20 @@ public class PLIRInstruction
 		}
 	}
 	
+	public void forceGenerate(int loc)
+	{
+		if (kind == ResultKind.CONST)
+		{
+			generated = true;
+		} 
+		if (!generated)
+		{
+			kind = ResultKind.VAR;
+			generated = true;
+			id = PLStaticSingleAssignment.injectInstruction(this, loc);
+		}
+	}
+	
 	public void forceGenerate()
 	{
 		if (kind == ResultKind.CONST)
@@ -388,7 +402,7 @@ public class PLIRInstruction
 		return inst;
 	}
 	
-	public static PLIRInstruction create_phi(PLIRInstruction b1, PLIRInstruction b2)
+	public static PLIRInstruction create_phi(PLIRInstruction b1, PLIRInstruction b2, int loc)
 	{
 		PLIRInstruction inst = new PLIRInstruction();
 		inst.opcode = PLIRInstructionType.PHI;
@@ -418,9 +432,7 @@ public class PLIRInstruction
 			inst.op2type = OperandType.INST;
 		}
 		
-//		inst.id = PLStaticSingleAssignment.addInstruction(inst);
-//		inst.generated = true;
-		inst.forceGenerate();
+		inst.forceGenerate(loc);
 		
 		return inst;
 	}
@@ -432,7 +444,8 @@ public class PLIRInstruction
 		inst.op2type = OperandType.CONST; // op2 will be an offset
 		
 		inst.op1type = OperandType.ADDRESS;
-		inst.i1 = cmp.id;
+		inst.op1 = cmp;
+//		inst.i1 = cmp.id;
 		
 		// We negate the logic in order to make fall-through work correctly
 		switch (token)
@@ -457,8 +470,8 @@ public class PLIRInstruction
 			break;
 		}
 		
-		inst.id = PLStaticSingleAssignment.addInstruction(inst);
-//		inst.forceGenerate();
+//		inst.id = PLStaticSingleAssignment.addInstruction(inst);
+		inst.forceGenerate();
 		return inst;
 	}
 	
@@ -551,7 +564,7 @@ public class PLIRInstruction
 				s = s + " #" + i1;
 				break;
 			case ADDRESS:
-				s = s + " (" + i1 + ")";
+				s = s + " (" + op1.id + ")";
 				break;
 		}
 		
@@ -564,7 +577,7 @@ public class PLIRInstruction
 				s = s + " #" + i2;
 				break;
 			case ADDRESS:
-				s = s + " (" + i2 + ")";
+				s = s + " (" + op2.id + ")";
 				break;
 		}
 		
