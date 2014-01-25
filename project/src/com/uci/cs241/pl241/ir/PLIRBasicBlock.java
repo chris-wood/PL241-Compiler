@@ -91,6 +91,11 @@ public class PLIRBasicBlock
 		return instructions.remove(inst);
 	}
 	
+	public PLIRInstruction getLastInst()
+	{
+		return instructions.get(instructions.size() - 1);
+	}
+	
 	public boolean insertInstruction(PLIRInstruction inst, int index)
 	{
 		if (0 <= index && index < instructions.size())

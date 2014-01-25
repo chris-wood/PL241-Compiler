@@ -73,7 +73,7 @@ public class PLSymbolTable
 		String scope = getCurrentScope();
 		if (isVarInScope(scope, sym))
 		{
-			System.err.println("Updating sym " + sym + " with " + inst.toString());
+//			System.err.println("Updating sym " + sym + " with " + inst.toString());
 			symTable.get(scope).put(sym, inst);
 		}
 		else

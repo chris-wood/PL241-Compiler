@@ -1,6 +1,6 @@
 // Partial parsing test to incrementally test all compiler features
 main
-var a, b, c, d; array[4] arr;
+var a, b, c, d, e, f; array[4] arr;
 
 // stupid function to return a constant
 function one;
@@ -13,32 +13,37 @@ return 1
     let b <- a + 1 + 2 + 3 + 4 + 5;
     let c <- 1 * 8 + (6 * 4); 
     let d <- call InputNum();
-    call OutputNum(call one);
+    let e <- call InputNum();
+    let f <- call one;
+    call OutputNum(f);
     call OutputNum(a);
     call OutputNum(b);
     call OutputNum(c);
     call OutputNum(d);
     call OutputNewLine();
     
+    let a <- d * e + 1;
+    call OutputNum(a);
+    
 if d == 1 then
-call OutputNum(0)
+   call OutputNum(0)
 else
-call OutputNum(1)
+   call OutputNum(1)
 fi;
 
 let b <- 100;
 if b == 0 then
-let b <- 1
+   let b <- 1
 else
-let b <- 0
+   let b <- 0
 fi;
 
 call OutputNum(b);
 
 let a <- 0;
 while a < 100 do
-let a <- a + 1;
-call OutputNum(a);
-call OutputNewLine()
+   let a <- a + 1;
+   call OutputNum(a);
+   call OutputNewLine()
 od
 }.

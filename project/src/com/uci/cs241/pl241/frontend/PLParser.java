@@ -21,7 +21,7 @@ public class PLParser
 	private int toksym;
 	
 	// Other necessary things
-	private PLSymbolTable symTable;
+//	private PLSymbolTable symTable;
 	private PLSymbolTable scope;
 	
 	public enum IdentType {VAR, ARRAY};
@@ -29,9 +29,19 @@ public class PLParser
 	
 	private ArrayList<String> deferredPhiIdents = new ArrayList<String>();
 	
+	private String funcName = "";
+	private ArrayList<String> callStack = new ArrayList<String>();
+	private HashMap<String, PLIRBasicBlock> funcBlockMap = new HashMap<String, PLIRBasicBlock>();
+	private HashMap<String, PLIRBasicBlock> procBlockMap = new HashMap<String, PLIRBasicBlock>();
+	private HashMap<String, Integer> paramMap = new HashMap<String, Integer>();
+	private HashMap<String, Boolean> funcFlagMap = new HashMap<String, Boolean>();
+	
 	public PLParser()
 	{
-		symTable = new PLSymbolTable();
+//		symTable = new PLSymbolTable();
+		paramMap.put("InputNum", 0);
+		paramMap.put("OutputNewLine", 0);
+		paramMap.put("OutputNum", 1);
 	}
 	
 	public void debug(String msg)
@@ -78,7 +88,20 @@ public class PLParser
 			while (toksym == PLToken.funcToken || toksym == PLToken.procToken)
 			{
 				// TODO: merge together, but make a separate BB from the ones above, and tie the BB to the procedure/function name
+				int funcType = toksym;
 				result = this.parse_funcDecl(in);
+				
+				switch (funcType)
+				{
+				case PLToken.funcToken:
+					funcBlockMap.put(funcName, result); // save this so that others may use it
+					funcFlagMap.put(funcName, true);
+					break;
+				case PLToken.procToken:
+					procBlockMap.put(funcName, result); // save this so that others may use it
+					funcFlagMap.put(funcName, false);
+					break;
+				}
 				
 			}
 			
@@ -159,7 +182,7 @@ public class PLParser
 				// Memorize the ident we saw here
 				if (inst != null)
 				{
-					System.err.println("inst " + sym + " from scope: " + inst);
+//					System.err.println("inst " + sym + " from scope: " + inst);
 					inst.wasIdent = true;
 					inst.origIdent = sym;
 				}
@@ -185,7 +208,7 @@ public class PLParser
 		// Memorize the ident we saw here
 		if (inst != null)
 		{
-			System.err.println("inst " + sym + " from scope: " + inst);
+//			System.err.println("inst " + sym + " from scope: " + inst);
 			inst.wasIdent = true;
 			inst.origIdent = sym;
 		}
@@ -254,14 +277,26 @@ public class PLParser
 		{
 			// If a factor is a function call, we need to use the return value (there must be one!)
 			factor = parse_funcCall(in);
-			if (factor.hasReturn == false)
-			{
-				SyntaxError("Function that was invoked had no return value!");
-			}
-			else
-			{
-				
-			}
+			PLIRInstruction funcInst = factor.getLastInst();
+			
+			
+			
+//			if (factor.hasReturn == false)
+//			{
+//				SyntaxError("Function that was invoked had no return value!");
+//			}
+			
+//			if (callStack.get(callStack.size() - 1).equals("InputNum"))
+//			{
+//				// pass, this is a special case
+//			}
+//			else
+//			{
+//				
+//			}
+			
+			// Remove the function from the callstack (we've returned from the call)
+			callStack.remove(callStack.size() - 1); // remove
 		}
 		else if (toksym == PLToken.number)
 		{
@@ -458,16 +493,26 @@ public class PLParser
 			// Save function identifier in case it's a predefined function with a special instruction
 			String funcName = sym;
 			result = parse_ident(in);
+			callStack.add(funcName); // add to call stack
+			
+			if (funcName.equals("one"))
+			{
+				int x = 0;
+			}
 			
 			if (toksym == PLToken.openParenToken)
 			{
 				advance(in);
 				
+				ArrayList<PLIRInstruction> operands = new ArrayList<PLIRInstruction>(); 
+				
 				if (toksym != PLToken.semiToken && toksym != PLToken.elseToken
 						&& toksym != PLToken.fiToken && toksym != PLToken.odToken 
 						&& toksym != PLToken.closeBraceToken && toksym != PLToken.closeParenToken)
 				{
+					
 					result = parse_expression(in);
+					operands.add(result.getLastInst());
 					
 					// Special case for single parameter
 					if (toksym == PLToken.commaToken && funcName.equals("OutputNum"))
@@ -476,7 +521,7 @@ public class PLParser
 					}
 					else if (toksym != PLToken.commaToken && funcName.equals("OutputNum"))
 					{
-						PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.WRITE, result.instructions.get(result.instructions.size() - 1));
+						PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.WRITE, result.getLastInst());
 						result = new PLIRBasicBlock();
 						result.addInstruction(inst);
 					}
@@ -490,7 +535,18 @@ public class PLParser
 							// TODO: we should really merge the BBs here
 							
 							result = parse_expression(in);
+							operands.add(result.getLastInst());
 						}
+						
+						if (paramMap.get(funcName) != operands.size())
+						{
+							SyntaxError("Function: " + funcName + " invoked with the wrong number of arguments. Expected " + paramMap.get(funcName) + ", got " + operands.size());
+						}
+						
+						PLIRInstruction callInst = PLIRInstruction.create_call(funcName, true, operands);
+						result = new PLIRBasicBlock();
+						result.hasReturn = funcFlagMap.get(funcName); // special case... this is a machine instruction, not a user-defined function
+						result.addInstruction(callInst);
 					}
 				}
 				else if (toksym == PLToken.closeParenToken && funcName.equals("InputNum"))
@@ -506,10 +562,23 @@ public class PLParser
 					result = new PLIRBasicBlock();
 					result.addInstruction(inst);
 				}
+				
+				// Eat the last token and proceed
+				advance(in);
 			}
-			
-			// Eat the last token and proceed
-			advance(in);
+			else if (paramMap.get(funcName) == 0)
+			{
+//				advance(in);
+				ArrayList<PLIRInstruction> emptyList = new ArrayList<PLIRInstruction>();
+				PLIRInstruction callInst = PLIRInstruction.create_call(funcName, funcFlagMap.get(funcName), emptyList);
+				result = new PLIRBasicBlock();
+				result.hasReturn = funcFlagMap.get(funcName); // special case... this is a machine instruction, not a user-defined function
+				result.addInstruction(callInst);
+			}
+			else
+			{
+				SyntaxError("Function: " + funcName + " invoked with the wrong number of arguments. Expected " + paramMap.get(funcName) + ", got 0");
+			}
 		}
 		
 		return result;
@@ -526,6 +595,7 @@ public class PLParser
 		else if (toksym == PLToken.callToken)
 		{
 			result = parse_funcCall(in);
+			callStack.remove(callStack.size() - 1);
 		}
 		else if (toksym == PLToken.ifToken)
 		{
@@ -754,9 +824,13 @@ public class PLParser
 					&& toksym != PLToken.fiToken && toksym != PLToken.odToken && toksym != PLToken.closeBraceToken)
 			{
 				result = parse_expression(in);
+				
+				// Since the return statement was followed by an expression, force the expression to be generated...
+				result.instructions.get(result.instructions.size() - 1).overrideGenerate = true;
+				result.instructions.get(result.instructions.size() - 1).forceGenerate();
+				result.returnInst = result.getLastInst();
+				debug("Forcing generation of return statement");
 			}
-			
-			// TODO: what to do with this statement now??!?!
 		}
 		else 
 		{
@@ -773,7 +847,7 @@ public class PLParser
 		if (isReturn)
 		{
 			// TODO: move into BB.setResult()
-			result.returnInst = result.instructions.get(result.instructions.size() - 1);
+			result.returnInst = result.getLastInst();
 			result.hasReturn = true;
 		}
 		
@@ -786,7 +860,7 @@ public class PLParser
 			if (isReturn)
 			{
 				// TODO: move into BB.setResult()
-				result.returnInst = result.instructions.get(result.instructions.size() - 1);
+				result.returnInst = result.getLastInst();
 				result.hasReturn = true;
 			}
 			
@@ -902,27 +976,37 @@ public class PLParser
 		PLIRBasicBlock result = null;
 		if (toksym == PLToken.funcToken || toksym == PLToken.procToken)
 		{
+			int callType = toksym;
+			
 			advance(in);
 			scope.addVarToScope(sym);
 			scope.pushNewScope(sym);
+			funcName = sym; // save for recovery later on
 			result = parse_ident(in);
 			
 			if (toksym != PLToken.semiToken)
 			{
 				result = parse_formalParam(in);
 			}
+			else
+			{
+				paramMap.put(funcName, 0); // no formal parameters specified
+			}
 			
-			advance(in);  // eat semi-colon
+			// Eat the semicolon and then parse the body
+			advance(in);  
 			result = parse_funcBody(in);
 			
+			// Eat the semicolon terminating the body
 			if (toksym != PLToken.semiToken)
 			{
 				SyntaxError("';' missing from funcDecl non-terminal");
 			}
-			
-			String leavingScope = scope.popScope();
-			System.err.println("Leaving scope: " + leavingScope);
 			advance(in);
+			
+			// Leave the scope of this new function
+			String leavingScope = scope.popScope();
+			debug("Leaving scope: " + leavingScope);
 		}
 		else
 		{
@@ -936,14 +1020,17 @@ public class PLParser
 	{
 		PLIRBasicBlock result = null;
 		
+		int numParams = 0;
 		if (toksym == PLToken.openParenToken)
 		{
 			advance(in);
 			result = parse_ident(in);
+			numParams++;
 			while (toksym == PLToken.commaToken)
 			{
 				advance(in);
 				result = parse_ident(in);
+				numParams++;
 			}
 			
 			if (toksym != PLToken.closeParenToken)
@@ -953,6 +1040,8 @@ public class PLParser
 			
 			advance(in);
 		}
+		
+		paramMap.put(funcName, numParams);
 		
 		return result;
 	}
@@ -974,9 +1063,9 @@ public class PLParser
 		// eat the open brace '{'
 		advance(in);
 		
+		// Must be a statSequence here, if there exists one!
 		if (toksym != PLToken.closeBraceToken)
 		{
-			// must be a statSequence here
 			result = parse_statSequence(in);
 			if (toksym != PLToken.closeBraceToken)
 			{

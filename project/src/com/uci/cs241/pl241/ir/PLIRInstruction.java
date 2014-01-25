@@ -10,6 +10,7 @@ public class PLIRInstruction
 	// Instruction descriptions
 	public int id;
 	public PLIRInstructionType opcode;
+	public OperandType type;
 	public int i1;
 	public PLIRInstruction op1;
 	public OperandType op1type;
@@ -17,15 +18,19 @@ public class PLIRInstruction
 	public PLIRInstruction op2;
 	public OperandType op2type;
 	
+	public ArrayList<PLIRInstruction> callOperands;
+	
 	// temporary value for combining constants
 //	public PLIRInstructionGenerateType generate = PLIRInstructionGenerateType.NOW;
 	public boolean generated = false;
+	public boolean overrideGenerate = false;
 	public ResultKind kind;
 	public int tempVal;
 	public int condcode;
 	public int fixupLocation;
 	public boolean wasIdent = false;
 	public String origIdent = "";
+	public String funcName;
 	
 	// Unique identifier for each instruction that's generated
 //	public static ArrayList<PLIRInstruction> ssaInstructions = new ArrayList<PLIRInstruction>();
@@ -44,6 +49,9 @@ public class PLIRInstruction
 		STORE,
 		MOVE,
 		PHI,
+		
+		PROC,
+		FUNC,
 		
 		END,
 		
@@ -347,10 +355,11 @@ public class PLIRInstruction
 			generated = true;
 		} 
 		
-		if (!generated)
+		if (!generated || overrideGenerate)
 		{
 			kind = ResultKind.VAR;
 			generated = true;
+			overrideGenerate = false;
 			id = PLStaticSingleAssignment.addInstruction(this);
 		}
 	}
@@ -488,19 +497,29 @@ public class PLIRInstruction
 		return inst;
 	}
 	
-	public static PLIRInstruction createInputInstruction()
+	public static PLIRInstruction create_call(String funcName, boolean isFunc, ArrayList<PLIRInstruction> ops)
 	{
-		return null;
-	}
-	
-	public static PLIRInstruction createOutputNumInstruction(PLIRInstruction val)
-	{
-		return null;
-	}
-	
-	public static PLIRInstruction createOutputLineInstruction()
-	{
-		return null;
+		PLIRInstruction newInst = new PLIRInstruction(); 
+		newInst.funcName = funcName;
+		newInst.callOperands = new ArrayList<PLIRInstruction>();
+		for (PLIRInstruction inst : ops)
+		{
+			newInst.callOperands.add(inst);
+		}
+		
+		if (isFunc)
+		{
+			newInst.opcode = PLIRInstructionType.FUNC;
+		}
+		else
+		{
+			newInst.opcode = PLIRInstructionType.PROC;
+		}
+		
+		// Generate the special instruction now
+		newInst.forceGenerate();
+		
+		return newInst;
 	}
 	
 	@Override
@@ -512,6 +531,15 @@ public class PLIRInstruction
 		{
 			case ADD:
 				s = "add";
+				break;
+			case SUB:
+				s = "sub";
+				break;
+			case MUL:
+				s = "mul";
+				break;
+			case DIV:
+				s = "div";
 				break;
 			case ADDA:
 				s = "adda";
@@ -552,33 +580,62 @@ public class PLIRInstruction
 			case PHI:
 				s = "phi";
 				break;
-			// TODO: fill in the remaining ones here
-		}
-		
-		switch (op1type)
-		{
-			case INST:
-				s = s + " (" + op1.id + ")";
+			case FUNC:
+				s = "func";
 				break;
-			case CONST:
-				s = s + " #" + i1;
-				break;
-			case ADDRESS:
-				s = s + " (" + op1.id + ")";
+			case PROC:
+				s = "proc";
 				break;
 		}
 		
-		switch (op2type)
+		if (callOperands != null)
 		{
-			case INST:
-				s = s + " (" + op2.id + ")";
-				break;
-			case CONST:
-				s = s + " #" + i2;
-				break;
-			case ADDRESS:
-				s = s + " (" + op2.id + ")";
-				break;
+			s = s + " " + funcName;
+			
+			// Append the operands
+			for (PLIRInstruction operand : callOperands)
+			{
+				switch (operand.type)
+				{
+					case INST:
+						s = s + " (" + operand.id + ")";
+						break;
+					case CONST:
+						s = s + " #" + operand.tempVal;
+						break;
+					case ADDRESS:
+						s = s + " (" + operand.id + ")";
+						break;
+				}
+			}
+		}
+		else // this is a normal IR instruction, so render it as usual
+		{
+			switch (op1type)
+			{
+				case INST:
+					s = s + " (" + op1.id + ")";
+					break;
+				case CONST:
+					s = s + " #" + i1;
+					break;
+				case ADDRESS:
+					s = s + " (" + op1.id + ")";
+					break;
+			}
+			
+			switch (op2type)
+			{
+				case INST:
+					s = s + " (" + op2.id + ")";
+					break;
+				case CONST:
+					s = s + " #" + i2;
+					break;
+				case ADDRESS:
+					s = s + " (" + op2.id + ")";
+					break;
+			}
 		}
 		
 		return s;
