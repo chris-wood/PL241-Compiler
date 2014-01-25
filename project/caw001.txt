@@ -1,12 +1,30 @@
 // Partial parsing test to incrementally test all compiler features
 main
-var a, b, c, d, e, f; array[4] arr;
+var a, b, c, d, e, f, x, y, z; array[4] arr1;
 
 // stupid function to return a constant
 function one;
 {
 return 1
 };
+
+// sample foo function from test002.txt
+// it takes parameters, much like everything else in this world does
+function foo( );
+var i, d;
+{
+let i <- 0;
+while i < 10 do
+let y <- y + 2;
+let z <- x + 2;
+let d <- y + z;
+let i <- i + 1
+od;
+return d
+};
+
+// stupid function that takes some parameters and does some stuff with them
+//function two;
  
 {
     let a <- 51;

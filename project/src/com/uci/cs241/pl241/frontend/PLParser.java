@@ -1024,21 +1024,30 @@ public class PLParser
 		if (toksym == PLToken.openParenToken)
 		{
 			advance(in);
-			result = parse_ident(in);
-			numParams++;
-			while (toksym == PLToken.commaToken)
+			
+			if (toksym == PLToken.closeParenToken)
 			{
+				// pass, no params
 				advance(in);
+			}
+			else
+			{
 				result = parse_ident(in);
 				numParams++;
+				while (toksym == PLToken.commaToken)
+				{
+					advance(in);
+					result = parse_ident(in);
+					numParams++;
+				}
+				
+				if (toksym != PLToken.closeParenToken)
+				{
+					SyntaxError("')' missing from formalParam");
+				}
+				
+				advance(in);
 			}
-			
-			if (toksym != PLToken.closeParenToken)
-			{
-				SyntaxError("')' missing from formalParam");
-			}
-			
-			advance(in);
 		}
 		
 		paramMap.put(funcName, numParams);

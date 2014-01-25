@@ -26,6 +26,27 @@ public class PLSymbolTable
 	public void pushNewScope(String scope)
 	{
 		currentScope.add(scope);
+		symTable.put(scope, new HashMap<String, PLIRInstruction>());
+		funScopeTable.put(scope, new ArrayList<String>());
+		
+		// TODO: take everything that's already in scope and push it into the new scope
+		if (currentScope.size() > 1)
+		{
+			String lastScope = currentScope.get(currentScope.size() - 2);
+			for (String value : symTable.get(lastScope).keySet())
+			{
+				symTable.get(scope).put(value, symTable.get(lastScope).get(value));
+			}
+			for (String value : funScopeTable.get(lastScope))
+			{
+				funScopeTable.get(scope).add(value);
+				if (varScopeTable.containsKey(value) == false)
+				{
+					varScopeTable.put(value, new ArrayList<String>());
+				}
+				varScopeTable.get(value).add(scope);
+			}
+		}
 	}
 	
 	public String popScope()
