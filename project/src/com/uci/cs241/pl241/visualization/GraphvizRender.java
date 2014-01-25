@@ -41,7 +41,7 @@ public class GraphvizRender
 		
 		// Subgraph start
 		builder.append("subgraph " + id + "{\n");
-		builder
+		builder.append("");
 		
 		
 		// Subgraph end
