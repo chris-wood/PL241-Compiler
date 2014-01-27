@@ -9,6 +9,7 @@ public class PLIRBasicBlock
 	public ArrayList<PLIRBasicBlock> children;
 	public ArrayList<PLIRBasicBlock> parents;
 	public ArrayList<PLIRBasicBlock> treeVertexSet;
+	public ArrayList<PLIRBasicBlock> dominatorSet;
 	
 	// To be used when inserting phi functions in join nodes
 	public HashMap<String, PLIRInstruction> modifiedIdents;
@@ -38,6 +39,7 @@ public class PLIRBasicBlock
 		this.children = new ArrayList<PLIRBasicBlock>();
 		this.parents = new ArrayList<PLIRBasicBlock>();
 		this.treeVertexSet = new ArrayList<PLIRBasicBlock>();
+		this.dominatorSet = new ArrayList<PLIRBasicBlock>();
 		this.instructions = new ArrayList<PLIRInstruction>();
 		this.modifiedIdents = new HashMap<String, PLIRInstruction>();
 		this.usedIdents = new HashMap<String, PLIRInstruction>();
@@ -48,6 +50,7 @@ public class PLIRBasicBlock
 		this.children = new ArrayList<PLIRBasicBlock>();
 		this.parents = new ArrayList<PLIRBasicBlock>();
 		this.treeVertexSet = new ArrayList<PLIRBasicBlock>();
+		this.dominatorSet = new ArrayList<PLIRBasicBlock>();
 		this.instructions = new ArrayList<PLIRInstruction>(seq.length);
 		this.modifiedIdents = new HashMap<String, PLIRInstruction>();
 		this.usedIdents = new HashMap<String, PLIRInstruction>();

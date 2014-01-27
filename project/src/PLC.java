@@ -79,7 +79,9 @@ public class PLC
 		
 		// TODO: run through visualization module
 		GraphvizRender render = new GraphvizRender();
-		String dot = render.renderCFG(root);
-		System.out.println("\n\n" + dot);
+		String cfgdot = render.renderCFG(root);
+		System.out.println("\n\n" + cfgdot);
+		String domdot = render.renderDominatorTree(root);
+		System.out.println("\n\n" + domdot);
 	}
 }

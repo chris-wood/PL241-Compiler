@@ -627,13 +627,14 @@ public class PLParser
 			
 			// Check for an else branch
 			int offset = 0;
+			PLIRBasicBlock elseBlock = null;
 			if (toksym == PLToken.elseToken)
 			{
 				PLIRInstruction uncond = UnCondBraFwd(follow);
 				advance(in);
 				
 				// Parse the else block
-				PLIRBasicBlock elseBlock = parse_statSequence(in);
+				elseBlock = parse_statSequence(in);
 				thenBlock.addInstruction(uncond);
 				entry.children.add(elseBlock);
 				elseBlock.children.add(joinNode);
@@ -671,7 +672,6 @@ public class PLParser
 				debug("fixing entry");
 				Fixup(x.fixupLocation, -offset);
 				
-				
 				System.out.println("herererere");
 				System.out.println(entry.instSequenceString());
 				System.out.println(thenBlock.instSequenceString());
@@ -687,16 +687,23 @@ public class PLParser
 			// Fix the join BB index
 			joinNode.fixSpot();
 			
+			// Configure the dominator tree connections
+			entry.dominatorSet.add(thenBlock);
+			if (elseBlock != null)
+			{
+				entry.dominatorSet.add(elseBlock);
+			}
+			entry.dominatorSet.add(joinNode);
+			
+			// Fixup the follow-through branch
+			Fixup(follow.fixupLocation, -offset);
+			
 			// Check for fi token and then eat it
 			if (toksym != PLToken.fiToken)
 			{
 				SyntaxError("Missing 'fi' close to if statement");
 			}
 			advance(in);
-			
-			// Fixup the follow-through branch
-			debug("fixing follow");
-			Fixup(follow.fixupLocation, -offset);
 			
 			// Save the resulting basic block
 			entry.isEntry = true;
@@ -820,6 +827,10 @@ public class PLParser
 			bgeInst.fixupLocation = x.fixupLocation;
 			Fixup(bgeInst.fixupLocation, 0); 
 			
+			// Configure the dominator tree connections
+			entry.dominatorSet.add(body);
+			entry.dominatorSet.add(exit);
+			
 			// Check for the closing od token and then eat it
 			if (toksym != PLToken.odToken)
 			{
@@ -911,6 +922,10 @@ public class PLParser
 					{
 						result.children.add(block);
 					}
+					for (PLIRBasicBlock block : nextBlock.dominatorSet)
+					{
+						result.dominatorSet.add(block);
+					}
 				}
 			}
 			
@@ -918,6 +933,7 @@ public class PLParser
 			if (nextBlock.exitNode != null)
 			{
 				result.fixSpot();
+				result.dominatorSet.add(nextBlock.exitNode);
 				result = nextBlock.exitNode;
 			}
 		}

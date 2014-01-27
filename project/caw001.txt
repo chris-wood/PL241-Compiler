@@ -1,4 +1,4 @@
-// asd
+// asd - the if statement parsing for the phi is incorrect - it puts the everything at the wrong spot
 main 
 var a, b, c;
 {
@@ -7,11 +7,13 @@ var a, b, c;
   let c <- a + 2;
   call OutputNum(a);
   if a == 0 then
-    call OutputNum(0)
+    let a <- 100;
+    call OutputNum(0);
+    call OutputNum(1)
   else
     call OutputNum(a)
   fi;
-  call OutputNum(0);
+  call OutputNum(a);
   call OutputNum(1);
   call OutputNum(2)
 }.
