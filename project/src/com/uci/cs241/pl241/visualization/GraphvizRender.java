@@ -3,49 +3,27 @@ package com.uci.cs241.pl241.visualization;
 import java.util.ArrayList;
 
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
+import com.uci.cs241.pl241.ir.PLIRInstruction;
 
 // Sample graph
 //digraph G {
-//
-//	subgraph cluster_0 {
-//		style=filled;
-//		color=lightgrey;
-//		node [style=filled,color=white];
-//		a0 -> a1 -> a2 -> a3;
-//		label = "process #1";
-//	}
-//
-//	subgraph cluster_1 {
-//		node [style=filled];
-//		b0 -> b1 -> b2 -> b3;
-//		label = "process #2";
-//		color=blue
-//	}
-//	start -> a0;
-//	start -> b0;
-//	a1 -> b3;
-//	b2 -> a3;
-//	a3 -> a0;
-//	a3 -> end;
-//	b3 -> end;
-//
-//	start [shape=Mdiamond];
-//	end [shape=Msquare];
+//node_bb_0[shape=box, label = "7 := write #0\n" + "8 := beq #0 #2"]
 //}
+
 
 public class GraphvizRender 
 {	
-	public String renderBasicBlockIR(PLIRBasicBlock block, int id)
+	public String renderBasicBlockIR(PLIRBasicBlock block)
 	{
 		StringBuilder builder = new StringBuilder();
 		
-		// Subgraph start
-		builder.append("subgraph " + id + "{\n");
-		builder.append("");
-		
-		
-		// Subgraph end
-		builder.append("}\n");
+		builder.append("\nbb_" + block.id + "[shape = box, label = \"BB(" + block.id + ")\\n\" + ");
+		ArrayList<String> instSeq = block.instSequence();
+		for (int i = 0; i < instSeq.size() - 1; i++)
+		{
+			builder.append("\"" + instSeq.get(i) + "\\n\" + ");
+		}
+		builder.append("\"" + instSeq.get(instSeq.size() - 1) + "\\n\"];");
 		
 		return builder.toString();
 	}
@@ -61,14 +39,13 @@ public class GraphvizRender
 		ArrayList<PLIRBasicBlock> queue = new ArrayList<PLIRBasicBlock>();
 		ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
 		queue.add(entry);
-		int id = 0;
 		while (queue.isEmpty() == false)
 		{
 			PLIRBasicBlock currBlock = queue.remove(0);
 			if (visited.contains(currBlock) == false)
 			{
 				visited.add(currBlock);
-				builder.append(renderBasicBlockIR(currBlock, id++));
+				builder.append(renderBasicBlockIR(currBlock));
 				for (PLIRBasicBlock child : currBlock.children)
 				{
 					queue.add(child);
@@ -76,9 +53,10 @@ public class GraphvizRender
 			}
 		}
 		
+		// TODO: walk the BBs again and write out the connections
 		
 		// CFG DAG end
-		builder.append("}");
+		builder.append("\n}");
 		
 		return builder.toString();
 	}

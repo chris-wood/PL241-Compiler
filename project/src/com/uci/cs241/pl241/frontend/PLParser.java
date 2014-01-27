@@ -19,6 +19,7 @@ public class PLParser
 	// Current symbol/token values used for parsing
 	private String sym;
 	private int toksym;
+	private PLIRBasicBlock root;
 	
 	// Other necessary things
 //	private PLSymbolTable symTable;
@@ -105,7 +106,6 @@ public class PLParser
 				
 			}
 			
-
 			if (toksym == PLToken.openBraceToken)
 			{
 				// eat the sequence of statements that make up the computation
@@ -119,7 +119,6 @@ public class PLParser
 					if (toksym == PLToken.periodToken)
 					{
 						PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.END);
-						PLStaticSingleAssignment.displayInstructions();
 					}
 					else
 					{
@@ -141,7 +140,7 @@ public class PLParser
 			SyntaxError("Computation does not begin with main keyword");
 		}
 		
-		return result;
+		return root;
 	}
 
 	// non-terminal
@@ -155,7 +154,6 @@ public class PLParser
 			switch (identTypeMap.get(sym))
 			{
 			case ARRAY:
-//				PLIRInstruction inst = scope.getCurrentValue(sym);
 				PLIRInstruction instArray = new PLIRInstruction();
 				
 				// Memorize the ident we saw here
@@ -208,7 +206,6 @@ public class PLParser
 		// Memorize the ident we saw here
 		if (inst != null)
 		{
-//			System.err.println("inst " + sym + " from scope: " + inst);
 			inst.wasIdent = true;
 			inst.origIdent = sym;
 		}
@@ -607,7 +604,8 @@ public class PLParser
 			// Parse the condition relation
 			PLIRBasicBlock entry = parse_relation(in);
 			PLIRInstruction x = entry.instructions.get(entry.instructions.size() - 1);
-			CondNegBraFwd(x);
+			PLIRInstruction branch = CondNegBraFwd(x);
+			entry.addInstruction(branch);
 			
 			// Check for follow through branch
 			if (toksym != PLToken.thenToken)
@@ -625,18 +623,21 @@ public class PLParser
 			PLIRBasicBlock joinNode = new PLIRBasicBlock();
 			thenBlock.children.add(joinNode);
 			entry.exitNode = entry.joinNode = joinNode;
+			thenBlock.fixSpot();
 			
 			// Check for an else branch
 			int offset = 0;
 			if (toksym == PLToken.elseToken)
 			{
-				UnCondBraFwd(follow);
+				PLIRInstruction uncond = UnCondBraFwd(follow);
 				advance(in);
 				
 				// Parse the else block
 				PLIRBasicBlock elseBlock = parse_statSequence(in);
+				thenBlock.addInstruction(uncond);
 				entry.children.add(elseBlock);
 				elseBlock.children.add(joinNode);
+				elseBlock.fixSpot();
 				
 				// Check for necessary phis to be inserted in the join block
 				// We need phis for variables that were modified in both branches so we fall through with the right value
@@ -669,11 +670,22 @@ public class PLParser
 				
 				debug("fixing entry");
 				Fixup(x.fixupLocation, -offset);
+				
+				
+				System.out.println("herererere");
+				System.out.println(entry.instSequenceString());
+				System.out.println(thenBlock.instSequenceString());
+				System.out.println(elseBlock.instSequenceString());
+				System.out.println(joinNode.instSequenceString());
+				System.out.println("herererere");
 			}
 			else
 			{
 				Fixup(x.fixupLocation, -offset);
 			}
+			
+			// Fix the join BB index
+			joinNode.fixSpot();
 			
 			// Check for fi token and then eat it
 			if (toksym != PLToken.fiToken)
@@ -687,6 +699,7 @@ public class PLParser
 			Fixup(follow.fixupLocation, -offset);
 			
 			// Save the resulting basic block
+			entry.isEntry = true;
 			result = entry;
 		}
 		else if (toksym == PLToken.whileToken)
@@ -815,6 +828,7 @@ public class PLParser
 			advance(in);
 			
 			// the result of parsing this basic block is the entry node, which doubles as the join and exit node
+			entry.isEntry = true;
 			result = entry;
 		}
 		else if (toksym == PLToken.returnToken)
@@ -844,6 +858,12 @@ public class PLParser
 	{
 		boolean isReturn = toksym == PLToken.returnToken;
 		PLIRBasicBlock result = parse_statement(in);
+		
+		if (root == null)
+		{
+			root = result;
+		}
+		
 		if (isReturn)
 		{
 			// TODO: move into BB.setResult()
@@ -864,7 +884,7 @@ public class PLParser
 				result.hasReturn = true;
 			}
 			
-			// merge the blocks here...
+			// merge the blocks intermediate results here
 			for (String sym : nextBlock.modifiedIdents.keySet())
 			{
 				result.addModifiedValue(sym, nextBlock.modifiedIdents.get(sym));
@@ -877,7 +897,32 @@ public class PLParser
 			{
 				result.instructions.add(inst);
 			}
+			
+			// merge the blocks
+			if (nextBlock.isEntry)
+			{
+				for (PLIRInstruction inst : nextBlock.instructions)
+				{
+					result.addInstruction(inst);
+				}
+				if (nextBlock.children.size() > 0)
+				{
+					for (PLIRBasicBlock block : nextBlock.children)
+					{
+						result.children.add(block);
+					}
+				}
+			}
+			
+			// if the node has an exit, continue on that node (only really changes if statements)
+			if (nextBlock.exitNode != null)
+			{
+				result.fixSpot();
+				result = nextBlock.exitNode;
+			}
 		}
+		
+		result.fixSpot();
 		
 		return result;
 	}
@@ -1087,17 +1132,19 @@ public class PLParser
 	}
 	
 	// per spec
-	private void CondNegBraFwd(PLIRInstruction x)
+	private PLIRInstruction CondNegBraFwd(PLIRInstruction x)
 	{
 		x.fixupLocation = PLStaticSingleAssignment.globalSSAIndex;
-		PLIRInstruction.create_branch(x, x.condcode);
+		PLIRInstruction inst = PLIRInstruction.create_branch(x, x.condcode);
+		return inst;
 	}
 	
 	// per spec
-	private void UnCondBraFwd(PLIRInstruction x)
+	private PLIRInstruction UnCondBraFwd(PLIRInstruction x)
 	{
-		PLIRInstruction.create_BEQ(x.fixupLocation);
+		PLIRInstruction inst = PLIRInstruction.create_BEQ(x.fixupLocation);
 		x.fixupLocation = PLStaticSingleAssignment.globalSSAIndex - 1;
+		return inst;
 	}
 
 	// set the address to which we jump...

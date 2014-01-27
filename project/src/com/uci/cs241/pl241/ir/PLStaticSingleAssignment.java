@@ -41,7 +41,6 @@ public class PLStaticSingleAssignment
 	public static void displayInstructions()
 	{
 		StringBuilder builder = new StringBuilder();
-		System.out.println("Instructions:");
 		for (PLIRInstruction inst : instructions)
 		{
 			builder.append(inst.id + " := " + inst.toString() + "\n");

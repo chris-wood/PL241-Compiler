@@ -8,6 +8,9 @@ import com.uci.cs241.pl241.frontend.PLParser;
 import com.uci.cs241.pl241.frontend.PLScanner;
 import com.uci.cs241.pl241.frontend.PLSyntaxErrorException;
 import com.uci.cs241.pl241.frontend.PLTokenizer;
+import com.uci.cs241.pl241.ir.PLIRBasicBlock;
+import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
+import com.uci.cs241.pl241.visualization.GraphvizRender;
 
 
 public class PLC
@@ -47,9 +50,36 @@ public class PLC
 		//// RUN THE PARSER
 		scanner = new PLScanner(args[0]);
 		PLParser parser = new PLParser();
-		parser.parse(scanner);
+		PLIRBasicBlock root = parser.parse(scanner);
 		
-//		PLParser parser = new PLParser();
-//		parser.parse(tokenizer);
+		// Display the instructions
+		System.out.println("\nBegin Instructions\n");
+		PLStaticSingleAssignment.displayInstructions();
+		System.out.println("End Instructions\n");
+		
+		// Walk the basic block and print out the contents
+		ArrayList<PLIRBasicBlock> queue = new ArrayList<PLIRBasicBlock>();
+		ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
+		queue.add(root);
+		while (queue.isEmpty() == false)
+		{
+			PLIRBasicBlock curr = queue.remove(0);
+			if (visited.contains(curr) == false)
+			{
+				visited.add(curr);
+				System.out.println("Visiting: " + curr.id);
+				System.out.println(curr.instSequenceString());
+				
+				for (PLIRBasicBlock child : curr.children)
+				{
+					queue.add(child);
+				}
+			}
+		}
+		
+		// TODO: run through visualization module
+		GraphvizRender render = new GraphvizRender();
+		String dot = render.renderCFG(root);
+		System.out.println("\n\n" + dot);
 	}
 }

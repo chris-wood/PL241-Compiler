@@ -1,3 +1,21 @@
+// asd
+main 
+var a, b, c;
+{
+  let a <- call InputNum();
+  let b <- a + 2;
+  let c <- a + 2;
+  call OutputNum(a);
+  if a == 0 then
+    call OutputNum(0)
+  else
+    call OutputNum(a)
+  fi;
+  call OutputNum(0);
+  call OutputNum(1);
+  call OutputNum(2)
+}.
+
 // Partial parsing test to incrementally test all compiler features
 main
 var a, b, c, d, e, f, x, y, z; array[4] arr1;

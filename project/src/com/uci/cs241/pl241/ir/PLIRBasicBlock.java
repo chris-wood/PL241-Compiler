@@ -21,14 +21,17 @@ public class PLIRBasicBlock
 	public PLIRBasicBlock exitNode;
 	
 	// Return instruction
+	public boolean isEntry = false;
 	public boolean hasReturn = false;
 	public PLIRInstruction returnInst;
 	
 	// TODO: need to compute this for the dominator tree algorithm!!!
 	public int treeSize;
 	
+	// ID information for the BB
 	public int id;
 	public static int bbid = 0;
+	private boolean fixed = false;
 	
 	public PLIRBasicBlock()
 	{
@@ -63,6 +66,15 @@ public class PLIRBasicBlock
 		}
 		
 		this.id = bbid++;
+	}
+	
+	public void fixSpot()
+	{
+		if (!fixed)
+		{
+			fixed = true;
+			id = bbid++;
+		}
 	}
 	
 	public void addUsedValue(String ident, PLIRInstruction inst)
@@ -122,6 +134,53 @@ public class PLIRBasicBlock
 		builder.append("label: \" " + instBuilder.toString() + " \"  \n");
 		
 		builder.append("}\n");
+		return builder.toString();
+	}
+	
+	public ArrayList<String> instSequence()
+	{
+		ArrayList<PLIRInstruction> orderedInsts = new ArrayList<PLIRInstruction>();
+		for (PLIRInstruction inst : instructions)
+		{
+			if (orderedInsts.size() == 0) orderedInsts.add(inst);
+			else
+			{
+				boolean added = false;
+				for (int i = 0; !added && i < orderedInsts.size(); i++)
+				{
+					if (inst.id < orderedInsts.get(i).id)
+					{
+						orderedInsts.add(i, inst);
+						added = true;
+					}
+				}
+				if (!added) orderedInsts.add(inst);
+			}
+		}
+		
+		ArrayList<String> builder = new ArrayList<String>();
+		ArrayList<Integer> seen = new ArrayList<Integer>();
+		for (PLIRInstruction inst : orderedInsts)
+		{
+			if (seen.contains(inst.id) == false)
+			{
+				builder.add(inst.id + " := " + inst.toString());
+				seen.add(inst.id);
+			}
+		}
+		return builder;
+	}
+	
+	public String instSequenceString()
+	{
+		ArrayList<String> insts = instSequence();
+		
+		StringBuilder builder = new StringBuilder();
+		for (String s : insts)
+		{
+			builder.append(s + "\n");
+		}
+		
 		return builder.toString();
 	}
 }
