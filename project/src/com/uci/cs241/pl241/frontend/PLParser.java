@@ -601,6 +601,8 @@ public class PLParser
 			
 			advance(in);
 			
+			scope.pushNewScope("if");
+			
 			// Parse the condition relation
 			PLIRBasicBlock entry = parse_relation(in);
 			PLIRInstruction x = entry.instructions.get(entry.instructions.size() - 1);
@@ -628,6 +630,7 @@ public class PLParser
 			// Check for an else branch
 			int offset = 0;
 			PLIRBasicBlock elseBlock = null;
+			ArrayList<String> sharedModifiers = new ArrayList<String>();
 			if (toksym == PLToken.elseToken)
 			{
 				PLIRInstruction uncond = UnCondBraFwd(follow);
@@ -642,7 +645,7 @@ public class PLParser
 				
 				// Check for necessary phis to be inserted in the join block
 				// We need phis for variables that were modified in both branches so we fall through with the right value
-				ArrayList<String> sharedModifiers = new ArrayList<String>();
+				sharedModifiers = new ArrayList<String>();
 				for (String i1 : thenBlock.modifiedIdents.keySet())
 				{
 					for (String i2 : elseBlock.modifiedIdents.keySet())
@@ -655,8 +658,10 @@ public class PLParser
 					}
 				}
 				debug("(if statement) Inserting " + sharedModifiers.size() + " phis");
-				for (String var : sharedModifiers)
+				ArrayList<PLIRInstruction> phisToAdd = new ArrayList<PLIRInstruction>(); 
+				for (int i = 0; i < sharedModifiers.size(); i++)
 				{
+					String var = sharedModifiers.get(i);
 					offset++;
 					PLIRInstruction thenInst = thenBlock.modifiedIdents.get(var);
 					debug(thenInst.toString());
@@ -664,25 +669,77 @@ public class PLParser
 					debug(elseInst.toString());
 					PLIRInstruction phi = PLIRInstruction.create_phi(thenInst, elseInst, PLStaticSingleAssignment.globalSSAIndex);
 					joinNode.insertInstruction(phi, 0);
+					phisToAdd.add(phi);
+					
+					// The current value in scope needs to be updated now with the result of the phi
+//					scope.updateSymbol(var, phi);
+				}
+				
+				// Jump back from the if statement scope so we can update the variables with the appropriate phi result
+				scope.popScope();
+				for (int i = 0; i < phisToAdd.size(); i++)
+				{
+					scope.updateSymbol(sharedModifiers.get(i), phisToAdd.get(i));
+				}
+				
+				// Check for modifications in the else block (but not in the if)
+				ArrayList<String> modifiers = new ArrayList<String>();
+				for (String modded : elseBlock.modifiedIdents.keySet())
+				{
+					if (sharedModifiers.contains(modded) == false)
+					{
+						modifiers.add(modded);
+					}
+				}
+				debug("(if statement not checking then) Inserting " + modifiers.size() + " phis");
+				for (String var : modifiers)
+				{
+					offset++;
+					PLIRInstruction leftInst = elseBlock.modifiedIdents.get(var);
+					debug(leftInst.toString());
+					PLIRInstruction followInst = scope.getCurrentValue(var);
+					PLIRInstruction phi = PLIRInstruction.create_phi(leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
+					joinNode.insertInstruction(phi, 0);
 					
 					// The current value in scope needs to be updated now with the result of the phi
 					scope.updateSymbol(var, phi);
 				}
 				
-				debug("fixing entry");
-				Fixup(x.fixupLocation, -offset);
-				
-				System.out.println("herererere");
-				System.out.println(entry.instSequenceString());
-				System.out.println(thenBlock.instSequenceString());
-				System.out.println(elseBlock.instSequenceString());
-				System.out.println(joinNode.instSequenceString());
-				System.out.println("herererere");
+//				debug("fixing entry");
+//				Fixup(x.fixupLocation, -offset);
 			}
 			else
 			{
-				Fixup(x.fixupLocation, -offset);
+				scope.popScope();
 			}
+			
+			// Check for necessary phis to be inserted in the join block
+			// We need phis for variables that were modified in both branches so we fall through with the right value
+			ArrayList<String> modifiers = new ArrayList<String>();
+			for (String modded : thenBlock.modifiedIdents.keySet())
+			{
+				if (sharedModifiers.contains(modded) == false)
+				{
+					modifiers.add(modded);
+				}
+			}
+			debug("(if statement withoutb else) Inserting " + modifiers.size() + " phis");
+			for (String var : modifiers)
+			{
+				offset++;
+				PLIRInstruction leftInst = thenBlock.modifiedIdents.get(var);
+				debug(leftInst.toString());
+				PLIRInstruction followInst = scope.getCurrentValue(var);
+				PLIRInstruction phi = PLIRInstruction.create_phi(leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
+				joinNode.insertInstruction(phi, 0);
+				
+				// The current value in scope needs to be updated now with the result of the phi
+				scope.updateSymbol(var, phi);
+			}
+			
+			// if modified in ANY body, insert phi (as is done above)
+			
+			Fixup(x.fixupLocation, -offset);
 			
 			// Fix the join BB index
 			joinNode.fixSpot();

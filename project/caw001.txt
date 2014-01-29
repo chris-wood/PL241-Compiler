@@ -1,3 +1,41 @@
+// asd - testing if/else with modifier in only one branch!
+main 
+var a, b, c;
+{
+  let a <- call InputNum();
+  let b <- a + 2;
+  let c <- a + 2;
+  call OutputNum(a);
+  if a == 0 then
+    let a <- 100;
+    call OutputNum(a)
+  else
+    let a <- 10;
+    let b <- 100;
+    call OutputNum(a)
+  fi;
+  call OutputNum(a);
+  call OutputNum(1);
+  call OutputNum(2)
+}.
+
+// asd - fixed!
+main 
+var a, b, c;
+{
+  let a <- call InputNum();
+  let b <- a + 2;
+  let c <- a + 2;
+  call OutputNum(a);
+  if a == 0 then
+    let a <- 100;
+    call OutputNum(a)
+  fi;
+  call OutputNum(a);
+  call OutputNum(1);
+  call OutputNum(2)
+}.
+
 // asd - the if statement parsing for the phi is incorrect - it puts the everything at the wrong spot
 main 
 var a, b, c;
