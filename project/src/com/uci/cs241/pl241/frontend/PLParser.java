@@ -876,10 +876,12 @@ public class PLParser
 				// TODO: this can possibly be recursive...?
 				debug("patching up phis: " + cmpInst.toString());
 				debug(phi.toString());
+				debug("checking left operand");
 				if (cmpInst.op1 != null && cmpInst.op1.origIdent.equals(var))
 				{
 					cmpInst.replaceLeftOperand(phi);
 				}
+				debug("checking right operand");
 				if (cmpInst.op2 != null && cmpInst.op2.origIdent.equals(var))
 				{
 					cmpInst.replaceRightOperand(phi);
@@ -887,8 +889,10 @@ public class PLParser
 				
 				// Now loop through the body and fix instructions as needed
 				// TODO: this can possibly be recursive...
+				debug("past patch");
 				for (PLIRInstruction bInst : body.instructions)
 				{
+					debug("trying: " + bInst.toString());
 					if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
 					{
 						bInst.replaceLeftOperand(phi);

@@ -1,4 +1,56 @@
-// asd - in-class exercise with an obvious CSE 
+// asd - simple while
+main 
+var a, b, c, d, e, f, g;
+{
+  let a <- call InputNum();
+  let b <- a;
+  let c <- b;
+  let d <- b + c;
+  let e <- a + b;
+  let f <- a + c;
+  let g <- 10;
+  while a > 0 do
+    let a <- a - 1;
+    call OutputNum(a)
+  od;
+  call OutputNum(a);
+  call OutputNum(g)
+}.
+
+// asd - HARD FUCKING TEST CASE WITH NESTED THINGS AND PHIS
+main 
+var a, b, c, d, e, f, g;
+{
+  let a <- call InputNum();
+  let b <- a;
+  let c <- b;
+  let d <- b + c;
+  let e <- a + b;
+  let f <- a + c;
+  let g <- 10;
+  while a > 0 do
+    let a <- a - 1;
+    call OutputNum(a)
+  od;
+
+  if a == 10 then
+    if a == 9 then
+      let g <- g + 1;
+      call OutputNum(9)
+    else 
+      while a > 0 do
+        let a <- a - 1;
+        call OutputNum(a)
+      od
+    fi
+  else
+    call OutputNum(100)
+  fi;
+  call OutputNum(a);
+  call OutputNum(g)
+}.
+
+// asd - modified in-class exercise with an obvious CSE and nested IF statements
 main 
 var a, b, c, d, e, f, g;
 {

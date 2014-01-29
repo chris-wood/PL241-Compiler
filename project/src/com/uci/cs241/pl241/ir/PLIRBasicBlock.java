@@ -73,6 +73,20 @@ public class PLIRBasicBlock
 	
 	public static PLIRBasicBlock merge(PLIRBasicBlock result, PLIRBasicBlock nextBlock)
 	{
+		// merge the blocks intermediate results here
+		for (String sym : nextBlock.modifiedIdents.keySet())
+		{
+			result.addModifiedValue(sym, nextBlock.modifiedIdents.get(sym));
+		}
+		for (String sym : nextBlock.usedIdents.keySet())
+		{
+			result.addUsedValue(sym, nextBlock.usedIdents.get(sym));
+		}
+		for (PLIRInstruction inst : nextBlock.instructions)
+		{
+			result.instructions.add(inst);
+		}
+		
 		// Merge the contents of the blocks
 		if (nextBlock.isEntry)
 		{

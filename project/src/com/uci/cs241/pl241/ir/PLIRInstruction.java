@@ -655,8 +655,9 @@ public class PLIRInstruction
 				{
 					case INST:
 						PLIRInstruction op = operand;
-						while (op.isRemoved)
+						while (op.isRemoved && op.refInst.id != this.id)
 						{
+							System.err.println("recursing to: " + op.refInst);
 							op = op.refInst;
 						}
 						s = s + " (" + op.id + ")";
@@ -678,6 +679,7 @@ public class PLIRInstruction
 					PLIRInstruction op = op1;
 					while (op.isRemoved)
 					{
+						System.err.println("recursing from " + this.id + " to: " + op.refInst);
 						op = op.refInst;
 					}
 					s = s + " (" + op.id + ")";
@@ -696,6 +698,7 @@ public class PLIRInstruction
 					PLIRInstruction op = op2;
 					while (op.isRemoved)
 					{
+						System.err.println("recursing from " + this.id + " to: " + op.refInst);
 						op = op.refInst;
 					}
 					s = s + " (" + op.id + ")";
