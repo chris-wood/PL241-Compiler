@@ -71,6 +71,39 @@ public class PLIRBasicBlock
 		this.id = bbid++;
 	}
 	
+	public static PLIRBasicBlock merge(PLIRBasicBlock result, PLIRBasicBlock nextBlock)
+	{
+		// Merge the contents of the blocks
+		if (nextBlock.isEntry)
+		{
+			for (PLIRInstruction inst : nextBlock.instructions)
+			{
+				result.addInstruction(inst);
+			}
+			if (nextBlock.children.size() > 0)
+			{
+				for (PLIRBasicBlock block : nextBlock.children)
+				{
+					result.children.add(block);
+				}
+				for (PLIRBasicBlock block : nextBlock.dominatorSet)
+				{
+					result.dominatorSet.add(block);
+				}
+			}
+		}
+		
+		// If the node has an exit, continue on that node (only really changes if statements)
+		if (nextBlock.exitNode != null)
+		{
+			result.fixSpot();
+			result.dominatorSet.add(nextBlock.exitNode);
+			result = nextBlock.exitNode;
+		}
+		
+		return result;
+	}
+	
 	public void fixSpot()
 	{
 		if (!fixed)

@@ -21,6 +21,9 @@ public class PLParser
 	private int toksym;
 	private PLIRBasicBlock root;
 	
+	// BB depth (to uniquify scopes)
+	private int blockDepth = 0;
+	
 	// Other necessary things
 	private PLSymbolTable scope;
 	
@@ -603,7 +606,7 @@ public class PLParser
 			
 			advance(in);
 			
-			scope.pushNewScope("if");
+			scope.pushNewScope("if" + (blockDepth++));
 			
 			// Parse the condition relation
 			PLIRBasicBlock entry = parse_relation(in);
@@ -679,6 +682,7 @@ public class PLParser
 				
 				// Jump back from the if statement scope so we can update the variables with the appropriate phi result
 				scope.popScope();
+				blockDepth--;
 				for (int i = 0; i < phisToAdd.size(); i++)
 				{
 					scope.updateSymbol(sharedModifiers.get(i), phisToAdd.get(i));
@@ -711,14 +715,17 @@ public class PLParser
 					
 					// The current value in scope needs to be updated now with the result of the phi
 					scope.updateSymbol(var, phi);
+					
+					// Add to this block's list of modified identifiers
+					// Rationale: since we added a phi, the value potentially changes (is modified), 
+					// 	so the latest value in the current scope needs to be modified
+					entry.modifiedIdents.put(var, phi);
 				}
-				
-//				debug("fixing entry");
-//				Fixup(x.fixupLocation, -offset);
 			}
 			else
 			{
 				scope.popScope();
+				blockDepth--;
 			}
 			
 			// Check for necessary phis to be inserted in the join block
@@ -749,11 +756,15 @@ public class PLParser
 				
 				// The current value in scope needs to be updated now with the result of the phi
 				scope.updateSymbol(var, phi);
+				
+				// Add to this block's list of modified identifiers
+				// Rationale: since we added a phi, the value potentially changes (is modified), 
+				// 	so the latest value in the current scope needs to be modified
+				entry.modifiedIdents.put(var, phi);
 			}
 			
-			// if modified in ANY body, insert phi (as is done above)
-			
-			Fixup(x.fixupLocation, -offset);
+			// After the phis have been inserted at the appropriate positions, fixup the entry instructions
+			Fixup(x.fixupLocation, -offset - 1);
 			
 			// Fix the join BB index
 			joinNode.fixSpot();
@@ -966,49 +977,11 @@ public class PLParser
 				result.hasReturn = true;
 			}
 			
-			// merge the blocks intermediate results here
-			for (String sym : nextBlock.modifiedIdents.keySet())
-			{
-				result.addModifiedValue(sym, nextBlock.modifiedIdents.get(sym));
-			}
-			for (String sym : nextBlock.usedIdents.keySet())
-			{
-				result.addUsedValue(sym, nextBlock.usedIdents.get(sym));
-			}
-			for (PLIRInstruction inst : nextBlock.instructions)
-			{
-				result.instructions.add(inst);
-			}
-			
-			// merge the blocks
-			if (nextBlock.isEntry)
-			{
-				for (PLIRInstruction inst : nextBlock.instructions)
-				{
-					result.addInstruction(inst);
-				}
-				if (nextBlock.children.size() > 0)
-				{
-					for (PLIRBasicBlock block : nextBlock.children)
-					{
-						result.children.add(block);
-					}
-					for (PLIRBasicBlock block : nextBlock.dominatorSet)
-					{
-						result.dominatorSet.add(block);
-					}
-				}
-			}
-			
-			// if the node has an exit, continue on that node (only really changes if statements)
-			if (nextBlock.exitNode != null)
-			{
-				result.fixSpot();
-				result.dominatorSet.add(nextBlock.exitNode);
-				result = nextBlock.exitNode;
-			}
+			// Merge the block results here
+			result = PLIRBasicBlock.merge(result, nextBlock);
 		}
 		
+		// Fix the spot of the basic block (since we're leaving a statement sequence) and call it a day
 		result.fixSpot();
 		
 		return result;
@@ -1138,6 +1111,7 @@ public class PLParser
 			
 			// Leave the scope of this new function
 			String leavingScope = scope.popScope();
+			blockDepth--;
 			debug("Leaving scope: " + leavingScope);
 		}
 		else
@@ -1236,7 +1210,7 @@ public class PLParser
 
 	// set the address to which we jump...
 	// buffer[loc] = (pc - loc) + offset;
-	// MODIFIED FROM SPEC - OFFSET NEEDED TO BE INTRODUCED
+	// MODIFIED FROM SPEC => offset needed to be introduced to account for phi injection
 	private void Fixup(int loc, int offset)
 	{
 		debug("Fixing: " + loc + ", " + (PLStaticSingleAssignment.globalSSAIndex - loc + offset) + ", " + offset);

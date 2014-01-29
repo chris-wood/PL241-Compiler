@@ -1,6 +1,6 @@
 // asd - in-class exercise with an obvious CSE 
 main 
-var a, b, c, d, e, f;
+var a, b, c, d, e, f, g;
 {
   let a <- call InputNum();
   let b <- a;
@@ -8,13 +8,19 @@ var a, b, c, d, e, f;
   let d <- b + c;
   let e <- a + b;
   let f <- a + c;
-  if a < 0 then
-  let d <- d + e;
-  let a <- d
+  let g <- 10;
+  if a == 10 then
+    if a == 9 then
+      let g <- g + 1;
+      call OutputNum(9)
+    else 
+      call OutputNum(10)
+    fi
   else
-  let d <- e
+    call OutputNum(100)
   fi;
-  call OutputNum(a)
+  call OutputNum(a);
+  call OutputNum(g)
 }.
 
 // asd - testing if/else with modifier in only one branch!
