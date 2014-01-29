@@ -22,14 +22,15 @@ public class PLParser
 	private PLIRBasicBlock root;
 	
 	// Other necessary things
-//	private PLSymbolTable symTable;
 	private PLSymbolTable scope;
 	
 	public enum IdentType {VAR, ARRAY};
 	private HashMap<String, IdentType> identTypeMap = new HashMap<String, IdentType>();
 	
+	// TODO!!!
 	private ArrayList<String> deferredPhiIdents = new ArrayList<String>();
 	
+	// TODO!!!
 	private String funcName = "";
 	private ArrayList<String> callStack = new ArrayList<String>();
 	private HashMap<String, PLIRBasicBlock> funcBlockMap = new HashMap<String, PLIRBasicBlock>();
@@ -39,10 +40,11 @@ public class PLParser
 	
 	public PLParser()
 	{
-//		symTable = new PLSymbolTable();
 		paramMap.put("InputNum", 0);
 		paramMap.put("OutputNewLine", 0);
 		paramMap.put("OutputNum", 1);
+		
+		PLStaticSingleAssignment.init();
 	}
 	
 	public void debug(String msg)
@@ -694,6 +696,12 @@ public class PLParser
 				debug("(if statement not checking then) Inserting " + modifiers.size() + " phis");
 				for (String var : modifiers)
 				{
+					// Check to make sure this thing was actually in scope!
+					if (scope.getCurrentValue(var) == null)
+					{
+						SyntaxError("Uninitialized identifier in path: " + var);
+					}
+					
 					offset++;
 					PLIRInstruction leftInst = elseBlock.modifiedIdents.get(var);
 					debug(leftInst.toString());
@@ -726,6 +734,12 @@ public class PLParser
 			debug("(if statement withoutb else) Inserting " + modifiers.size() + " phis");
 			for (String var : modifiers)
 			{
+				// Check to make sure this thing was actually in scope!
+				if (scope.getCurrentValue(var) == null)
+				{
+					SyntaxError("Uninitialized identifier in path: " + var);
+				}
+				
 				offset++;
 				PLIRInstruction leftInst = thenBlock.modifiedIdents.get(var);
 				debug(leftInst.toString());

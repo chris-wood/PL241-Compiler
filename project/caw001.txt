@@ -1,10 +1,28 @@
+// asd - in-class exercise with an obvious CSE 
+main 
+var a, b, c, d, e, f;
+{
+  let a <- call InputNum();
+  let b <- a;
+  let c <- b;
+  let d <- b + c;
+  let e <- a + b;
+  let f <- a + c;
+  if a < 0 then
+  let d <- d + e;
+  let a <- d
+  else
+  let d <- e
+  fi;
+  call OutputNum(a)
+}.
+
 // asd - testing if/else with modifier in only one branch!
 main 
 var a, b, c;
 {
   let a <- call InputNum();
   let b <- a + 2;
-  let c <- a + 2;
   call OutputNum(a);
   if a == 0 then
     let a <- 100;
@@ -14,6 +32,7 @@ var a, b, c;
     let b <- 100;
     call OutputNum(a)
   fi;
+  call OutputNum(b);
   call OutputNum(a);
   call OutputNum(1);
   call OutputNum(2)

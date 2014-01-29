@@ -18,10 +18,10 @@ public class PLIRInstruction
 	public PLIRInstruction op2;
 	public OperandType op2type;
 	
+	// TODO
 	public ArrayList<PLIRInstruction> callOperands;
 	
-	// temporary value for combining constants
-//	public PLIRInstructionGenerateType generate = PLIRInstructionGenerateType.NOW;
+	// Temporary value for combining constants
 	public boolean generated = false;
 	public boolean overrideGenerate = false;
 	public ResultKind kind;
@@ -32,8 +32,18 @@ public class PLIRInstruction
 	public String origIdent = "";
 	public String funcName;
 	
-	// Unique identifier for each instruction that's generated
-//	public static ArrayList<PLIRInstruction> ssaInstructions = new ArrayList<PLIRInstruction>();
+	// Elimination information
+	public enum EliminationReason {CSE, DCR};
+	public EliminationReason elimReason;
+	public boolean isRemoved = false;
+	public PLIRInstruction refInst = null;
+	
+	public void removeInstruction(EliminationReason reason, PLIRInstruction ref)
+	{
+		isRemoved = true;
+		elimReason = reason;
+		refInst = ref;
+	}
 	
 	public enum PLIRInstructionType 
 	{
@@ -88,7 +98,6 @@ public class PLIRInstruction
 		this.opcode = opcode;
 		op1 = op2 = null;
 		op1type = op2type = OperandType.NULL;
-//		id = PLStaticSingleAssignment.addInstruction(this); 
 		forceGenerate(); // always generate right away...
 	}
 	
@@ -523,9 +532,56 @@ public class PLIRInstruction
 	}
 	
 	@Override
+	public boolean equals(Object o)
+	{
+		if (o == null) return false;
+	    if (o == this) return true;
+	    if (!(o instanceof PLIRInstruction)) return false;
+	    PLIRInstruction other = (PLIRInstruction)o;
+	    
+	    if (this.opcode == other.opcode)
+	    {
+	    	if (this.op1type == other.op1type && this.op1type == OperandType.INST && this.op1.equals(other.op1))
+	    	{
+	    		// op inst inst
+	    		if (this.op2type == other.op2type && this.op2type == OperandType.INST && this.op2.equals(other.op2))
+	    		{
+	    			return true;
+	    		}
+	    		// op inst const
+	    		else if (this.op2type == other.op2type && this.op2type == OperandType.CONST && this.i2 == other.i2)
+	    		{
+	    			return true;
+	    		}
+	    	} 
+	    	else if (this.op1type == other.op1type && this.op1type == OperandType.CONST && this.i1 == other.i1)
+	    	{
+	    		// op const inst 
+	    		if (this.op2type == other.op2type && this.op2type == OperandType.INST && this.op2.equals(other.op2))
+	    		{
+	    			return true;
+	    		}
+	    		// op const const 
+	    		else if (this.op2type == other.op2type && this.op2type == OperandType.CONST && this.i2 == other.i2)
+	    		{
+	    			return true;
+	    		}
+	    	}
+	    }
+	    
+	    return false;
+	}
+	
+	@Override
 	public String toString()
 	{
 		String s = "";
+		
+		// Short-circuit for instructions that have already been deleted
+		if (this.isRemoved && this.refInst != null)
+		{
+			return "(" + this.refInst.id + ")";
+		}
 		
 		switch (opcode)
 		{
@@ -598,7 +654,12 @@ public class PLIRInstruction
 				switch (operand.type)
 				{
 					case INST:
-						s = s + " (" + operand.id + ")";
+						PLIRInstruction op = operand;
+						while (op.isRemoved)
+						{
+							op = op.refInst;
+						}
+						s = s + " (" + op.id + ")";
 						break;
 					case CONST:
 						s = s + " #" + operand.tempVal;
@@ -614,7 +675,12 @@ public class PLIRInstruction
 			switch (op1type)
 			{
 				case INST:
-					s = s + " (" + op1.id + ")";
+					PLIRInstruction op = op1;
+					while (op.isRemoved)
+					{
+						op = op.refInst;
+					}
+					s = s + " (" + op.id + ")";
 					break;
 				case CONST:
 					s = s + " #" + i1;
@@ -627,7 +693,12 @@ public class PLIRInstruction
 			switch (op2type)
 			{
 				case INST:
-					s = s + " (" + op2.id + ")";
+					PLIRInstruction op = op2;
+					while (op.isRemoved)
+					{
+						op = op.refInst;
+					}
+					s = s + " (" + op.id + ")";
 					break;
 				case CONST:
 					s = s + " #" + i2;
