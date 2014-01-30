@@ -8,6 +8,7 @@ import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
 public class PLIRBasicBlock
 {
 	public ArrayList<PLIRInstruction> instructions;
+	public ArrayList<PLIRInstruction> dominatedInstructions;
 	public ArrayList<PLIRBasicBlock> children;
 	public ArrayList<PLIRBasicBlock> parents;
 	public ArrayList<PLIRBasicBlock> treeVertexSet;
@@ -43,6 +44,7 @@ public class PLIRBasicBlock
 		this.treeVertexSet = new ArrayList<PLIRBasicBlock>();
 		this.dominatorSet = new ArrayList<PLIRBasicBlock>();
 		this.instructions = new ArrayList<PLIRInstruction>();
+		this.dominatedInstructions = new ArrayList<PLIRInstruction>();
 		this.modifiedIdents = new HashMap<String, PLIRInstruction>();
 		this.usedIdents = new HashMap<String, PLIRInstruction>();
 	}
@@ -55,6 +57,7 @@ public class PLIRBasicBlock
 		this.dominatorSet = new ArrayList<PLIRBasicBlock>();
 		this.instructions = new ArrayList<PLIRInstruction>(seq.length);
 		this.modifiedIdents = new HashMap<String, PLIRInstruction>();
+		this.dominatedInstructions = new ArrayList<PLIRInstruction>();
 		this.usedIdents = new HashMap<String, PLIRInstruction>();
 		
 		for (PLIRBasicBlock block : parents)
@@ -87,6 +90,7 @@ public class PLIRBasicBlock
 		for (PLIRInstruction inst : nextBlock.instructions)
 		{
 			result.instructions.add(inst);
+			result.dominatedInstructions.add(inst);
 		}
 		
 		// Merge the contents of the blocks
@@ -107,11 +111,14 @@ public class PLIRBasicBlock
 					result.dominatorSet.add(block);
 				}
 			}
+			
+			/// TODO: we should really be adding these to a set of "dominated" instructions... not the instructions of the BB
 			if (nextBlock.exitNode != null)
 			{
 				for (PLIRInstruction inst : nextBlock.exitNode.instructions)
 				{
 					result.addInstruction(inst);
+//					result.dominatedInstructions.add(inst);
 				}
 			}
 		}
@@ -129,20 +136,19 @@ public class PLIRBasicBlock
 	
 	public void propogatePhi(String var, PLIRInstruction phi)
 	{
+		// propoagate through the main instructions in this block's body
 		for (PLIRInstruction bInst : instructions)
 		{
 			System.err.println(bInst.toString());
 			boolean replaced = false;
-//			if (bInst.opcode == PLIRInstructionType.PHI)
-//			{
-//				int x = 0;
-//			}
-			if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
+//			if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
+			if (bInst.op1 != null && (bInst.op1.equals(phi.op1) || bInst.op1.equals(phi.op2)))
 			{
 				bInst.replaceLeftOperand(phi);
 				replaced = true;
 			}
-			if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
+//			if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
+			if (bInst.op2 != null && (bInst.op2.equals(phi.op1) || bInst.op2.equals(phi.op2)))
 			{
 				bInst.replaceRightOperand(phi);
 				replaced = true;
@@ -152,6 +158,29 @@ public class PLIRBasicBlock
 				break;
 			}
 		}
+		
+		// propagate through dominated instructions
+//		for (PLIRInstruction bInst : dominatedInstructions)
+//		{
+//			System.err.println(bInst.toString());
+//			boolean replaced = false;
+////			if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
+//			if (bInst.op1 != null && (bInst.op1.equals(phi.op1) || bInst.op1.equals(phi.op2)))
+//			{
+//				bInst.replaceLeftOperand(phi);
+//				replaced = true;
+//			}
+////			if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
+//			if (bInst.op2 != null && (bInst.op2.equals(phi.op1) || bInst.op2.equals(phi.op2)))
+//			{
+//				bInst.replaceRightOperand(phi);
+//				replaced = true;
+//			}
+//			if (replaced && bInst.opcode == PLIRInstructionType.PHI)
+//			{
+//				break;
+//			}
+//		}
 		
 		for (PLIRBasicBlock child : children)
 		{

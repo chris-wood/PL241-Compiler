@@ -1,5 +1,7 @@
 package com.uci.cs241.pl241.ir;
 
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -67,6 +69,16 @@ public class PLStaticSingleAssignment
 	{
 		System.err.println("Replacing: " + instructions.get(id).toString() + " with " + inst.toString());
 		instructions.set(id, inst);
+	}
+	
+	public static String renderInstructions()
+	{
+		StringBuilder builder = new StringBuilder();
+		for (PLIRInstruction inst : instructions)
+		{
+			builder.append(inst.id + " := " + inst.toString() + "\n");
+		}
+		return builder.toString();
 	}
 	
 	public static void displayInstructions()

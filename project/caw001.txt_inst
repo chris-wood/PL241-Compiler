@@ -1,0 +1,8 @@
+1 := read
+2 := add (1) #1
+3 := add (2) #1
+4 := write (1)
+5 := write (2)
+6 := write (3)
+7 := end
+

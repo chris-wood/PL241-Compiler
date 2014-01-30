@@ -1,6 +1,10 @@
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 
 import com.uci.cs241.pl241.frontend.PLEndOfFileException;
@@ -9,6 +13,7 @@ import com.uci.cs241.pl241.frontend.PLScanner;
 import com.uci.cs241.pl241.frontend.PLSyntaxErrorException;
 import com.uci.cs241.pl241.frontend.PLTokenizer;
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
+import com.uci.cs241.pl241.ir.PLIRInstruction;
 import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
 import com.uci.cs241.pl241.visualization.GraphvizRender;
 
@@ -54,8 +59,24 @@ public class PLC
 		
 		// Display the instructions
 		System.out.println("\nBegin Instructions\n");
+		PrintWriter instWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + "_inst")));
 		PLStaticSingleAssignment.displayInstructions();
+		instWriter.println(PLStaticSingleAssignment.renderInstructions());
+		instWriter.flush();
+		instWriter.close();
 		System.out.println("End Instructions\n");
+		
+		// Display the DU chain
+		System.out.println("\nDU chain");
+		for (PLIRInstruction def : parser.duChain.keySet())
+		{
+			System.out.println(def.id + " := " + def.toString());
+			for (PLIRInstruction use : parser.duChain.get(def))
+			{
+				System.out.println("\t" + use.id + " := " + use.toString());
+			}
+		}
+		System.out.println("End DU chain\n");
 		
 		// Walk the basic block and print out the contents
 		ArrayList<PLIRBasicBlock> queue = new ArrayList<PLIRBasicBlock>();
@@ -77,11 +98,21 @@ public class PLC
 			}
 		}
 		
-		// TODO: run through visualization module
+		// Generate visualization strings
 		GraphvizRender render = new GraphvizRender();
 		String cfgdot = render.renderCFG(root);
-		System.out.println("\n\n" + cfgdot);
 		String domdot = render.renderDominatorTree(root);
-		System.out.println("\n\n" + domdot);
+		
+		// Write out the CFG string
+		PrintWriter cfgWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + "_cfg.dot")));
+		cfgWriter.println(cfgdot);
+		cfgWriter.flush();
+		cfgWriter.close();
+		
+		// Write out the dominator tree
+		PrintWriter domWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + "_dom.dot")));
+		domWriter.println(cfgdot);
+		domWriter.flush();
+		domWriter.close();	
 	}
 }

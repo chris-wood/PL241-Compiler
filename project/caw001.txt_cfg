@@ -1,0 +1,3 @@
+digraph G {
+bb0[shape = box, label = "BB(0)\n" + "1 := read\n" + "2 := add (1) #1\n" + "3 := add (2) #1\n" + "4 := write (1)\n" + "5 := write (2)\n" + "6 := write (3)\n"];
+}

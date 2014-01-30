@@ -24,7 +24,7 @@ public class PLParser
 	// BB depth (to uniquify scopes)
 	private int blockDepth = 0;
 	
-	// Useful things to help teh parser
+	// Useful things to help the parser
 	private boolean globalVariableParsing;
 	
 	// Other necessary things
@@ -43,6 +43,9 @@ public class PLParser
 	private HashMap<String, PLIRBasicBlock> procBlockMap = new HashMap<String, PLIRBasicBlock>();
 	private HashMap<String, Integer> paramMap = new HashMap<String, Integer>();
 	private HashMap<String, Boolean> funcFlagMap = new HashMap<String, Boolean>();
+	
+	// def-use chain data structure
+	public HashMap<PLIRInstruction, ArrayList<PLIRInstruction>> duChain = new HashMap<PLIRInstruction, ArrayList<PLIRInstruction>>(); 
 	
 	public PLParser()
 	{
@@ -361,6 +364,16 @@ public class PLParser
 			termInst.forceGenerate();
 			termNode.addInstruction(termInst);
 			
+			// Update DU chain
+			if (duChain.containsKey(leftValue))
+			{
+				duChain.get(leftValue).add(termInst);
+			}
+			if (duChain.containsKey(rightValue))
+			{
+				duChain.get(rightValue).add(termInst);
+			}
+			
 //			exprNode.setLeft(term);
 //			exprNode.setRight(rightNode);
 			return termNode;
@@ -374,6 +387,7 @@ public class PLParser
 	private PLIRBasicBlock parse_expression(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRBasicBlock term = parse_term(in);
+		
 		if (toksym == PLToken.plusToken || toksym == PLToken.minusToken)
 		{
 			int operator = toksym;
@@ -393,15 +407,20 @@ public class PLParser
 			debug("forcing generation of: " + exprInst);
 			exprNode.addInstruction(exprInst);
 			
+			// Update DU chain
+			if (duChain.containsKey(leftValue))
+			{
+				duChain.get(leftValue).add(exprInst);
+			}
+			if (duChain.containsKey(rightValue))
+			{
+				duChain.get(rightValue).add(exprInst);
+			}
+			
 			return exprNode;
 		}
 		else
 		{
-//			System.err.println(term.instructions);
-//			for (PLIRInstruction inst : term.instructions)
-//			{
-//				inst.forceGenerate();
-//			}
 			return term;
 		}
 	}
@@ -473,10 +492,6 @@ public class PLParser
 				if (toksym == PLToken.becomesToken)
 				{
 					advance(in);
-					if (sym.equals("a"))
-					{
-						int x = 0;
-					}
 					result = parse_expression(in);
 					
 					// The last instruction added to the BB is the one that holds the value for this assignment
@@ -486,6 +501,9 @@ public class PLParser
 					if (deferredPhiIdents.contains(varName) == false)
 					{
 						scope.updateSymbol(varName, inst); // (SSA ID) := expr
+						
+						// Add an entry to the DU chain
+						duChain.put(inst, new ArrayList<PLIRInstruction>());
 					}
 					else // else, force the current instruction to be generated so it can be used in a phi later
 					{
@@ -552,9 +570,16 @@ public class PLParser
 					}
 					else if (toksym != PLToken.commaToken && funcName.equals("OutputNum"))
 					{
-						PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.WRITE, result.getLastInst());
+						PLIRInstruction exprInst = result.getLastInst();
+						PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.WRITE, exprInst);
 						result = new PLIRBasicBlock();
 						result.addInstruction(inst);
+						
+						// Update DU chain
+						if (duChain.containsKey(exprInst))
+						{
+							duChain.get(exprInst).add(inst);
+						}
 					}
 					else
 					{
@@ -578,6 +603,15 @@ public class PLParser
 						result = new PLIRBasicBlock();
 						result.hasReturn = funcFlagMap.get(funcName); // special case... this is a machine instruction, not a user-defined function
 						result.addInstruction(callInst);
+						
+						// Update DU chain
+						for (PLIRInstruction operand : operands)
+						{
+							if (duChain.containsKey(operand))
+							{
+								duChain.get(operand).add(callInst);
+							}
+						}
 					}
 				}
 				else if (toksym == PLToken.closeParenToken && funcName.equals("InputNum"))
@@ -597,7 +631,7 @@ public class PLParser
 				// Eat the last token and proceed
 				advance(in);
 			}
-			else if (paramMap.get(funcName) == 0)
+			else if (paramMap.get(funcName) == 0) // a function with parameters, just write out the call
 			{
 //				advance(in);
 				ArrayList<PLIRInstruction> emptyList = new ArrayList<PLIRInstruction>();
@@ -1050,6 +1084,10 @@ public class PLParser
 			
 			// Merge the block results here
 			result = PLIRBasicBlock.merge(result, nextBlock);
+//			if (nextBlock.exitNode != null)
+//			{
+//				result = nextBlock.exitNode;
+//			}
 		}
 		
 		// Fix the spot of the basic block (since we're leaving a statement sequence) and call it a day

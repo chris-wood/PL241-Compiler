@@ -1,4 +1,16 @@
-// asd - simple while with odd phi that conflicts with CASE - problem: where is the phi instruction (13) going? to which BB?
+// DU chain test
+main 
+var a, b, c, d, e, f, g;
+{
+  let a <- call InputNum();
+  let b <- a + 1;
+  let c <- b + 1;
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c)
+}.
+
+// nested while/if statements
 main 
 var a, b, c, d, e, f, g;
 {
@@ -12,13 +24,37 @@ var a, b, c, d, e, f, g;
   while a > 0 do
     let a <- a - 1;
     if a == 1 then
-    let a <- 0;
-    call OutputNum(100)
+        let a <- 0;
+        call OutputNum(100)
     else
-    call OutputNum(b)
+        call OutputNum(b);
+        while g == 0 do
+            let g <- g - 1;
+            call OutputNum(g)
+        od;
+        call OutputNum(g)
     fi;
     call OutputNum(a)
   od;
+  call OutputNum(a);
+  call OutputNum(g)
+}.
+
+// asd - Test case for graphs
+main 
+var a, b, c, d, e, f, g;
+{
+  let a <- call InputNum();
+  let b <- a;
+  let c <- b;
+  let d <- b + c;
+  let e <- a + b;
+  let f <- a + c;
+  let g <- 10;
+  if a == 0 then
+    let a <- a - 1;
+    call OutputNum(a)
+  fi;
   call OutputNum(a);
   call OutputNum(g)
 }.
