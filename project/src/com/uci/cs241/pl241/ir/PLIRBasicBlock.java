@@ -3,6 +3,8 @@ package com.uci.cs241.pl241.ir;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
+
 public class PLIRBasicBlock
 {
 	public ArrayList<PLIRInstruction> instructions;
@@ -122,13 +124,24 @@ public class PLIRBasicBlock
 	{
 		for (PLIRInstruction bInst : instructions)
 		{
+			boolean replaced = false;
+			if (bInst.opcode == PLIRInstructionType.PHI)
+			{
+				int x = 0;
+			}
 			if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
 			{
 				bInst.replaceLeftOperand(phi);
+				replaced = true;
 			}
 			if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
 			{
 				bInst.replaceRightOperand(phi);
+				replaced = true;
+			}
+			if (replaced && bInst.opcode == PLIRInstructionType.PHI)
+			{
+				break;
 			}
 		}
 		

@@ -1,4 +1,4 @@
-// asd - simple while with odd phi that conflicts with CASE
+// asd - simple while with odd phi that conflicts with CASE - problem: where is the phi instruction (13) going? to which BB?
 main 
 var a, b, c, d, e, f, g;
 {
