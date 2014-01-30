@@ -112,10 +112,35 @@ public class PLIRBasicBlock
 		{
 			result.fixSpot();
 			result.dominatorSet.add(nextBlock.exitNode);
-			result = nextBlock.exitNode;
+//			result = nextBlock.exitNode;
 		}
 		
 		return result;
+	}
+	
+	public void propogatePhi(String var, PLIRInstruction phi)
+	{
+		for (PLIRInstruction bInst : instructions)
+		{
+			if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
+			{
+				bInst.replaceLeftOperand(phi);
+			}
+			if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
+			{
+				bInst.replaceRightOperand(phi);
+			}
+		}
+		
+		for (PLIRBasicBlock child : children)
+		{
+			child.propogatePhi(var, phi);
+		}
+		
+		if (this.exitNode != null)
+		{
+			exitNode.propogatePhi(var, phi);
+		}
 	}
 	
 	public void fixSpot()
@@ -160,7 +185,7 @@ public class PLIRBasicBlock
 	
 	public boolean insertInstruction(PLIRInstruction inst, int index)
 	{
-		if (0 <= index && index < instructions.size())
+		if (0 <= index && index <= instructions.size())
 		{
 			instructions.add(index, inst);
 			return true;

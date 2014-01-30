@@ -450,6 +450,7 @@ public class PLIRInstruction
 			inst.op2type = OperandType.INST;
 		}
 		
+		inst.isRemoved = false;
 		inst.forceGenerate(loc);
 		
 		return inst;

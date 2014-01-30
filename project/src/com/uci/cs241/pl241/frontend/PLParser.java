@@ -24,6 +24,9 @@ public class PLParser
 	// BB depth (to uniquify scopes)
 	private int blockDepth = 0;
 	
+	// Useful things to help teh parser
+	private boolean globalVariableParsing;
+	
 	// Other necessary things
 	private PLSymbolTable scope;
 	
@@ -85,11 +88,13 @@ public class PLParser
 			scope = new PLSymbolTable();
 			scope.pushNewScope("main");
 			
+			// Parse global variables
+			globalVariableParsing = true;
 			while (toksym == PLToken.varToken || toksym == PLToken.arrToken)
 			{
-				// TODO: merge
-				result = this.parse_varDecl(in);
+				result = parse_varDecl(in); 
 			}
+			globalVariableParsing = false;
 			
 			while (toksym == PLToken.funcToken || toksym == PLToken.procToken)
 			{
@@ -200,6 +205,25 @@ public class PLParser
 				
 				return block;
 			}
+		}
+		else if (globalVariableParsing)
+		{
+			// Initialize the variable to 0
+			PLIRInstruction inst = new PLIRInstruction();
+			inst.opcode = PLIRInstructionType.ADD;
+			inst.i1 = 0;
+			inst.i2 = 0;
+			inst.kind = ResultKind.CONST;
+			
+			// Eat the symbol, create the block with the single instruction, add the ident to the list
+			// of used identifiers, and return
+			advance(in);
+			
+			block = new PLIRBasicBlock();
+			block.instructions.add(inst);
+			block.addUsedValue(symName, inst);
+			
+			return block;
 		}
 		else
 		{
@@ -366,6 +390,7 @@ public class PLParser
 			
 			PLIRInstruction exprInst = new PLIRInstruction(opcode, leftValue, rightValue);
 			exprInst.forceGenerate();
+			debug("forcing generation of: " + exprInst);
 			exprNode.addInstruction(exprInst);
 			
 			return exprNode;
@@ -448,6 +473,10 @@ public class PLParser
 				if (toksym == PLToken.becomesToken)
 				{
 					advance(in);
+					if (sym.equals("a"))
+					{
+						int x = 0;
+					}
 					result = parse_expression(in);
 					
 					// The last instruction added to the BB is the one that holds the value for this assignment
@@ -461,7 +490,7 @@ public class PLParser
 					else // else, force the current instruction to be generated so it can be used in a phi later
 					{
 						inst.kind = ResultKind.VAR;
-						inst.generated = false;
+//						inst.generated = false;
 						inst.forceGenerate();
 					}
 					result.addModifiedValue(varName, inst);
@@ -678,6 +707,8 @@ public class PLParser
 					
 					// The current value in scope needs to be updated now with the result of the phi
 //					scope.updateSymbol(var, phi);
+					entry.modifiedIdents.put(var, phi);
+					joinNode.modifiedIdents.put(var, phi);
 				}
 				
 				// Jump back from the if statement scope so we can update the variables with the appropriate phi result
@@ -686,6 +717,11 @@ public class PLParser
 				for (int i = 0; i < phisToAdd.size(); i++)
 				{
 					scope.updateSymbol(sharedModifiers.get(i), phisToAdd.get(i));
+					
+					// Add to this block's list of modified identifiers
+					// Rationale: since we added a phi, the value potentially changes (is modified), 
+					// 	so the latest value in the current scope needs to be modified
+					entry.modifiedIdents.put(sharedModifiers.get(i), phisToAdd.get(i));
 				}
 				
 				// Check for modifications in the else block (but not in the if)
@@ -720,6 +756,7 @@ public class PLParser
 					// Rationale: since we added a phi, the value potentially changes (is modified), 
 					// 	so the latest value in the current scope needs to be modified
 					entry.modifiedIdents.put(var, phi);
+					joinNode.modifiedIdents.put(var, phi);
 				}
 			}
 			else
@@ -749,7 +786,6 @@ public class PLParser
 				
 				offset++;
 				PLIRInstruction leftInst = thenBlock.modifiedIdents.get(var);
-				debug(leftInst.toString());
 				PLIRInstruction followInst = scope.getCurrentValue(var);
 				PLIRInstruction phi = PLIRInstruction.create_phi(leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
 				joinNode.insertInstruction(phi, 0);
@@ -761,7 +797,10 @@ public class PLParser
 				// Rationale: since we added a phi, the value potentially changes (is modified), 
 				// 	so the latest value in the current scope needs to be modified
 				entry.modifiedIdents.put(var, phi);
+				joinNode.modifiedIdents.put(var, phi);
 			}
+			
+			PLStaticSingleAssignment.displayInstructions();
 			
 			// After the phis have been inserted at the appropriate positions, fixup the entry instructions
 			Fixup(x.fixupLocation, -offset - 1);
@@ -797,6 +836,8 @@ public class PLParser
 			advance(in);
 			int loopLocation = PLStaticSingleAssignment.globalSSAIndex;
 			
+			scope.pushNewScope("while" + (blockDepth++));
+			
 			// Parse the condition (relation) for the loop
 			PLIRBasicBlock entry = parse_relation(in);
 			PLIRInstruction x = entry.instructions.get(entry.instructions.size() - 1);
@@ -830,65 +871,81 @@ public class PLParser
 			entry.joinNode = entry; // the entry is itself the join node for a while loop (see paper)
 			entry.exitNode = exit; // exit is the fall through branch, second child (see paper)
 			
+			scope.popScope();
+			blockDepth--;
+			
 			////////////////////////////////////////////
 			// We've passed through the body and know what variables are updated, now we need to insert phis
 			// Phis are inserted when variables in the relation are modified in the loop body
 			// Left phi value is entry instruction, right phi value is instruction computed in loop body
 			
 			int offset = 0;
-			ArrayList<String> sharedModifiers = new ArrayList<String>();
+			ArrayList<String> modded = new ArrayList<String>();
 			ArrayList<String> filteredModifiers = new ArrayList<String>();
 			for (String i1 : body.modifiedIdents.keySet())
 			{
-				sharedModifiers.add(i1);
+				modded.add(i1);
 			}
 			debug("body modified size = " + body.modifiedIdents.size());
-			debug("entry used size = " + entry.usedIdents.size());
-			for (String i2 : entry.usedIdents.keySet())
-			{
-				for (String i1 : sharedModifiers)
-				{
-					debug("comparing " + i1 + " and " + i2);
-					if (i1.equals(i2) && filteredModifiers.contains(i2) == false)
-					{
-						filteredModifiers.add(i2);
-					}
-				}
-			}
-			debug("(while loop) Inserting " + filteredModifiers.size() + " phis");
-			for (String var : filteredModifiers)
+//			debug("entry used size = " + entry.usedIdents.size());
+//			for (String i2 : entry.usedIdents.keySet())
+//			{
+//				for (String i1 : sharedModifiers)
+//				{
+//					debug("comparing " + i1 + " and " + i2);
+//					if (i1.equals(i2) && filteredModifiers.contains(i2) == false)
+//					{
+//						filteredModifiers.add(i2);
+//					}
+//				}
+//			}
+			debug("(while loop) Inserting " + modded.size() + " phis");
+			for (String var : modded)
 			{
 				offset++;
 				PLIRInstruction bodyInst = body.modifiedIdents.get(var);
 				debug(bodyInst.toString());
-				PLIRInstruction entryInst = entry.usedIdents.get(var);
-				debug(entryInst.toString());
+				PLIRInstruction preInst = scope.getCurrentValue(var);
 				
 				// Inject the phi at the appropriate spot in the join node...
-				PLIRInstruction phi = PLIRInstruction.create_phi(entryInst, bodyInst, loopLocation);
+				PLIRInstruction phi = PLIRInstruction.create_phi(preInst, bodyInst, loopLocation);
 				entry.joinNode.insertInstruction(phi, 0); 
 				
 				// The current value in scope needs to be updated now with the result of the phi
 				scope.updateSymbol(var, phi);
 				
+				// Add to this block's list of modified identifiers
+				// Rationale: since we added a phi, the value potentially changes (is modified), 
+				// 	so the latest value in the current scope needs to be modified
+				entry.modifiedIdents.put(var, phi);
+				
 				// Now loop through the entry and fix instructions as needed
 				// Those fixed are replaced with the result of this phi if they have used or modified the sym...
-				// TODO: this can possibly be recursive...?
+				// TODO: this can possibly be recursive...? 
+				// no, phis at lower layer will replace themselves automatically...
 				debug("patching up phis: " + cmpInst.toString());
 				debug(phi.toString());
 				debug("checking left operand");
+				debug(cmpInst.op1.toString());
 				if (cmpInst.op1 != null && cmpInst.op1.origIdent.equals(var))
 				{
 					cmpInst.replaceLeftOperand(phi);
 				}
 				debug("checking right operand");
+				debug(cmpInst.op2.toString());
 				if (cmpInst.op2 != null && cmpInst.op2.origIdent.equals(var))
 				{
 					cmpInst.replaceRightOperand(phi);
 				}
 				
+				debug("propagating phi throughout the body via recursive descent of the BB graph");
+				body.propogatePhi(var, phi);
+				
+				/*
+				
 				// Now loop through the body and fix instructions as needed
-				// TODO: this can possibly be recursive...
+				// TODO: this can possibly be recursive...?
+				// no, phis at lower layer will replace themselves automatically...
 				debug("past patch");
 				for (PLIRInstruction bInst : body.instructions)
 				{
@@ -902,6 +959,8 @@ public class PLParser
 						bInst.replaceRightOperand(phi);
 					}
 				}
+				
+				*/
 			}
 			
 			////////////////////////////////////////////
