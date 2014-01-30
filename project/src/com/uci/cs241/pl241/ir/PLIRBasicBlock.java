@@ -107,6 +107,13 @@ public class PLIRBasicBlock
 					result.dominatorSet.add(block);
 				}
 			}
+			if (nextBlock.exitNode != null)
+			{
+				for (PLIRInstruction inst : nextBlock.exitNode.instructions)
+				{
+					result.addInstruction(inst);
+				}
+			}
 		}
 		
 		// If the node has an exit, continue on that node (only really changes if statements)
@@ -124,11 +131,12 @@ public class PLIRBasicBlock
 	{
 		for (PLIRInstruction bInst : instructions)
 		{
+			System.err.println(bInst.toString());
 			boolean replaced = false;
-			if (bInst.opcode == PLIRInstructionType.PHI)
-			{
-				int x = 0;
-			}
+//			if (bInst.opcode == PLIRInstructionType.PHI)
+//			{
+//				int x = 0;
+//			}
 			if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
 			{
 				bInst.replaceLeftOperand(phi);

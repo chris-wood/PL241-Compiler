@@ -668,11 +668,16 @@ public class PLParser
 			if (toksym == PLToken.elseToken)
 			{
 				PLIRInstruction uncond = UnCondBraFwd(follow);
+				thenBlock.addInstruction(uncond);
 				advance(in);
+				
+				// Update scope
+//				scope.popScope();
+//				blockDepth--;
+//				scope.pushNewScope("else" + (blockDepth++));
 				
 				// Parse the else block
 				elseBlock = parse_statSequence(in);
-				thenBlock.addInstruction(uncond);
 				entry.children.add(elseBlock);
 				elseBlock.children.add(joinNode);
 				elseBlock.fixSpot();
@@ -710,6 +715,9 @@ public class PLParser
 					entry.modifiedIdents.put(var, phi);
 					joinNode.modifiedIdents.put(var, phi);
 				}
+				
+//				scope.popScope();
+//				blockDepth--;
 				
 				// Jump back from the if statement scope so we can update the variables with the appropriate phi result
 				scope.popScope();

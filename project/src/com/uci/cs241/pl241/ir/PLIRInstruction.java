@@ -43,6 +43,14 @@ public class PLIRInstruction
 		isRemoved = true;
 		elimReason = reason;
 		refInst = ref;
+		PLIRInstruction prev = ref;
+		PLIRInstruction base = ref.refInst;
+		while (base != null)
+		{
+			prev = base;
+			base = base.refInst;
+		}
+		this.origIdent = prev.origIdent;
 	}
 	
 	public enum PLIRInstructionType 
