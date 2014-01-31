@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.uci.cs241.pl241.ir.PLIRInstruction;
+import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
 
 public class PLSymbolTable
 {
@@ -14,6 +15,8 @@ public class PLSymbolTable
 	public HashMap<String, ArrayList<PLIRInstruction>> prevSymTable;
 	public String name;
 	
+	public HashMap<String, HashMap<PLIRInstructionType, ArrayList<PLIRInstruction>>> instTypeMap = new HashMap<String, HashMap<PLIRInstructionType, ArrayList<PLIRInstruction>>>();
+	
 	public PLSymbolTable()
 	{
 		funScopeTable = new HashMap<String, ArrayList<String>>();
@@ -21,6 +24,50 @@ public class PLSymbolTable
 		symTable = new HashMap<String, HashMap<String, PLIRInstruction>>();
 		prevSymTable = new HashMap<String, ArrayList<PLIRInstruction>>();
 		currentScope = new ArrayList<String>();
+	}
+	
+	public ArrayList<PLIRInstruction> getDominatedInstructions(PLIRInstructionType type)
+	{
+		switch (type)
+		{
+		case NEG:
+		case ADD:
+		case SUB:
+		case MUL:
+		case DIV:
+		case CMP:
+			String scope = getCurrentScope();
+			if (instTypeMap.containsKey(scope) == false)
+			{
+				instTypeMap.put(scope, new HashMap<PLIRInstructionType, ArrayList<PLIRInstruction>>());
+				instTypeMap.get(scope).put(type, new ArrayList<PLIRInstruction>());
+			}
+			
+			return instTypeMap.get(scope).get(type);
+		default:
+			return null;
+		}
+	}
+	
+	public void addDominatedInstruction(PLIRInstruction type)
+	{
+		switch (type.opcode)
+		{
+		case NEG:
+		case ADD:
+		case SUB:
+		case MUL:
+		case DIV:
+		case CMP:
+			String scope = getCurrentScope();
+			if (instTypeMap.containsKey(scope) == false)
+			{
+				instTypeMap.put(scope, new HashMap<PLIRInstructionType, ArrayList<PLIRInstruction>>());
+				instTypeMap.get(scope).put(type.opcode, new ArrayList<PLIRInstruction>());
+			}
+			instTypeMap.get(scope).get(type.opcode).add(type);
+			break;
+		}
 	}
 	
 	public void pushNewScope(String scope)

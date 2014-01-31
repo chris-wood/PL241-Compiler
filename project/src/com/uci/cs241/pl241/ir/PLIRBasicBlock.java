@@ -87,18 +87,22 @@ public class PLIRBasicBlock
 		{
 			result.addUsedValue(sym, nextBlock.usedIdents.get(sym));
 		}
-		for (PLIRInstruction inst : nextBlock.instructions)
-		{
-			result.instructions.add(inst);
-			result.dominatedInstructions.add(inst);
-		}
+//		for (PLIRInstruction inst : nextBlock.instructions)
+//		{
+//			result.instructions.add(inst);
+//			result.dominatedInstructions.add(inst);
+//		}
+		
+		// Add to parent
+		nextBlock.parents.add(result);
 		
 		// Merge the contents of the blocks
 		if (nextBlock.isEntry)
 		{
-			for (PLIRInstruction inst : nextBlock.instructions)
+//			for (PLIRInstruction inst : nextBlock.instructions)
+			for (int i = 0; i < nextBlock.instructions.size(); i++)
 			{
-				result.addInstruction(inst);
+				result.addInstruction(nextBlock.instructions.get(i));
 			}
 			if (nextBlock.children.size() > 0)
 			{
@@ -117,7 +121,7 @@ public class PLIRBasicBlock
 			{
 				for (PLIRInstruction inst : nextBlock.exitNode.instructions)
 				{
-					result.addInstruction(inst);
+//					result.addInstruction(inst);
 //					result.dominatedInstructions.add(inst);
 				}
 			}

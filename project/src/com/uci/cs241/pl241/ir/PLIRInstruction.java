@@ -3,6 +3,7 @@ package com.uci.cs241.pl241.ir;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.uci.cs241.pl241.frontend.PLSymbolTable;
 import com.uci.cs241.pl241.frontend.PLToken;
 
 public class PLIRInstruction
@@ -96,20 +97,20 @@ public class PLIRInstruction
 		CONST, INST, NULL, ADDRESS
 	};
 	
-	public PLIRInstruction()
+	public PLIRInstruction(PLSymbolTable table)
 	{
 		// blank slate to be filled in by the parser or static factory methods in this class	
 	}
 	
-	public PLIRInstruction(PLIRInstructionType opcode)
+	public PLIRInstruction(PLSymbolTable table, PLIRInstructionType opcode)
 	{
 		this.opcode = opcode;
 		op1 = op2 = null;
 		op1type = op2type = OperandType.NULL;
-		forceGenerate(); // always generate right away...
+		forceGenerate(table); // always generate right away...
 	}
 	
-	public PLIRInstruction(PLIRInstructionType opcode, PLIRInstruction singleOperand)
+	public PLIRInstruction(PLSymbolTable table, PLIRInstructionType opcode, PLIRInstruction singleOperand)
 	{
 		this.opcode = opcode;
 		op1 = singleOperand;
@@ -131,10 +132,10 @@ public class PLIRInstruction
 //		}
 		
 //		id = PLStaticSingleAssignment.addInstruction(this); 
-		forceGenerate(); // always generate right away...
+		forceGenerate(table); // always generate right away...
 	}
 	
-	public PLIRInstruction(PLIRInstructionType opcode, PLIRInstruction left, PLIRInstruction right)
+	public PLIRInstruction(PLSymbolTable table, PLIRInstructionType opcode, PLIRInstruction left, PLIRInstruction right)
 	{
 		this.opcode = opcode;
 		op1 = left;
@@ -182,22 +183,22 @@ public class PLIRInstruction
 		}
 		else
 		{
-			left.forceGenerate();
-			right.forceGenerate();
+			left.forceGenerate(table);
+			right.forceGenerate(table);
 		}
 		
 		if (opcode == PLIRInstructionType.CMP)
 		{
 			kind = ResultKind.COND;
-			forceGenerate();
+			forceGenerate(table);
 		}
 		if (kind == ResultKind.CONST)
 		{
-			forceGenerate();
+			forceGenerate(table);
 		}
 	}
 	
-	public PLIRInstruction(PLIRInstructionType opcode, PLIRInstruction left, OperandType leftType, PLIRInstruction right, OperandType rightType)
+	public PLIRInstruction(PLSymbolTable table, PLIRInstructionType opcode, PLIRInstruction left, OperandType leftType, PLIRInstruction right, OperandType rightType)
 	{
 		this.opcode = opcode;
 		op1 = left;
@@ -244,23 +245,23 @@ public class PLIRInstruction
 		}
 		else
 		{
-			left.forceGenerate();
-			right.forceGenerate();
+			left.forceGenerate(table);
+			right.forceGenerate(table);
 		}
 		
 		if (opcode == PLIRInstructionType.CMP)
 		{
 			kind = ResultKind.COND;
-			forceGenerate();
+			forceGenerate(table);
 		}
 		
 		if (kind == ResultKind.CONST)
 		{
-			forceGenerate();
+			forceGenerate(table);
 		}
 	}
 	
-	public PLIRInstruction(PLIRInstructionType opcode, PLIRInstruction left, OperandType leftType, int right)
+	public PLIRInstruction(PLSymbolTable table, PLIRInstructionType opcode, PLIRInstruction left, OperandType leftType, int right)
 	{
 		this.opcode = opcode;
 		op1 = left;
@@ -302,22 +303,22 @@ public class PLIRInstruction
 		}
 		else
 		{
-			left.forceGenerate();
+			left.forceGenerate(table);
 		}
 		
 		if (opcode == PLIRInstructionType.CMP)
 		{
 			kind = ResultKind.COND;
-			forceGenerate();
+			forceGenerate(table);
 		}
 		
 		if (kind == ResultKind.CONST)
 		{
-			forceGenerate();
+			forceGenerate(table);
 		}
 	}
 	
-	public PLIRInstruction(PLIRInstructionType opcode, int left, int right)
+	public PLIRInstruction(PLSymbolTable table, PLIRInstructionType opcode, int left, int right)
 	{
 		this.opcode = opcode;
 		op1 = op2 = null;
@@ -347,11 +348,11 @@ public class PLIRInstruction
 
 		if (kind != ResultKind.CONST)
 		{
-			forceGenerate();
+			forceGenerate(table);
 		}
 	}
 	
-	public void forceGenerate(int loc)
+	public void forceGenerate(PLSymbolTable table, int loc)
 	{
 		if (kind == ResultKind.CONST)
 		{
@@ -361,11 +362,11 @@ public class PLIRInstruction
 		{
 			kind = ResultKind.VAR;
 			generated = true;
-			id = PLStaticSingleAssignment.injectInstruction(this, loc);
+			id = PLStaticSingleAssignment.injectInstruction(this, table, loc);
 		}
 	}
 	
-	public void forceGenerate()
+	public void forceGenerate(PLSymbolTable table)
 	{
 		if (kind == ResultKind.CONST)
 		{
@@ -377,7 +378,7 @@ public class PLIRInstruction
 			kind = ResultKind.VAR;
 			generated = true;
 			overrideGenerate = false;
-			id = PLStaticSingleAssignment.addInstruction(this);
+			id = PLStaticSingleAssignment.addInstruction(table, this);
 		}
 	}
 	
@@ -393,9 +394,9 @@ public class PLIRInstruction
 		op2type = OperandType.INST;
 	}
 	
-	public static PLIRInstruction create_cmp(PLIRInstruction left, PLIRInstruction right)
+	public static PLIRInstruction create_cmp(PLSymbolTable table, PLIRInstruction left, PLIRInstruction right)
 	{
-		PLIRInstruction inst = new PLIRInstruction();
+		PLIRInstruction inst = new PLIRInstruction(table);
 		inst.opcode = PLIRInstructionType.CMP;
 		inst.kind = ResultKind.VAR;
 		
@@ -423,14 +424,14 @@ public class PLIRInstruction
 			inst.op2type = OperandType.INST;
 		}
 		
-		inst.forceGenerate();
+		inst.forceGenerate(table);
 		
 		return inst;
 	}
 	
-	public static PLIRInstruction create_phi(PLIRInstruction b1, PLIRInstruction b2, int loc)
+	public static PLIRInstruction create_phi(PLSymbolTable table, PLIRInstruction b1, PLIRInstruction b2, int loc)
 	{
-		PLIRInstruction inst = new PLIRInstruction();
+		PLIRInstruction inst = new PLIRInstruction(table);
 		inst.opcode = PLIRInstructionType.PHI;
 		inst.kind = ResultKind.VAR;
 		
@@ -459,14 +460,14 @@ public class PLIRInstruction
 		}
 		
 		inst.isRemoved = false;
-		inst.forceGenerate(loc);
+		inst.forceGenerate(table, loc);
 		
 		return inst;
 	}
 	
-	public static PLIRInstruction create_branch(PLIRInstruction cmp, int token)
+	public static PLIRInstruction create_branch(PLSymbolTable table, PLIRInstruction cmp, int token)
 	{	
-		PLIRInstruction inst = new PLIRInstruction();
+		PLIRInstruction inst = new PLIRInstruction(table);
 		inst.op2 = null;
 		inst.op2type = OperandType.CONST; // op2 will be an offset
 		
@@ -498,26 +499,26 @@ public class PLIRInstruction
 		}
 		
 //		inst.id = PLStaticSingleAssignment.addInstruction(inst);
-		inst.forceGenerate();
+		inst.forceGenerate(table);
 		return inst;
 	}
 	
-	public static PLIRInstruction create_BEQ(int loc)
+	public static PLIRInstruction create_BEQ(PLSymbolTable table, int loc)
 	{	
-		PLIRInstruction inst = new PLIRInstruction();
+		PLIRInstruction inst = new PLIRInstruction(table);
 		inst.i2 = loc;
 //		inst.i1 = cmp.fixupLocation;
 		inst.op1 = inst.op2 = null;
 		inst.op1type = OperandType.CONST; // op1 will be 0
 		inst.op2type = OperandType.CONST; // op2 will be an offset
 		inst.opcode = PLIRInstructionType.BEQ;
-		inst.forceGenerate();
+		inst.forceGenerate(table);
 		return inst;
 	}
 	
-	public static PLIRInstruction create_call(String funcName, boolean isFunc, ArrayList<PLIRInstruction> ops)
+	public static PLIRInstruction create_call(PLSymbolTable table, String funcName, boolean isFunc, ArrayList<PLIRInstruction> ops)
 	{
-		PLIRInstruction newInst = new PLIRInstruction(); 
+		PLIRInstruction newInst = new PLIRInstruction(table); 
 		newInst.funcName = funcName;
 		newInst.callOperands = new ArrayList<PLIRInstruction>();
 		for (PLIRInstruction inst : ops)
@@ -535,7 +536,7 @@ public class PLIRInstruction
 		}
 		
 		// Generate the special instruction now
-		newInst.forceGenerate();
+		newInst.forceGenerate(table);
 		
 		return newInst;
 	}

@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.uci.cs241.pl241.frontend.PLSymbolTable;
 import com.uci.cs241.pl241.ir.PLIRInstruction.EliminationReason;
 import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
 
@@ -12,28 +13,21 @@ public class PLStaticSingleAssignment
 {
 	public static int globalSSAIndex = 0;
 	public static ArrayList<PLIRInstruction> instructions = new ArrayList<PLIRInstruction>();
-	
-	public static HashMap<PLIRInstructionType, ArrayList<PLIRInstruction>> instTypeMap = new HashMap<PLIRInstructionType, ArrayList<PLIRInstruction>>();
-	
+		
 	public static void init()
 	{
-		instTypeMap.put(PLIRInstructionType.NEG, new ArrayList<PLIRInstruction>());
-		instTypeMap.put(PLIRInstructionType.ADD, new ArrayList<PLIRInstruction>());
-		instTypeMap.put(PLIRInstructionType.SUB, new ArrayList<PLIRInstruction>());
-		instTypeMap.put(PLIRInstructionType.MUL, new ArrayList<PLIRInstruction>());
-		instTypeMap.put(PLIRInstructionType.DIV, new ArrayList<PLIRInstruction>());
-		instTypeMap.put(PLIRInstructionType.CMP, new ArrayList<PLIRInstruction>());
 	}
 	
-	public static int addInstruction(PLIRInstruction inst)
+	public static int addInstruction(PLSymbolTable table, PLIRInstruction inst)
 	{
-		// Check for common subexpression first
-		if (instTypeMap.containsKey(inst.opcode))
+		// Check for common subexpressions first
+		ArrayList<PLIRInstruction> dominated = table.getDominatedInstructions(inst.opcode);
+		if (dominated != null)
 		{
 			boolean common = false;
-			for (int i = 0; i < instTypeMap.get(inst.opcode).size() && !common; i++)
+			for (int i = 0; i < dominated.size() && !common; i++)
 			{
-				PLIRInstruction other = instTypeMap.get(inst.opcode).get(i);
+				PLIRInstruction other = dominated.get(i);
 				if (other.equals(inst))
 				{
 					inst.removeInstruction(EliminationReason.CSE, other);
@@ -42,7 +36,8 @@ public class PLStaticSingleAssignment
 			}
 			if (!common)
 			{
-				instTypeMap.get(inst.opcode).add(inst);	
+//				table.instTypeMap.get(inst.opcode).add(inst);
+				table.addDominatedInstruction(inst);
 			}
 		}
 		
@@ -52,7 +47,7 @@ public class PLStaticSingleAssignment
 		return globalSSAIndex;
 	}
 	
-	public static int injectInstruction(PLIRInstruction inst, int loc)
+	public static int injectInstruction(PLIRInstruction inst, PLSymbolTable table, int loc)
 	{
 		for (int i = loc; i < instructions.size(); i++)
 		{

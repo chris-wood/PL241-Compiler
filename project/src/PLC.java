@@ -55,7 +55,14 @@ public class PLC
 		//// RUN THE PARSER
 		scanner = new PLScanner(args[0]);
 		PLParser parser = new PLParser();
-		PLIRBasicBlock root = parser.parse(scanner);
+		PLIRBasicBlock exit = parser.parse(scanner);
+		
+		// Find the root by walking up the tree in any direction
+		PLIRBasicBlock root = exit;
+		while (root.parents.isEmpty() == false)
+		{
+			root = root.parents.get(0);
+		}
 		
 		// Display the instructions
 		System.out.println("\nBegin Instructions\n");

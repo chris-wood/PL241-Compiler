@@ -1,3 +1,25 @@
+// Nested dominator/cfg stuff
+main 
+var a, b, c, d, e, f, g;
+{
+  let a <- call InputNum();
+  let b <- call InputNum();
+  let c <- b + 1;
+  while a < 10 do
+    let a <- a - 1;
+    if b == 0 then
+      call OutputNum(1)
+    else
+      call OutputNum(2)
+    fi
+  od;
+  call OutputNum(100);
+  call OutputNewLine();
+  if b == c then
+    call OutputNum(a)
+  fi
+}.
+
 // DU chain test
 main 
 var a, b, c, d, e, f, g;
@@ -5,6 +27,7 @@ var a, b, c, d, e, f, g;
   let a <- call InputNum();
   let b <- a + 1;
   let c <- b + 1;
+  let d <- a + 1;
   call OutputNum(a);
   call OutputNum(b);
   call OutputNum(c)

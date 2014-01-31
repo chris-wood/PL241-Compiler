@@ -19,9 +19,10 @@ public class GraphvizRender
 	{
 		StringBuilder builder = new StringBuilder();
 		
-		builder.append("\n" + prefix + block.id + "[shape = box, label = \"BB(" + block.id + ")\\n\" + ");
+		builder.append("\n" + prefix + block.id + "[shape = box, label = \"BB(" + block.id + ")\\n\"");
 		if (block.instructions.size() > 0)
 		{
+			builder.append(" + ");
 			ArrayList<String> instSeq = block.instSequence();
 			for (int i = 0; i < instSeq.size() - 1; i++)
 			{

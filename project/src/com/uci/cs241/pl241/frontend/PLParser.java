@@ -131,7 +131,7 @@ public class PLParser
 					advance(in);
 					if (toksym == PLToken.periodToken)
 					{
-						PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.END);
+						PLIRInstruction inst = new PLIRInstruction(scope, PLIRInstructionType.END);
 					}
 					else
 					{
@@ -167,7 +167,7 @@ public class PLParser
 			switch (identTypeMap.get(sym))
 			{
 			case ARRAY:
-				PLIRInstruction instArray = new PLIRInstruction();
+				PLIRInstruction instArray = new PLIRInstruction(scope);
 				
 				// Memorize the ident we saw here
 				if (instArray != null)
@@ -212,7 +212,7 @@ public class PLParser
 		else if (globalVariableParsing)
 		{
 			// Initialize the variable to 0
-			PLIRInstruction inst = new PLIRInstruction();
+			PLIRInstruction inst = new PLIRInstruction(scope);
 			inst.opcode = PLIRInstructionType.ADD;
 			inst.i1 = 0;
 			inst.i2 = 0;
@@ -258,7 +258,7 @@ public class PLParser
 	{	
 		// Result: add 0 tokenValue
 		// this just puts an immediate value in a temporary variable (no moves!)
-		PLIRInstruction li = new PLIRInstruction(PLIRInstructionType.ADD, 0, Integer.parseInt(sym)); 
+		PLIRInstruction li = new PLIRInstruction(scope, PLIRInstructionType.ADD, 0, Integer.parseInt(sym)); 
 		advance(in);
 		PLIRBasicBlock block = new PLIRBasicBlock();
 		block.instructions.add(li);
@@ -360,8 +360,8 @@ public class PLParser
 			PLIRInstruction rightValue = rightNode.instructions.get(rightNode.instructions.size() - 1);
 			PLIRInstructionType opcode = operator == PLToken.timesToken ? PLIRInstructionType.MUL : PLIRInstructionType.DIV;
 			
-			PLIRInstruction termInst = new PLIRInstruction(opcode, leftValue, rightValue);
-			termInst.forceGenerate();
+			PLIRInstruction termInst = new PLIRInstruction(scope, opcode, leftValue, rightValue);
+			termInst.forceGenerate(scope);
 			termNode.addInstruction(termInst);
 			
 			// Update DU chain
@@ -402,8 +402,8 @@ public class PLParser
 			PLIRInstruction rightValue = rightNode.instructions.get(rightNode.instructions.size() - 1);
 			PLIRInstructionType opcode = operator == PLToken.plusToken ? PLIRInstructionType.ADD : PLIRInstructionType.SUB;
 			
-			PLIRInstruction exprInst = new PLIRInstruction(opcode, leftValue, rightValue);
-			exprInst.forceGenerate();
+			PLIRInstruction exprInst = new PLIRInstruction(scope, opcode, leftValue, rightValue);
+			exprInst.forceGenerate(scope);
 			debug("forcing generation of: " + exprInst);
 			exprNode.addInstruction(exprInst);
 			
@@ -444,7 +444,7 @@ public class PLParser
 		// Build the comparison instruction with the memorized condition
 		PLIRInstruction leftInst = left.instructions.get(left.instructions.size() - 1);
 		PLIRInstruction rightInst = right.instructions.get(right.instructions.size() - 1);
-		PLIRInstruction inst = PLIRInstruction.create_cmp(leftInst, rightInst);
+		PLIRInstruction inst = PLIRInstruction.create_cmp(scope, leftInst, rightInst);
 		inst.condcode = condcode;
 		inst.fixupLocation = 0;
 		
@@ -509,7 +509,7 @@ public class PLParser
 					{
 						inst.kind = ResultKind.VAR;
 //						inst.generated = false;
-						inst.forceGenerate();
+						inst.forceGenerate(scope);
 					}
 					result.addModifiedValue(varName, inst);
 				}
@@ -571,7 +571,7 @@ public class PLParser
 					else if (toksym != PLToken.commaToken && funcName.equals("OutputNum"))
 					{
 						PLIRInstruction exprInst = result.getLastInst();
-						PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.WRITE, exprInst);
+						PLIRInstruction inst = new PLIRInstruction(scope, PLIRInstructionType.WRITE, exprInst);
 						result = new PLIRBasicBlock();
 						result.addInstruction(inst);
 						
@@ -599,7 +599,7 @@ public class PLParser
 							SyntaxError("Function: " + funcName + " invoked with the wrong number of arguments. Expected " + paramMap.get(funcName) + ", got " + operands.size());
 						}
 						
-						PLIRInstruction callInst = PLIRInstruction.create_call(funcName, true, operands);
+						PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, true, operands);
 						result = new PLIRBasicBlock();
 						result.hasReturn = funcFlagMap.get(funcName); // special case... this is a machine instruction, not a user-defined function
 						result.addInstruction(callInst);
@@ -616,14 +616,14 @@ public class PLParser
 				}
 				else if (toksym == PLToken.closeParenToken && funcName.equals("InputNum"))
 				{
-					PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.READ);
+					PLIRInstruction inst = new PLIRInstruction(scope, PLIRInstructionType.READ);
 					result = new PLIRBasicBlock();
 					result.hasReturn = true; // special case... this is a machine instruction, not a user-defined function
 					result.addInstruction(inst);
 				}
 				else if (toksym == PLToken.closeParenToken && funcName.equals("OutputNewLine"))
 				{
-					PLIRInstruction inst = new PLIRInstruction(PLIRInstructionType.WLN);
+					PLIRInstruction inst = new PLIRInstruction(scope, PLIRInstructionType.WLN);
 					result = new PLIRBasicBlock();
 					result.addInstruction(inst);
 				}
@@ -635,7 +635,7 @@ public class PLParser
 			{
 //				advance(in);
 				ArrayList<PLIRInstruction> emptyList = new ArrayList<PLIRInstruction>();
-				PLIRInstruction callInst = PLIRInstruction.create_call(funcName, funcFlagMap.get(funcName), emptyList);
+				PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, funcFlagMap.get(funcName), emptyList);
 				result = new PLIRBasicBlock();
 				result.hasReturn = funcFlagMap.get(funcName); // special case... this is a machine instruction, not a user-defined function
 				result.addInstruction(callInst);
@@ -664,7 +664,7 @@ public class PLParser
 		}
 		else if (toksym == PLToken.ifToken)
 		{
-			PLIRInstruction follow = new PLIRInstruction();
+			PLIRInstruction follow = new PLIRInstruction(scope);
 			follow.fixupLocation = 0;
 			
 			advance(in);
@@ -687,13 +687,26 @@ public class PLParser
 			// Parse the follow-through and add it as the first child of the entry block
 			PLIRBasicBlock thenBlock = parse_statSequence(in);
 			entry.children.add(thenBlock);
+			thenBlock.parents.add(entry);
 			
 			// Create the artificial join node and make it a child of the follow-through branch,
 			// and also the exit/join block of the entry block
 			PLIRBasicBlock joinNode = new PLIRBasicBlock();
-			thenBlock.children.add(joinNode);
-			entry.exitNode = entry.joinNode = joinNode;
-			thenBlock.fixSpot();
+			
+			if (thenBlock.exitNode != null)
+			{
+				thenBlock.exitNode.children.add(joinNode);
+				entry.exitNode = entry.joinNode = joinNode;
+				joinNode.parents.add(thenBlock.exitNode);
+				thenBlock.exitNode.fixSpot();
+			}
+			else
+			{
+				thenBlock.children.add(joinNode);
+				entry.exitNode = entry.joinNode = joinNode;
+				joinNode.parents.add(thenBlock);
+				thenBlock.fixSpot();
+			}
 			
 			// Check for an else branch
 			int offset = 0;
@@ -715,6 +728,8 @@ public class PLParser
 				entry.children.add(elseBlock);
 				elseBlock.children.add(joinNode);
 				elseBlock.fixSpot();
+				elseBlock.parents.add(entry);
+				joinNode.parents.add(elseBlock);
 				
 				// Check for necessary phis to be inserted in the join block
 				// We need phis for variables that were modified in both branches so we fall through with the right value
@@ -740,7 +755,7 @@ public class PLParser
 					debug(thenInst.toString());
 					PLIRInstruction elseInst = elseBlock.modifiedIdents.get(var);
 					debug(elseInst.toString());
-					PLIRInstruction phi = PLIRInstruction.create_phi(thenInst, elseInst, PLStaticSingleAssignment.globalSSAIndex);
+					PLIRInstruction phi = PLIRInstruction.create_phi(scope, thenInst, elseInst, PLStaticSingleAssignment.globalSSAIndex);
 					joinNode.insertInstruction(phi, 0);
 					phisToAdd.add(phi);
 					
@@ -788,7 +803,7 @@ public class PLParser
 					PLIRInstruction leftInst = elseBlock.modifiedIdents.get(var);
 					debug(leftInst.toString());
 					PLIRInstruction followInst = scope.getCurrentValue(var);
-					PLIRInstruction phi = PLIRInstruction.create_phi(leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
+					PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
 					joinNode.insertInstruction(phi, 0);
 					
 					// The current value in scope needs to be updated now with the result of the phi
@@ -803,6 +818,8 @@ public class PLParser
 			}
 			else
 			{
+				entry.children.add(joinNode);
+				joinNode.parents.add(entry);
 				scope.popScope();
 				blockDepth--;
 			}
@@ -829,7 +846,7 @@ public class PLParser
 				offset++;
 				PLIRInstruction leftInst = thenBlock.modifiedIdents.get(var);
 				PLIRInstruction followInst = scope.getCurrentValue(var);
-				PLIRInstruction phi = PLIRInstruction.create_phi(leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
+				PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
 				joinNode.insertInstruction(phi, 0);
 				
 				// The current value in scope needs to be updated now with the result of the phi
@@ -870,7 +887,7 @@ public class PLParser
 			
 			// Save the resulting basic block
 			entry.isEntry = true;
-			result = entry;
+			return entry;
 		}
 		else if (toksym == PLToken.whileToken)
 		{	
@@ -902,16 +919,32 @@ public class PLParser
 			
 			// Build the BB of the statement sequence
 			PLIRBasicBlock body = parse_statSequence(in);
-			entry.children.add(body);
+			PLIRBasicBlock exit = new PLIRBasicBlock();
+			
 			PLIRInstruction cmpInst = entry.instructions.get(entry.instructions.size() - 1);
 			bgeInst.op1 = cmpInst;
+			if (body.exitNode == null)
+			{
+				entry.children.add(body);
+				body.children.add(exit);
+				entry.children.add(exit);
+				entry.joinNode = entry; // the entry is itself the join node for a while loop (see paper)
+				entry.exitNode = exit; // exit is the fall through branch, second child (see paper)
+			}
+			else
+			{
+				entry.children.add(body.exitNode);
+				body.exitNode.children.add(exit);
+				entry.children.add(exit);
+				entry.joinNode = entry; // the entry is itself the join node for a while loop (see paper)
+				entry.exitNode = exit; // exit is the fall through branch, second child (see paper)
+			}
 			
 			// Create the exit block and hook it in along with the join node
-			PLIRBasicBlock exit = new PLIRBasicBlock();
-			body.children.add(exit);
-			entry.children.add(exit);
-			entry.joinNode = entry; // the entry is itself the join node for a while loop (see paper)
-			entry.exitNode = exit; // exit is the fall through branch, second child (see paper)
+//			body.children.add(exit);
+//			entry.children.add(exit);
+//			entry.joinNode = entry; // the entry is itself the join node for a while loop (see paper)
+//			entry.exitNode = exit; // exit is the fall through branch, second child (see paper)
 			
 			scope.popScope();
 			blockDepth--;
@@ -950,7 +983,7 @@ public class PLParser
 				PLIRInstruction preInst = scope.getCurrentValue(var);
 				
 				// Inject the phi at the appropriate spot in the join node...
-				PLIRInstruction phi = PLIRInstruction.create_phi(preInst, bodyInst, loopLocation);
+				PLIRInstruction phi = PLIRInstruction.create_phi(scope, preInst, bodyInst, loopLocation);
 				entry.joinNode.insertInstruction(phi, 0); 
 				
 				// The current value in scope needs to be updated now with the result of the phi
@@ -980,7 +1013,7 @@ public class PLParser
 					cmpInst.replaceRightOperand(phi);
 				}
 				
-				debug("propagating phi throughout the body via recursive descent of the BB graph");
+				debug("propagating phi throughout the body via recursive descent of the BB graph: " + phi.toString());
 				body.propogatePhi(var, phi);
 				
 				/*
@@ -1008,7 +1041,7 @@ public class PLParser
 			////////////////////////////////////////////
 			
 			// Insert the unconditional branch at (location - pc)
-			PLIRInstruction.create_BEQ(loopLocation - PLStaticSingleAssignment.globalSSAIndex);
+			PLIRInstruction.create_BEQ(scope, loopLocation - PLStaticSingleAssignment.globalSSAIndex);
 			
 			// Fixup the conditional branch at the appropriate location
 			bgeInst.fixupLocation = x.fixupLocation;
@@ -1039,7 +1072,7 @@ public class PLParser
 				
 				// Since the return statement was followed by an expression, force the expression to be generated...
 				result.instructions.get(result.instructions.size() - 1).overrideGenerate = true;
-				result.instructions.get(result.instructions.size() - 1).forceGenerate();
+				result.instructions.get(result.instructions.size() - 1).forceGenerate(scope);
 				result.returnInst = result.getLastInst();
 				debug("Forcing generation of return statement");
 			}
@@ -1084,10 +1117,18 @@ public class PLParser
 			
 			// Merge the block results here
 			result = PLIRBasicBlock.merge(result, nextBlock);
-//			if (nextBlock.exitNode != null)
-//			{
-//				result = nextBlock.exitNode;
-//			}
+			if (nextBlock.exitNode != null)
+			{	
+				// Carry over modifications and used
+				for (String sym : result.modifiedIdents.keySet())
+				{
+					nextBlock.exitNode.addModifiedValue(sym, result.modifiedIdents.get(sym));
+				}
+				for (String sym : result.usedIdents.keySet())
+				{
+					nextBlock.exitNode.addUsedValue(sym, result.usedIdents.get(sym));
+				}
+			}
 		}
 		
 		// Fix the spot of the basic block (since we're leaving a statement sequence) and call it a day
@@ -1305,14 +1346,14 @@ public class PLParser
 	private PLIRInstruction CondNegBraFwd(PLIRInstruction x)
 	{
 		x.fixupLocation = PLStaticSingleAssignment.globalSSAIndex;
-		PLIRInstruction inst = PLIRInstruction.create_branch(x, x.condcode);
+		PLIRInstruction inst = PLIRInstruction.create_branch(scope, x, x.condcode);
 		return inst;
 	}
 	
 	// per spec
 	private PLIRInstruction UnCondBraFwd(PLIRInstruction x)
 	{
-		PLIRInstruction inst = PLIRInstruction.create_BEQ(x.fixupLocation);
+		PLIRInstruction inst = PLIRInstruction.create_BEQ(scope, x.fixupLocation);
 		x.fixupLocation = PLStaticSingleAssignment.globalSSAIndex - 1;
 		return inst;
 	}
