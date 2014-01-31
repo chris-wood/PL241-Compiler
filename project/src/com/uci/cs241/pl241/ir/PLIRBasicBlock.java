@@ -138,7 +138,7 @@ public class PLIRBasicBlock
 		return result;
 	}
 	
-	public void propogatePhi(String var, PLIRInstruction phi)
+	public void propogatePhi(String var, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited)
 	{
 		// propoagate through the main instructions in this block's body
 		for (PLIRInstruction bInst : instructions)
@@ -188,12 +188,20 @@ public class PLIRBasicBlock
 		
 		for (PLIRBasicBlock child : children)
 		{
-			child.propogatePhi(var, phi);
+			if (visited.contains(child) == false)
+			{
+				visited.add(child);
+				child.propogatePhi(var, phi, visited);
+			}
 		}
 		
 		if (this.exitNode != null)
 		{
-			exitNode.propogatePhi(var, phi);
+			if (visited.contains(this.exitNode) == false)
+			{
+				visited.add(this.exitNode);
+				exitNode.propogatePhi(var, phi, visited);
+			}
 		}
 	}
 	

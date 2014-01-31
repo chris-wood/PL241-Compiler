@@ -926,7 +926,7 @@ public class PLParser
 			if (body.exitNode == null)
 			{
 				entry.children.add(body);
-				body.children.add(exit);
+				body.children.add(entry);
 				entry.children.add(exit);
 				entry.joinNode = entry; // the entry is itself the join node for a while loop (see paper)
 				entry.exitNode = exit; // exit is the fall through branch, second child (see paper)
@@ -934,7 +934,7 @@ public class PLParser
 			else
 			{
 				entry.children.add(body.exitNode);
-				body.exitNode.children.add(exit);
+				body.exitNode.children.add(entry);
 				entry.children.add(exit);
 				entry.joinNode = entry; // the entry is itself the join node for a while loop (see paper)
 				entry.exitNode = exit; // exit is the fall through branch, second child (see paper)
@@ -1014,7 +1014,9 @@ public class PLParser
 				}
 				
 				debug("propagating phi throughout the body via recursive descent of the BB graph: " + phi.toString());
-				body.propogatePhi(var, phi);
+				ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
+				visited.add(entry);
+				body.propogatePhi(var, phi, visited);
 				
 				/*
 				
@@ -1128,6 +1130,8 @@ public class PLParser
 				{
 					nextBlock.exitNode.addUsedValue(sym, result.usedIdents.get(sym));
 				}
+				
+				result = nextBlock.exitNode;
 			}
 		}
 		
