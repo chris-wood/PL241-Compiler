@@ -139,7 +139,7 @@ public class PLIRBasicBlock
 	{
 		// propoagate through the main instructions in this block's body
 //		for (PLIRInstruction bInst : instructions)
-		for (PLIRInstruction bInst : carriedInstructions)
+		for (PLIRInstruction bInst : instructions)
 		{
 			System.err.println(bInst.toString());
 			boolean replaced = false;
@@ -149,12 +149,24 @@ public class PLIRBasicBlock
 				bInst.replaceLeftOperand(phi);
 				replaced = true;
 			}
+			if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
+			{
+				bInst.replaceLeftOperand(phi);
+				replaced = true;
+			}
+			
 //			if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
 			if (bInst.op2 != null && (bInst.op2.equals(phi.op1) || bInst.op2.equals(phi.op2)))
 			{
 				bInst.replaceRightOperand(phi);
 				replaced = true;
 			}
+			if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
+			{
+				bInst.replaceRightOperand(phi);
+				replaced = true;
+			}
+			
 			if (replaced && bInst.opcode == PLIRInstructionType.PHI)
 			{
 				break;

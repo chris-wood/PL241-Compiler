@@ -13,9 +13,6 @@ import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
 
 public class PLParser
 {
-	// NODES
-	// SUBCLASSES: assignment, func/proc, array, block, designator, functionblock, load/store, main, param 
-	
 	// Current symbol/token values used for parsing
 	private String sym;
 	private int toksym;
@@ -402,7 +399,12 @@ public class PLParser
 			PLIRInstruction rightValue = rightNode.instructions.get(rightNode.instructions.size() - 1);
 			PLIRInstructionType opcode = operator == PLToken.plusToken ? PLIRInstructionType.ADD : PLIRInstructionType.SUB;
 			
+			if (opcode == PLIRInstructionType.SUB)
+			{
+				int x = 0;
+			}
 			PLIRInstruction exprInst = new PLIRInstruction(scope, opcode, leftValue, rightValue);
+			exprInst.overrideGenerate = true; 
 			exprInst.forceGenerate(scope);
 			debug("forcing generation of: " + exprInst);
 			exprNode.addInstruction(exprInst);
@@ -454,8 +456,6 @@ public class PLParser
 		relation.addInstruction(leftInst);
 		relation.addInstruction(rightInst);
 		relation.addInstruction(inst);
-		
-		// 
 		
 		// Save whatever values are used in these expressions
 		// TODO: need a merge BBs method
@@ -938,32 +938,9 @@ public class PLParser
 			// Build the BB of the statement sequence
 			PLIRBasicBlock body = parse_statSequence(in);
 			entry.joinNode = entry;
-//			PLIRBasicBlock exit = new PLIRBasicBlock();
 			
 			PLIRInstruction cmpInst = entry.instructions.get(entry.instructions.size() - 1);
 			bgeInst.op1 = cmpInst;
-//			if (body.exitNode == null)
-//			{
-//				entry.children.add(body);
-//				body.children.add(entry);
-////				entry.children.add(exit);
-//				entry.joinNode = entry; // the entry is itself the join node for a while loop (see paper)
-////				entry.exitNode = entry; // exit is the fall through branch, second child (see paper)
-//			}
-//			else
-//			{
-//				entry.children.add(body.exitNode);
-//				body.exitNode.children.add(entry);
-////				entry.children.add(exit);
-//				entry.joinNode = entry; // the entry is itself the join node for a while loop (see paper)
-////				entry.exitNode = entry; // exit is the fall through branch, second child (see paper)
-//			}
-			
-			// Create the exit block and hook it in along with the join node
-//			body.children.add(exit);
-//			entry.children.add(exit);
-//			entry.joinNode = entry; // the entry is itself the join node for a while loop (see paper)
-//			entry.exitNode = exit; // exit is the fall through branch, second child (see paper)
 			
 			scope.popScope();
 			blockDepth--;
@@ -980,19 +957,6 @@ public class PLParser
 			{
 				modded.add(i1);
 			}
-			debug("body modified size = " + body.modifiedIdents.size());
-//			debug("entry used size = " + entry.usedIdents.size());
-//			for (String i2 : entry.usedIdents.keySet())
-//			{
-//				for (String i1 : sharedModifiers)
-//				{
-//					debug("comparing " + i1 + " and " + i2);
-//					if (i1.equals(i2) && filteredModifiers.contains(i2) == false)
-//					{
-//						filteredModifiers.add(i2);
-//					}
-//				}
-//			}
 			debug("(while loop) Inserting " + modded.size() + " phis");
 			for (String var : modded)
 			{
@@ -1036,30 +1000,25 @@ public class PLParser
 				ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
 				visited.add(entry);
 				body.propogatePhi(var, phi, visited);
-				
-				/*
-				
-				// Now loop through the body and fix instructions as needed
-				// TODO: this can possibly be recursive...?
-				// no, phis at lower layer will replace themselves automatically...
-				debug("past patch");
-				for (PLIRInstruction bInst : body.instructions)
-				{
-					debug("trying: " + bInst.toString());
-					if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
-					{
-						bInst.replaceLeftOperand(phi);
-					}
-					if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
-					{
-						bInst.replaceRightOperand(phi);
-					}
-				}
-				
-				*/
 			}
 			
 			////////////////////////////////////////////
+			
+			// Make BB connections
+			if (body.joinNode != null)
+			{
+				body.joinNode.children.add(entry);
+				body.joinNode.fixSpot();
+				entry.parents.add(body.joinNode);
+			}
+			else
+			{
+				body.children.add(entry);
+				body.fixSpot();
+				entry.parents.add(body);
+			}
+			entry.children.add(body);
+			body.parents.add(entry);
 			
 			// Insert the unconditional branch at (location - pc)
 			PLIRInstruction beqInst = PLIRInstruction.create_BEQ(scope, loopLocation - PLStaticSingleAssignment.globalSSAIndex);
@@ -1071,31 +1030,30 @@ public class PLParser
 			
 			// Configure the dominator tree connections
 			entry.dominatorSet.add(body);
-//			entry.dominatorSet.add(exit);
 			
 			//// TODO: merge here
 			// Merge the block results here
-			entry = PLIRBasicBlock.merge(entry, body);
-			if (body.joinNode != null)
-			{	
-				// Carry over modifications and used
-				for (String sym : entry.modifiedIdents.keySet())
-				{
-					body.joinNode.addModifiedValue(sym, entry.modifiedIdents.get(sym));
-				}
-				for (String sym : entry.usedIdents.keySet())
-				{
-					body.joinNode.addUsedValue(sym, entry.usedIdents.get(sym));
-				}
-				
-				// Carry over to the next node
-				result = body.joinNode;
-			}
-			else
-			{
-				entry.isEntry = true;
-				result = entry;
-			}
+//			entry = PLIRBasicBlock.merge(entry, body);
+//			if (body.joinNode != null)
+//			{	
+//				// Carry over modifications and used
+//				for (String sym : entry.modifiedIdents.keySet())
+//				{
+//					body.joinNode.addModifiedValue(sym, entry.modifiedIdents.get(sym));
+//				}
+//				for (String sym : entry.usedIdents.keySet())
+//				{
+//					body.joinNode.addUsedValue(sym, entry.usedIdents.get(sym));
+//				}
+//				
+//				// Carry over to the next node
+//				result = body.joinNode;
+//			}
+//			else
+//			{
+//				entry.isEntry = true;
+//				result = entry;
+//			}
 			
 			// Check for the closing od token and then eat it
 			if (toksym != PLToken.odToken)
@@ -1105,8 +1063,8 @@ public class PLParser
 			advance(in);
 			
 			// the result of parsing this basic block is the entry node, which doubles as the join and exit node
-//			entry.isEntry = true;
-//			result = entry;
+			entry.isEntry = true;
+			result = entry;
 		}
 		else if (toksym == PLToken.returnToken)
 		{

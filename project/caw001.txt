@@ -8,11 +8,10 @@ var a, b, c, d, e, f, g;
   let d <- 10;
   if a == b then
     if a == c then
-      if a == d then
+      while a == d do
+        let d <- d - 1;
         call OutputNum(a)
-      else
-        call OutputNum(d)
-      fi
+      od
     else
       call OutputNum(c)
     fi
