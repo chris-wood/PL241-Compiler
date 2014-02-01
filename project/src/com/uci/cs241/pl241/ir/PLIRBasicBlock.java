@@ -43,6 +43,7 @@ public class PLIRBasicBlock
 	
 	public PLIRBasicBlock()
 	{
+		id = bbid++;
 		this.children = new ArrayList<PLIRBasicBlock>();
 		this.parents = new ArrayList<PLIRBasicBlock>();
 		this.treeVertexSet = new ArrayList<PLIRBasicBlock>();
@@ -77,6 +78,22 @@ public class PLIRBasicBlock
 		// If next is an entry, merge with what we have
 		if (nextBlock.isEntry)
 		{
+			PLIRBasicBlock join = result;
+			if (nextBlock.joinNode != null)
+			{
+				ArrayList<Integer> seen = new ArrayList<Integer>();
+				while (join.joinNode != null && seen.contains(join.id) == false)
+				{
+					seen.add(join.id);
+					join = join.joinNode;
+				}
+			}
+			
+			if (result.id == 34 || nextBlock.id == 34)
+			{
+				System.out.println("asd");
+				int x = 0;
+			}
 			// Remove instructions in nextBlock that appear in result 
 			for (PLIRInstruction inst : result.instructions)
 			{
@@ -88,8 +105,8 @@ public class PLIRBasicBlock
 			ArrayList<PLIRInstruction> toRemove = new ArrayList<PLIRInstruction>(); 
 			for (PLIRInstruction inst : nextBlock.instructions)
 			{
-				result.instructions.add(inst);
-				result.dominatedInstructions.add(inst);
+				join.instructions.add(inst); // CAW RESULT
+				join.dominatedInstructions.add(inst); // CAW RESULT
 				toRemove.add(inst);
 			}
 			
@@ -104,14 +121,16 @@ public class PLIRBasicBlock
 			{
 				for (PLIRBasicBlock block : nextBlock.children)
 				{
-					result.children.add(block);
+//					result.children.add(block);
+					join.children.add(block);
 					block.parents.add(result);
 					block.parents.remove(nextBlock);
 				}
-				for (PLIRBasicBlock block : nextBlock.dominatorSet)
-				{
-					result.dominatorSet.add(block);
-				}
+			}
+			for (PLIRBasicBlock block : nextBlock.dominatorSet)
+			{
+				result.dominatorSet.add(block);
+//				join.dominatorSet.add(block);
 			}
 		}
 		else
@@ -175,24 +194,19 @@ public class PLIRBasicBlock
 					join.addUsedValue(sym, result.usedIdents.get(sym));
 				}
 			}
-			result.joinNode = join;
 			
-//			PLIRBasicBlock join = nextBlock.joinNode;
-//			ArrayList<Integer> seen = new ArrayList<Integer>();
-//			while (join.joinNode != null && seen.contains(join.id) == false)
-//			{
-//				seen.add(join.id);
-//				join = join.joinNode;
-//			}
+			if (join.instructions.size() > 0)
+			{
+				result.joinNode = join;
+			}
 		}
 		
 		return result;
 	}
 	
-	public void propogatePhi(String var, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited)
+	public void propagatePhi(String var, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited)
 	{
-		// propoagate through the main instructions in this block's body
-//		for (PLIRInstruction bInst : instructions)
+		// Propagate through the main instructions in this block's body
 		for (PLIRInstruction bInst : instructions)
 		{
 			System.err.println(bInst.toString());
@@ -233,7 +247,7 @@ public class PLIRBasicBlock
 			if (visited.contains(child) == false)
 			{
 				visited.add(child);
-				child.propogatePhi(var, phi, visited);
+				child.propagatePhi(var, phi, visited);
 			}
 		}
 		
@@ -243,22 +257,19 @@ public class PLIRBasicBlock
 			if (visited.contains(this.joinNode) == false)
 			{
 				visited.add(this.joinNode);
-				exitNode.propogatePhi(var, phi, visited);
+				exitNode.propagatePhi(var, phi, visited);
 			}
 		}
 	}
 	
 	public void fixSpot()
 	{
-		if (!fixed)
-		{
-			fixed = true;
-			id = bbid++;
-			if (id == 0)
-			{
-				int x = 0;
-			}
-		}
+		// noop
+//		if (!fixed)
+//		{
+//			fixed = true;
+////			id = bbid++;
+//		}
 	}
 	
 	public void addUsedValue(String ident, PLIRInstruction inst)
@@ -273,10 +284,6 @@ public class PLIRBasicBlock
 	
 	public boolean addInstruction(PLIRInstruction inst)
 	{
-		if (inst != null && inst.id == 1)
-		{
-			int x = 0;
-		}
 		if (inst != null)
 		{
 			carriedInstructions.add(inst);

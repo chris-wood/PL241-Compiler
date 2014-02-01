@@ -100,7 +100,6 @@ public class PLParser
 				result = PLIRBasicBlock.merge(result, parse_varDecl(in)); 
 			}
 			globalVariableParsing = false;
-//			PLStaticSingleAssignment.globalSSAIndex = 0;
 			
 			while (toksym == PLToken.funcToken || toksym == PLToken.procToken)
 			{
@@ -390,6 +389,15 @@ public class PLParser
 			PLIRInstruction termInst = new PLIRInstruction(scope, opcode, leftValue, rightValue);
 			termInst.overrideGenerate = true; //// CAW: removed?...
 			termInst.forceGenerate(scope);
+			
+			for (PLIRInstruction inst : factor.instructions)
+			{
+				termNode.addInstruction(inst);
+			}
+			for (PLIRInstruction inst : rightNode.instructions)
+			{
+				termNode.addInstruction(inst);
+			}
 			termNode.addInstruction(termInst);
 			
 			// Update DU chain
@@ -402,8 +410,6 @@ public class PLParser
 				duChain.get(rightValue).add(termInst);
 			}
 			
-//			exprNode.setLeft(term);
-//			exprNode.setRight(rightNode);
 			return termNode;
 		}
 		else
@@ -432,11 +438,18 @@ public class PLParser
 			PLIRInstruction exprInst = new PLIRInstruction(scope, opcode, leftValue, rightValue);
 			exprInst.overrideGenerate = true; //// CAW: removed?...
 			exprInst.forceGenerate(scope);
-			debug("forcing generation of: " + exprInst);
+			
+			for (PLIRInstruction inst : term.instructions)
+			{
+				exprNode.addInstruction(inst);
+			}
+			for (PLIRInstruction inst : rightNode.instructions)
+			{
+				exprNode.addInstruction(inst);
+			}
 			exprNode.addInstruction(exprInst);
 			
 			// Update DU chain
-			// TODO: ONLY DO THIS FOR DOMINATING INSTRUCTIONS!!! ELSE IT WILL NOT BE CORRECT!!!
 			if (duChain.containsKey(leftValue))
 			{
 				duChain.get(leftValue).add(exprInst);
@@ -570,11 +583,6 @@ public class PLParser
 			String funcName = sym;
 			result = parse_ident(in);
 			callStack.add(funcName); // add to call stack
-			
-			if (funcName.equals("one"))
-			{
-				int x = 0;
-			}
 			
 			if (toksym == PLToken.openParenToken)
 			{
@@ -1018,7 +1026,7 @@ public class PLParser
 				debug("propagating phi throughout the body via recursive descent of the BB graph: " + phi.toString());
 				ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
 				visited.add(entry);
-				body.propogatePhi(var, phi, visited);
+				body.propagatePhi(var, phi, visited);
 			}
 			
 			////////////////////////////////////////////
@@ -1027,10 +1035,10 @@ public class PLParser
 			if (body.joinNode != null)
 			{
 				PLIRBasicBlock join = body.joinNode;
-				while (join.joinNode != null)
-				{
-					join = join.joinNode;
-				}
+//				while (join.joinNode != null)
+//				{
+//					join = join.joinNode;
+//				}
 				join.children.add(entry);
 				join.fixSpot();
 //				entry.parents.add(body.joinNode);

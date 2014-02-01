@@ -65,6 +65,10 @@ public class PLSymbolTable
 				instTypeMap.put(scope, new HashMap<PLIRInstructionType, ArrayList<PLIRInstruction>>());
 				instTypeMap.get(scope).put(type.opcode, new ArrayList<PLIRInstruction>());
 			}
+			if (instTypeMap.get(scope).containsKey(type.opcode) == false)
+			{
+				instTypeMap.get(scope).put(type.opcode, new ArrayList<PLIRInstruction>());
+			}
 			instTypeMap.get(scope).get(type.opcode).add(type);
 			break;
 		}
