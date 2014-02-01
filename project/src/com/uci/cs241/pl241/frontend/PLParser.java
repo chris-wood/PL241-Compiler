@@ -712,21 +712,6 @@ public class PLParser
 			entry.joinNode = joinNode;
 			joinNode.parents.add(thenBlock);
 			
-//			if (thenBlock.joinNode != null)
-//			{
-//				thenBlock.joinNode.children.add(joinNode);
-//				entry.exitNode = entry.joinNode = joinNode;
-//				joinNode.parents.add(thenBlock.joinNode);
-//				thenBlock.joinNode.fixSpot();
-//			}
-//			else
-//			{
-//				thenBlock.children.add(joinNode);
-//				entry.exitNode = entry.joinNode = joinNode;
-//				joinNode.parents.add(thenBlock);
-//				thenBlock.fixSpot();
-//			}
-			
 			// Check for an else branch
 			int offset = 0;
 			PLIRBasicBlock elseBlock = null;

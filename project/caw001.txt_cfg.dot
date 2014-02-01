@@ -1,17 +1,17 @@
 digraph G {
-bb12[shape = box, label = "BB(12)\n" + "0 := add #0 #10\n" + "1 := read\n" + "2 := read\n" + "3 := add (2) #1\n" + "4 := cmp (1) (2)\n" + "5 := bne (4) #15\n"];
-bb6[shape = box, label = "BB(6)\n" + "1 := read\n" + "3 := add (2) #1\n" + "6 := cmp (1) (3)\n" + "7 := bne (6) #7\n" + "15 := beq #0 #6\n"];
-bb10[shape = box, label = "BB(10)\n" + "1 := read\n" + "3 := add (2) #1\n" + "16 := (6)\n" + "17 := bne (16) #3\n"];
+bb12[shape = box, label = "BB(12)\n" + "0 := add #0 #10\n" + "1 := read\n" + "2 := read\n" + "3 := add (2) #1\n" + "4 := cmp (1) (2)\n" + "5 := bne (4) #17\n"];
+bb6[shape = box, label = "BB(6)\n" + "1 := read\n" + "3 := add (2) #1\n" + "6 := cmp (1) (3)\n" + "7 := bne (6) #7\n" + "15 := beq #0 #8\n"];
+bb10[shape = box, label = "BB(10)\n" + "1 := read\n" + "3 := add (2) #1\n" + "16 := (6)\n" + "17 := bne (16) #4\n"];
 bb3[shape = box, label = "BB(3)\n" + "0 := add #0 #10\n" + "1 := read\n" + "8 := cmp (1) #10\n" + "9 := bne (8) #3\n" + "13 := beq #0 #2\n"];
 bb4[shape = box, label = "BB(4)\n" + "14 := write (3)\n"];
-bb7[shape = box, label = "BB(7)\n" + "18 := write #100\n" + "19 := beq #0 #2\n"];
-bb8[shape = box, label = "BB(8)\n" + "20 := write (2)\n"];
+bb7[shape = box, label = "BB(7)\n" + "18 := add (1) #1\n" + "19 := write #100\n" + "20 := beq #0 #2\n"];
+bb8[shape = box, label = "BB(8)\n" + "21 := write (2)\n"];
 bb0[shape = box, label = "BB(0)\n" + "10 := write (1)\n" + "11 := beq #0 #2\n"];
 bb1[shape = box, label = "BB(1)\n" + "12 := write #10\n"];
 bb5[shape = box, label = "BB(5)\n"];
-bb9[shape = box, label = "BB(9)\n"];
+bb9[shape = box, label = "BB(9)\n" + "22 := phi (18) (1)\n"];
 bb2[shape = box, label = "BB(2)\n"];
-bb11[shape = box, label = "BB(11)\n" + "21 := wln\n"];
+bb11[shape = box, label = "BB(11)\n" + "23 := phi (22) (1)\n" + "24 := wln\n" + "25 := write (23)\n"];
 bb12 -> bb6;
 bb12 -> bb10;
 bb6 -> bb3;

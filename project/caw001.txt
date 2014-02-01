@@ -18,12 +18,14 @@ var a, b, c, d, e, f, g;
     fi
   else
     if a == c then
+      let a <- a + 1;
       call OutputNum(100)
     else
       call OutputNum(b)
     fi
   fi;
-  call OutputNewLine()
+  call OutputNewLine();
+  call OutputNum(a)
 }.
 
 
