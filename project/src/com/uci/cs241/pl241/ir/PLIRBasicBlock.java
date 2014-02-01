@@ -143,7 +143,7 @@ public class PLIRBasicBlock
 		{
 			System.err.println(bInst.toString());
 			boolean replaced = false;
-//			if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
+			
 			if (bInst.op1 != null && (bInst.op1.equals(phi.op1) || bInst.op1.equals(phi.op2)))
 			{
 				bInst.replaceLeftOperand(phi);
@@ -155,7 +155,6 @@ public class PLIRBasicBlock
 				replaced = true;
 			}
 			
-//			if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
 			if (bInst.op2 != null && (bInst.op2.equals(phi.op1) || bInst.op2.equals(phi.op2)))
 			{
 				bInst.replaceRightOperand(phi);
@@ -167,35 +166,14 @@ public class PLIRBasicBlock
 				replaced = true;
 			}
 			
+			// Don't propagate past the phi, since it essentially replaces the current value
 			if (replaced && bInst.opcode == PLIRInstructionType.PHI)
 			{
 				break;
 			}
 		}
-		
-		// propagate through dominated instructions
-//		for (PLIRInstruction bInst : dominatedInstructions)
-//		{
-//			System.err.println(bInst.toString());
-//			boolean replaced = false;
-////			if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
-//			if (bInst.op1 != null && (bInst.op1.equals(phi.op1) || bInst.op1.equals(phi.op2)))
-//			{
-//				bInst.replaceLeftOperand(phi);
-//				replaced = true;
-//			}
-////			if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
-//			if (bInst.op2 != null && (bInst.op2.equals(phi.op1) || bInst.op2.equals(phi.op2)))
-//			{
-//				bInst.replaceRightOperand(phi);
-//				replaced = true;
-//			}
-//			if (replaced && bInst.opcode == PLIRInstructionType.PHI)
-//			{
-//				break;
-//			}
-//		}
-		
+	
+		// Now propagate down the tree
 		for (PLIRBasicBlock child : children)
 		{
 			if (visited.contains(child) == false)
@@ -205,11 +183,12 @@ public class PLIRBasicBlock
 			}
 		}
 		
-		if (this.exitNode != null)
+		
+		if (this.joinNode != null)
 		{
-			if (visited.contains(this.exitNode) == false)
+			if (visited.contains(this.joinNode) == false)
 			{
-				visited.add(this.exitNode);
+				visited.add(this.joinNode);
 				exitNode.propogatePhi(var, phi, visited);
 			}
 		}
@@ -231,12 +210,6 @@ public class PLIRBasicBlock
 	public void addUsedValue(String ident, PLIRInstruction inst)
 	{
 		usedIdents.put(ident, inst);
-//		System.err.println(if i)
-		if (ident.equals("a"))
-		{
-			System.err.println(inst);
-//			System.err.println("inst: " + inst.toString());
-		}
 	}
 	
 	public void addModifiedValue(String ident, PLIRInstruction inst)
@@ -266,7 +239,11 @@ public class PLIRBasicBlock
 	
 	public PLIRInstruction getLastInst()
 	{
-		return instructions.get(instructions.size() - 1);
+		if (instructions.size() > 0)
+		{
+			return instructions.get(instructions.size() - 1);
+		}
+		return null;
 	}
 	
 	public boolean insertInstruction(PLIRInstruction inst, int index)
@@ -280,26 +257,7 @@ public class PLIRBasicBlock
 		return false;
 	}
 	
-	public String toVcgNodeString()
-	{
-		StringBuilder builder = new StringBuilder();
-		builder.append("node: \n");
-		builder.append("{\n");	
-		builder.append("title: \" " + id + "\"  \n");
-		
-		// Build instruction sequence string
-		StringBuilder instBuilder = new StringBuilder();
-		for (PLIRInstruction inst : instructions)
-		{
-			instBuilder.append(inst.toString() + ";");
-		}
-		builder.append("label: \" " + instBuilder.toString() + " \"  \n");
-		
-		builder.append("}\n");
-		return builder.toString();
-	}
-	
-	public ArrayList<String> instSequence(ArrayList<PLIRInstruction> globalSeen)
+	public ArrayList<String> instSequence(ArrayList<Integer> globalSeen)
 	{
 		ArrayList<PLIRInstruction> orderedInsts = new ArrayList<PLIRInstruction>();
 		for (PLIRInstruction inst : instructions)
@@ -324,9 +282,9 @@ public class PLIRBasicBlock
 		ArrayList<Integer> seen = new ArrayList<Integer>();
 		for (PLIRInstruction inst : orderedInsts)
 		{
-			if (seen.contains(inst.id) == false)// && globalSeen.contains(inst) == false)
+			if (seen.contains(inst.id) == false && globalSeen.contains(inst.id) == false)
 			{
-//				globalSeen.add(inst);
+				globalSeen.add(inst.id);
 				builder.add(inst.id + " := " + inst.toString());
 				seen.add(inst.id);
 			}
@@ -334,7 +292,7 @@ public class PLIRBasicBlock
 		return builder;
 	}
 	
-	public String instSequenceString(ArrayList<PLIRInstruction> seen)
+	public String instSequenceString(ArrayList<Integer> seen)
 	{
 		ArrayList<String> insts = instSequence(seen);
 		

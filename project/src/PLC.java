@@ -88,7 +88,7 @@ public class PLC
 		// Walk the basic block and print out the contents
 		ArrayList<PLIRBasicBlock> queue = new ArrayList<PLIRBasicBlock>();
 		ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
-		ArrayList<PLIRInstruction> seen = new ArrayList<PLIRInstruction>();
+		ArrayList<Integer> seen = new ArrayList<Integer>();
 		queue.add(root);
 		while (queue.isEmpty() == false)
 		{

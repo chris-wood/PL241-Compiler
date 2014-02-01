@@ -27,7 +27,7 @@ public class PLParser
 	// Other necessary things
 	private PLSymbolTable scope;
 	
-	public enum IdentType {VAR, ARRAY};
+	public enum IdentType {VAR, ARRAY, FUNC};
 	private HashMap<String, IdentType> identTypeMap = new HashMap<String, IdentType>();
 	
 	// TODO!!!
@@ -49,6 +49,10 @@ public class PLParser
 		paramMap.put("InputNum", 0);
 		paramMap.put("OutputNewLine", 0);
 		paramMap.put("OutputNum", 1);
+		
+		identTypeMap.put("InputNum", IdentType.FUNC);
+		identTypeMap.put("OutputNewLine", IdentType.FUNC);
+		identTypeMap.put("OutputNum", IdentType.FUNC);
 		
 		PLStaticSingleAssignment.init();
 	}
@@ -227,7 +231,8 @@ public class PLParser
 		}
 		else
 		{
-			debug("Previously unencountered identifier: " + sym);
+//			debug("Previously unencountered identifier: " + sym);
+			SyntaxError("Previously unencountered identifier: " + sym);
 		}
 		
 		PLIRInstruction inst = scope.getCurrentValue(sym);
@@ -358,6 +363,7 @@ public class PLParser
 			PLIRInstructionType opcode = operator == PLToken.timesToken ? PLIRInstructionType.MUL : PLIRInstructionType.DIV;
 			
 			PLIRInstruction termInst = new PLIRInstruction(scope, opcode, leftValue, rightValue);
+			termInst.overrideGenerate = true; //// CAW: removed?...
 			termInst.forceGenerate(scope);
 			termNode.addInstruction(termInst);
 			
@@ -398,13 +404,8 @@ public class PLParser
 			PLIRInstruction leftValue = term.instructions.get(term.instructions.size() - 1);
 			PLIRInstruction rightValue = rightNode.instructions.get(rightNode.instructions.size() - 1);
 			PLIRInstructionType opcode = operator == PLToken.plusToken ? PLIRInstructionType.ADD : PLIRInstructionType.SUB;
-			
-			if (opcode == PLIRInstructionType.SUB)
-			{
-				int x = 0;
-			}
 			PLIRInstruction exprInst = new PLIRInstruction(scope, opcode, leftValue, rightValue);
-			exprInst.overrideGenerate = true; 
+			exprInst.overrideGenerate = true; //// CAW: removed?...
 			exprInst.forceGenerate(scope);
 			debug("forcing generation of: " + exprInst);
 			exprNode.addInstruction(exprInst);
@@ -572,6 +573,10 @@ public class PLParser
 					else if (toksym != PLToken.commaToken && funcName.equals("OutputNum"))
 					{
 						PLIRInstruction exprInst = result.getLastInst();
+						if (exprInst == null)
+						{
+							SyntaxError("Invalid parameter to OutputNum");
+						}
 						PLIRInstruction inst = new PLIRInstruction(scope, PLIRInstructionType.WRITE, exprInst);
 						result = new PLIRBasicBlock();
 						result.addInstruction(inst);
@@ -687,15 +692,8 @@ public class PLParser
 			
 			// Parse the follow-through and add it as the first child of the entry block
 			PLIRBasicBlock thenBlock = parse_statSequence(in);
-			
-//			if (thenBlock.joinNode != null)
-//			{
-//				thenBlock = thenBlock.joinNode;
-//			}
-			
 			entry.children.add(thenBlock);
 			thenBlock.parents.add(entry);
-			
 			
 			// Create the artificial join node and make it a child of the follow-through branch,
 			// and also the exit/join block of the entry block
@@ -720,16 +718,14 @@ public class PLParser
 			{
 				PLIRInstruction uncond = UnCondBraFwd(follow);
 				thenBlock.addInstruction(uncond);
+				if (uncond.id == 22)
+				{
+					int a = 0;
+				}
 				advance(in);
 				
-				// Update scope
-//				scope.popScope();
-//				blockDepth--;
-//				scope.pushNewScope("else" + (blockDepth++));
-				
-				// Parse the else block
+				// Parse the else block and then configure the BB connections accordingly
 				elseBlock = parse_statSequence(in);
-				
 				if (elseBlock.joinNode != null)
 				{
 					elseBlock.joinNode.children.add(joinNode);
@@ -782,9 +778,6 @@ public class PLParser
 					entry.modifiedIdents.put(var, phi);
 					joinNode.modifiedIdents.put(var, phi);
 				}
-				
-//				scope.popScope();
-//				blockDepth--;
 				
 				// Jump back from the if statement scope so we can update the variables with the appropriate phi result
 				scope.popScope();
@@ -877,8 +870,6 @@ public class PLParser
 				joinNode.modifiedIdents.put(var, phi);
 			}
 			
-			PLStaticSingleAssignment.displayInstructions();
-			
 			// After the phis have been inserted at the appropriate positions, fixup the entry instructions
 			Fixup(x.fixupLocation, -offset - 1);
 			
@@ -918,8 +909,8 @@ public class PLParser
 			// Parse the condition (relation) for the loop
 			PLIRBasicBlock entry = parse_relation(in);
 			PLIRInstruction x = entry.instructions.get(entry.instructions.size() - 1);
-			CondNegBraFwd(x);
-			PLIRInstruction bgeInst = PLStaticSingleAssignment.instructions.get(PLStaticSingleAssignment.globalSSAIndex - 1);
+			PLIRInstruction bgeInst = CondNegBraFwd(x);
+//			PLIRInstruction bgeInst = PLStaticSingleAssignment.instructions.get(PLStaticSingleAssignment.globalSSAIndex - 1);
 			
 			// Determine which identifiers are used in the entry/join node so we can defer generation (if PHIs are needed)
 			deferredPhiIdents.clear();
@@ -941,6 +932,7 @@ public class PLParser
 			
 			PLIRInstruction cmpInst = entry.instructions.get(entry.instructions.size() - 1);
 			bgeInst.op1 = cmpInst;
+			entry.addInstruction(bgeInst);
 			
 			scope.popScope();
 			blockDepth--;
@@ -950,9 +942,7 @@ public class PLParser
 			// Phis are inserted when variables in the relation are modified in the loop body
 			// Left phi value is entry instruction, right phi value is instruction computed in loop body
 			
-			int offset = 0;
 			ArrayList<String> modded = new ArrayList<String>();
-			ArrayList<String> filteredModifiers = new ArrayList<String>();
 			for (String i1 : body.modifiedIdents.keySet())
 			{
 				modded.add(i1);
@@ -960,9 +950,7 @@ public class PLParser
 			debug("(while loop) Inserting " + modded.size() + " phis");
 			for (String var : modded)
 			{
-				offset++;
 				PLIRInstruction bodyInst = body.modifiedIdents.get(var);
-				debug(bodyInst.toString());
 				PLIRInstruction preInst = scope.getCurrentValue(var);
 				
 				// Inject the phi at the appropriate spot in the join node...

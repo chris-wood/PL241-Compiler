@@ -6,10 +6,12 @@ var a, b, c, d, e, f, g;
   let b <- call InputNum();
   let c <- b + 1;
   let d <- 10;
+  let e <- call InputNum();
   if a == b then
+    let f <- e + 1;
     if a == c then
       while a == d do
-        let d <- d - 1;
+        let d <- d / 2;
         call OutputNum(a)
       od
     else
@@ -24,7 +26,9 @@ var a, b, c, d, e, f, g;
     fi
   fi;
   call OutputNewLine();
-  call OutputNum(a)
+  call OutputNum(a);
+  let f <- e + 1;
+  call OutputNum(f)
 }.
 
 

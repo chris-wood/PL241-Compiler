@@ -15,7 +15,7 @@ public class GraphvizRender
 	
 	private String prefix = "bb";
 	
-	public String renderBasicBlockIR(PLIRBasicBlock block, ArrayList<PLIRInstruction> seen)
+	public String renderBasicBlockIR(PLIRBasicBlock block, ArrayList<Integer> seen)
 	{
 		StringBuilder builder = new StringBuilder();
 		
@@ -41,7 +41,7 @@ public class GraphvizRender
 	public String renderCFG(PLIRBasicBlock entry)
 	{
 		StringBuilder builder = new StringBuilder();
-		ArrayList<PLIRInstruction> seen = new ArrayList<PLIRInstruction>(); 
+		ArrayList<Integer> seen = new ArrayList<Integer>(); 
 		
 		// CFG DAG start
 		builder.append("digraph G {");
@@ -78,7 +78,7 @@ public class GraphvizRender
 	public String renderDominatorTree(PLIRBasicBlock entry)
 	{
 		StringBuilder builder = new StringBuilder();
-		ArrayList<PLIRInstruction> seen = new ArrayList<PLIRInstruction>();
+		ArrayList<Integer> seen = new ArrayList<Integer>();
 		
 		// Tree start
 		builder.append("digraph G {");

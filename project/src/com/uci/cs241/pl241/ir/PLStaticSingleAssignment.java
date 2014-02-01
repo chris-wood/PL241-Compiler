@@ -36,7 +36,7 @@ public class PLStaticSingleAssignment
 			}
 			if (!common)
 			{
-//				table.instTypeMap.get(inst.opcode).add(inst);
+				table.instTypeMap.get(table.getCurrentScope()).get(inst.opcode).add(inst);
 //				table.addDominatedInstruction(inst);
 			}
 		}
