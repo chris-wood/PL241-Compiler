@@ -163,7 +163,34 @@ public class PLParser
 		String symName = sym;
 		PLIRBasicBlock block = null;
 		
-		if (identTypeMap.containsKey(sym))
+		if (globalVariableParsing)
+		{
+			// Initialize the variable to 0
+			PLIRInstruction inst = new PLIRInstruction(scope);
+			inst.opcode = PLIRInstructionType.ADD;
+			inst.i1 = 0;
+			inst.op1type = OperandType.CONST;
+			inst.i2 = 0;
+			inst.op2type = OperandType.CONST;
+			inst.kind = ResultKind.CONST;
+			inst.overrideGenerate = true;
+			inst.forceGenerate(scope);
+			
+			// Eat the symbol, create the block with the single instruction, add the ident to the list
+			// of used identifiers, and return
+			advance(in);
+			
+			block = new PLIRBasicBlock();
+			block.addInstruction(inst);
+			block.addUsedValue(symName, inst);
+			
+			// Add the sheet to scope
+			scope.addVarToScope(symName);
+//			scope.updateSymbol(symName, inst);
+			
+			return block;
+		}
+		else if (identTypeMap.containsKey(sym))
 		{
 			switch (identTypeMap.get(sym))
 			{
@@ -209,25 +236,6 @@ public class PLParser
 				
 				return block;
 			}
-		}
-		else if (globalVariableParsing)
-		{
-			// Initialize the variable to 0
-			PLIRInstruction inst = new PLIRInstruction(scope);
-			inst.opcode = PLIRInstructionType.ADD;
-			inst.i1 = 0;
-			inst.i2 = 0;
-			inst.kind = ResultKind.CONST;
-			
-			// Eat the symbol, create the block with the single instruction, add the ident to the list
-			// of used identifiers, and return
-			advance(in);
-			
-			block = new PLIRBasicBlock();
-			block.addInstruction(inst);
-			block.addUsedValue(symName, inst);
-			
-			return block;
 		}
 		else
 		{
@@ -851,7 +859,7 @@ public class PLParser
 				// Check to make sure this thing was actually in scope!
 				if (scope.getCurrentValue(var) == null)
 				{
-					SyntaxError("Uninitialized identifier in path: " + var);
+					debug("Uninitialized identifier in path: " + var);
 				}
 				
 				offset++;
