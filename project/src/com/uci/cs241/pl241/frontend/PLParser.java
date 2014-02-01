@@ -182,7 +182,7 @@ public class PLParser
 				advance(in);
 				
 				block = new PLIRBasicBlock();
-				block.instructions.add(instArray);
+				block.addInstruction(instArray);
 				block.addUsedValue(symName, instArray);
 				
 				return block;
@@ -203,7 +203,7 @@ public class PLParser
 				advance(in);
 				
 				block = new PLIRBasicBlock();
-				block.instructions.add(inst);
+				block.addInstruction(inst);
 				block.addUsedValue(symName, inst);
 				
 				return block;
@@ -223,7 +223,7 @@ public class PLParser
 			advance(in);
 			
 			block = new PLIRBasicBlock();
-			block.instructions.add(inst);
+			block.addInstruction(inst);
 			block.addUsedValue(symName, inst);
 			
 			return block;
@@ -247,7 +247,7 @@ public class PLParser
 		advance(in);
 		
 		block = new PLIRBasicBlock();
-		block.instructions.add(inst);
+		block.addInstruction(inst);
 		block.addUsedValue(symName, inst);
 		
 		return block;
@@ -261,7 +261,7 @@ public class PLParser
 		PLIRInstruction li = new PLIRInstruction(scope, PLIRInstructionType.ADD, 0, Integer.parseInt(sym)); 
 		advance(in);
 		PLIRBasicBlock block = new PLIRBasicBlock();
-		block.instructions.add(li);
+		block.addInstruction(li);
 		return block;
 	}
 
@@ -408,6 +408,7 @@ public class PLParser
 			exprNode.addInstruction(exprInst);
 			
 			// Update DU chain
+			// TODO: ONLY DO THIS FOR DOMINATING INSTRUCTIONS!!! ELSE IT WILL NOT BE CORRECT!!!
 			if (duChain.containsKey(leftValue))
 			{
 				duChain.get(leftValue).add(exprInst);
@@ -919,26 +920,27 @@ public class PLParser
 			
 			// Build the BB of the statement sequence
 			PLIRBasicBlock body = parse_statSequence(in);
-			PLIRBasicBlock exit = new PLIRBasicBlock();
+			entry.joinNode = entry;
+//			PLIRBasicBlock exit = new PLIRBasicBlock();
 			
 			PLIRInstruction cmpInst = entry.instructions.get(entry.instructions.size() - 1);
 			bgeInst.op1 = cmpInst;
-			if (body.exitNode == null)
-			{
-				entry.children.add(body);
-				body.children.add(entry);
-				entry.children.add(exit);
-				entry.joinNode = entry; // the entry is itself the join node for a while loop (see paper)
-				entry.exitNode = exit; // exit is the fall through branch, second child (see paper)
-			}
-			else
-			{
-				entry.children.add(body.exitNode);
-				body.exitNode.children.add(entry);
-				entry.children.add(exit);
-				entry.joinNode = entry; // the entry is itself the join node for a while loop (see paper)
-				entry.exitNode = exit; // exit is the fall through branch, second child (see paper)
-			}
+//			if (body.exitNode == null)
+//			{
+//				entry.children.add(body);
+//				body.children.add(entry);
+////				entry.children.add(exit);
+//				entry.joinNode = entry; // the entry is itself the join node for a while loop (see paper)
+////				entry.exitNode = entry; // exit is the fall through branch, second child (see paper)
+//			}
+//			else
+//			{
+//				entry.children.add(body.exitNode);
+//				body.exitNode.children.add(entry);
+////				entry.children.add(exit);
+//				entry.joinNode = entry; // the entry is itself the join node for a while loop (see paper)
+////				entry.exitNode = entry; // exit is the fall through branch, second child (see paper)
+//			}
 			
 			// Create the exit block and hook it in along with the join node
 //			body.children.add(exit);
@@ -1043,7 +1045,8 @@ public class PLParser
 			////////////////////////////////////////////
 			
 			// Insert the unconditional branch at (location - pc)
-			PLIRInstruction.create_BEQ(scope, loopLocation - PLStaticSingleAssignment.globalSSAIndex);
+			PLIRInstruction beqInst = PLIRInstruction.create_BEQ(scope, loopLocation - PLStaticSingleAssignment.globalSSAIndex);
+			body.addInstruction(beqInst);
 			
 			// Fixup the conditional branch at the appropriate location
 			bgeInst.fixupLocation = x.fixupLocation;
@@ -1051,7 +1054,31 @@ public class PLParser
 			
 			// Configure the dominator tree connections
 			entry.dominatorSet.add(body);
-			entry.dominatorSet.add(exit);
+//			entry.dominatorSet.add(exit);
+			
+			//// TODO: merge here
+			// Merge the block results here
+			entry = PLIRBasicBlock.merge(entry, body);
+			if (body.exitNode != null)
+			{	
+				// Carry over modifications and used
+				for (String sym : entry.modifiedIdents.keySet())
+				{
+					body.exitNode.addModifiedValue(sym, entry.modifiedIdents.get(sym));
+				}
+				for (String sym : entry.usedIdents.keySet())
+				{
+					body.exitNode.addUsedValue(sym, entry.usedIdents.get(sym));
+				}
+				
+				// Carry over to the next node
+				result = body.exitNode;
+			}
+			else
+			{
+				entry.isEntry = true;
+				result = entry;
+			}
 			
 			// Check for the closing od token and then eat it
 			if (toksym != PLToken.odToken)
@@ -1061,8 +1088,8 @@ public class PLParser
 			advance(in);
 			
 			// the result of parsing this basic block is the entry node, which doubles as the join and exit node
-			entry.isEntry = true;
-			result = entry;
+//			entry.isEntry = true;
+//			result = entry;
 		}
 		else if (toksym == PLToken.returnToken)
 		{
@@ -1118,20 +1145,24 @@ public class PLParser
 			}
 			
 			// Merge the block results here
-			result = PLIRBasicBlock.merge(result, nextBlock);
-			if (nextBlock.exitNode != null)
-			{	
-				// Carry over modifications and used
-				for (String sym : result.modifiedIdents.keySet())
-				{
-					nextBlock.exitNode.addModifiedValue(sym, result.modifiedIdents.get(sym));
+			if (nextBlock != null)
+			{
+				result = PLIRBasicBlock.merge(result, nextBlock);
+				if (nextBlock.exitNode != null)
+				{	
+					// Carry over modifications and used
+					for (String sym : result.modifiedIdents.keySet())
+					{
+						nextBlock.exitNode.addModifiedValue(sym, result.modifiedIdents.get(sym));
+					}
+					for (String sym : result.usedIdents.keySet())
+					{
+						nextBlock.exitNode.addUsedValue(sym, result.usedIdents.get(sym));
+					}
+					
+					// Carry over to the next node
+					result = result.exitNode;
 				}
-				for (String sym : result.usedIdents.keySet())
-				{
-					nextBlock.exitNode.addUsedValue(sym, result.usedIdents.get(sym));
-				}
-				
-				result = nextBlock.exitNode;
 			}
 		}
 		

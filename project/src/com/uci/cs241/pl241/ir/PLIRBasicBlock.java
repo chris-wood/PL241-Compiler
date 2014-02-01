@@ -9,6 +9,7 @@ public class PLIRBasicBlock
 {
 	public ArrayList<PLIRInstruction> instructions;
 	public ArrayList<PLIRInstruction> dominatedInstructions;
+	public ArrayList<PLIRInstruction> carriedInstructions;
 	public ArrayList<PLIRBasicBlock> children;
 	public ArrayList<PLIRBasicBlock> parents;
 	public ArrayList<PLIRBasicBlock> treeVertexSet;
@@ -29,6 +30,9 @@ public class PLIRBasicBlock
 	public boolean hasReturn = false;
 	public PLIRInstruction returnInst;
 	
+	// For rendering
+	public boolean omit = false;
+	
 	// TODO: need to compute this for the dominator tree algorithm!!!
 	public int treeSize;
 	
@@ -45,35 +49,9 @@ public class PLIRBasicBlock
 		this.dominatorSet = new ArrayList<PLIRBasicBlock>();
 		this.instructions = new ArrayList<PLIRInstruction>();
 		this.dominatedInstructions = new ArrayList<PLIRInstruction>();
+		this.carriedInstructions = new ArrayList<PLIRInstruction>();
 		this.modifiedIdents = new HashMap<String, PLIRInstruction>();
 		this.usedIdents = new HashMap<String, PLIRInstruction>();
-	}
-	
-	public PLIRBasicBlock(ArrayList<PLIRBasicBlock> childs, ArrayList<PLIRBasicBlock> parents, PLIRInstruction[] seq)
-	{
-		this.children = new ArrayList<PLIRBasicBlock>();
-		this.parents = new ArrayList<PLIRBasicBlock>();
-		this.treeVertexSet = new ArrayList<PLIRBasicBlock>();
-		this.dominatorSet = new ArrayList<PLIRBasicBlock>();
-		this.instructions = new ArrayList<PLIRInstruction>(seq.length);
-		this.modifiedIdents = new HashMap<String, PLIRInstruction>();
-		this.dominatedInstructions = new ArrayList<PLIRInstruction>();
-		this.usedIdents = new HashMap<String, PLIRInstruction>();
-		
-		for (PLIRBasicBlock block : parents)
-		{
-			this.parents.add(block);
-		}	
-		for (PLIRBasicBlock block : childs)
-		{
-			this.children.add(block);
-		}
-		for (int i = 0; i < seq.length; i++)
-		{
-			this.instructions.add(seq[i]);;
-		}
-		
-		this.id = bbid++;
 	}
 	
 	public static PLIRBasicBlock merge(PLIRBasicBlock result, PLIRBasicBlock nextBlock)
@@ -83,32 +61,59 @@ public class PLIRBasicBlock
 		{
 			result.addModifiedValue(sym, nextBlock.modifiedIdents.get(sym));
 		}
+		for (String sym : result.modifiedIdents.keySet())
+		{
+			nextBlock.addModifiedValue(sym, result.modifiedIdents.get(sym));
+		}
 		for (String sym : nextBlock.usedIdents.keySet())
 		{
 			result.addUsedValue(sym, nextBlock.usedIdents.get(sym));
 		}
-//		for (PLIRInstruction inst : nextBlock.instructions)
+		for (String sym : result.usedIdents.keySet())
+		{
+			nextBlock.addUsedValue(sym, result.usedIdents.get(sym));
+		}
+		
+		// Not symmetric, order matters.
+		ArrayList<PLIRInstruction> toRemove = new ArrayList<PLIRInstruction>(); 
+		for (PLIRInstruction inst : nextBlock.instructions)
+		{
+			result.instructions.add(inst);
+			result.dominatedInstructions.add(inst);
+			toRemove.add(inst);
+		}
+		
+		// remove instructions from nextBlock.instructions here since we just added them to the BB above
+		for (PLIRInstruction inst : toRemove)
+		{
+			nextBlock.instructions.remove(inst);
+		}
+		
+		
+//		for (PLIRInstruction inst : result.instructions)
 //		{
-//			result.instructions.add(inst);
-//			result.dominatedInstructions.add(inst);
+//			nextBlock.carriedInstructions.add(inst);
 //		}
 		
 		// Add to parent
 		nextBlock.parents.add(result);
 		
-		// Merge the contents of the blocks
+		// If next is an entry, merge with what we have
 		if (nextBlock.isEntry)
 		{
 //			for (PLIRInstruction inst : nextBlock.instructions)
-			for (int i = 0; i < nextBlock.instructions.size(); i++)
-			{
-				result.addInstruction(nextBlock.instructions.get(i));
-			}
+//			{
+//				result.instructions.add(inst);
+//			}
+			
+			// Handle parents
 			if (nextBlock.children.size() > 0)
 			{
 				for (PLIRBasicBlock block : nextBlock.children)
 				{
 					result.children.add(block);
+					block.parents.add(result);
+					block.parents.remove(nextBlock);
 				}
 				for (PLIRBasicBlock block : nextBlock.dominatorSet)
 				{
@@ -116,20 +121,28 @@ public class PLIRBasicBlock
 				}
 			}
 			
-			/// TODO: we should really be adding these to a set of "dominated" instructions... not the instructions of the BB
-			if (nextBlock.exitNode != null)
-			{
-				for (PLIRInstruction inst : nextBlock.exitNode.instructions)
-				{
-//					result.addInstruction(inst);
-//					result.dominatedInstructions.add(inst);
-				}
-			}
+			// Mark nextBlock as not being rendered
+//			nextBlock.omit = true;
 		}
 		
-		// If the node has an exit, continue on that node (only really changes if statements)
+		/// TODO: we should really be adding these to a set of "dominated" instructions... not the instructions of the BB
 		if (nextBlock.exitNode != null)
 		{
+			result.exitNode = nextBlock.exitNode;
+			
+			// TODO: keep this...
+//			for (PLIRInstruction inst : nextBlock.exitNode.instructions)
+//			{
+////				result.addInstruction(inst);
+//				result.dominatedInstructions.add(inst);
+//			}
+			
+//			for (PLIRInstruction inst : result.instructions)
+//			{
+////				result.addInstruction(inst);
+//				nextBlock.exitNode.carriedInstructions.add(inst);
+//			}
+			
 			result.fixSpot();
 			result.dominatorSet.add(nextBlock.exitNode);
 //			result = nextBlock.exitNode;
@@ -141,7 +154,8 @@ public class PLIRBasicBlock
 	public void propogatePhi(String var, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited)
 	{
 		// propoagate through the main instructions in this block's body
-		for (PLIRInstruction bInst : instructions)
+//		for (PLIRInstruction bInst : instructions)
+		for (PLIRInstruction bInst : carriedInstructions)
 		{
 			System.err.println(bInst.toString());
 			boolean replaced = false;
@@ -211,6 +225,10 @@ public class PLIRBasicBlock
 		{
 			fixed = true;
 			id = bbid++;
+			if (id == 0)
+			{
+				int x = 0;
+			}
 		}
 	}
 	
@@ -232,7 +250,17 @@ public class PLIRBasicBlock
 	
 	public boolean addInstruction(PLIRInstruction inst)
 	{
-		return instructions.add(inst);
+		if (inst != null && inst.id == 1)
+		{
+			int x = 0;
+		}
+		if (inst != null)
+		{
+			carriedInstructions.add(inst);
+			dominatedInstructions.add(inst);
+			return instructions.add(inst);
+		}
+		return false;
 	}
 	
 	public boolean removeInstruction(PLIRInstruction inst)
@@ -249,6 +277,7 @@ public class PLIRBasicBlock
 	{
 		if (0 <= index && index <= instructions.size())
 		{
+			dominatedInstructions.add(inst);
 			instructions.add(index, inst);
 			return true;
 		}
@@ -274,7 +303,7 @@ public class PLIRBasicBlock
 		return builder.toString();
 	}
 	
-	public ArrayList<String> instSequence()
+	public ArrayList<String> instSequence(ArrayList<PLIRInstruction> globalSeen)
 	{
 		ArrayList<PLIRInstruction> orderedInsts = new ArrayList<PLIRInstruction>();
 		for (PLIRInstruction inst : instructions)
@@ -299,8 +328,9 @@ public class PLIRBasicBlock
 		ArrayList<Integer> seen = new ArrayList<Integer>();
 		for (PLIRInstruction inst : orderedInsts)
 		{
-			if (seen.contains(inst.id) == false)
+			if (seen.contains(inst.id) == false)// && globalSeen.contains(inst) == false)
 			{
+//				globalSeen.add(inst);
 				builder.add(inst.id + " := " + inst.toString());
 				seen.add(inst.id);
 			}
@@ -308,9 +338,9 @@ public class PLIRBasicBlock
 		return builder;
 	}
 	
-	public String instSequenceString()
+	public String instSequenceString(ArrayList<PLIRInstruction> seen)
 	{
-		ArrayList<String> insts = instSequence();
+		ArrayList<String> insts = instSequence(seen);
 		
 		StringBuilder builder = new StringBuilder();
 		for (String s : insts)

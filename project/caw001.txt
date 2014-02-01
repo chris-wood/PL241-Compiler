@@ -1,4 +1,4 @@
-// Nested dominator/cfg stuff
+// Nested dominator/cfg stuff - trying to get the graphs correct :-\ ...
 main 
 var a, b, c, d, e, f, g;
 {
@@ -17,8 +17,32 @@ var a, b, c, d, e, f, g;
   call OutputNewLine();
   if b == c then
     call OutputNum(a)
-  fi
+  else
+    if a == 1 then
+      call OutputNum(2)
+    else
+      call OutputNum(3)
+    fi
+  fi;
+  call OutputNewLine()
 }.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // DU chain test
 main 

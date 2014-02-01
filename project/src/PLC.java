@@ -88,15 +88,16 @@ public class PLC
 		// Walk the basic block and print out the contents
 		ArrayList<PLIRBasicBlock> queue = new ArrayList<PLIRBasicBlock>();
 		ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
+		ArrayList<PLIRInstruction> seen = new ArrayList<PLIRInstruction>();
 		queue.add(root);
 		while (queue.isEmpty() == false)
 		{
 			PLIRBasicBlock curr = queue.remove(0);
-			if (visited.contains(curr) == false)
+			if (visited.contains(curr) == false || curr.omit == true)
 			{
 				visited.add(curr);
 				System.out.println("Visiting: " + curr.id);
-				System.out.println(curr.instSequenceString());
+				System.out.println(curr.instSequenceString(seen));
 				
 				for (PLIRBasicBlock child : curr.children)
 				{

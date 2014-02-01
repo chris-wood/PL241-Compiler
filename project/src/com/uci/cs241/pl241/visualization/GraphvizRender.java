@@ -15,20 +15,23 @@ public class GraphvizRender
 	
 	private String prefix = "bb";
 	
-	public String renderBasicBlockIR(PLIRBasicBlock block)
+	public String renderBasicBlockIR(PLIRBasicBlock block, ArrayList<PLIRInstruction> seen)
 	{
 		StringBuilder builder = new StringBuilder();
 		
 		builder.append("\n" + prefix + block.id + "[shape = box, label = \"BB(" + block.id + ")\\n\"");
 		if (block.instructions.size() > 0)
 		{
-			builder.append(" + ");
-			ArrayList<String> instSeq = block.instSequence();
-			for (int i = 0; i < instSeq.size() - 1; i++)
+			ArrayList<String> instSeq = block.instSequence(seen);
+			if (instSeq.size() > 0)
 			{
-				builder.append("\"" + instSeq.get(i) + "\\n\" + ");
+				builder.append(" + ");
+				for (int i = 0; i < instSeq.size() - 1; i++)
+				{
+					builder.append("\"" + instSeq.get(i) + "\\n\" + ");
+				}
+				builder.append("\"" + instSeq.get(instSeq.size() - 1) + "\\n\"");
 			}
-			builder.append("\"" + instSeq.get(instSeq.size() - 1) + "\\n\"");
 		}
 		builder.append("];");
 		
@@ -38,6 +41,7 @@ public class GraphvizRender
 	public String renderCFG(PLIRBasicBlock entry)
 	{
 		StringBuilder builder = new StringBuilder();
+		ArrayList<PLIRInstruction> seen = new ArrayList<PLIRInstruction>(); 
 		
 		// CFG DAG start
 		builder.append("digraph G {");
@@ -53,7 +57,7 @@ public class GraphvizRender
 			if (visited.contains(currBlock) == false)
 			{
 				visited.add(currBlock);
-				builder.append(renderBasicBlockIR(currBlock));
+				builder.append(renderBasicBlockIR(currBlock, seen));
 				for (PLIRBasicBlock child : currBlock.children)
 				{
 					cfgBuilder.append(prefix + currBlock.id + " -> " + prefix + child.id + ";\n");
@@ -74,6 +78,7 @@ public class GraphvizRender
 	public String renderDominatorTree(PLIRBasicBlock entry)
 	{
 		StringBuilder builder = new StringBuilder();
+		ArrayList<PLIRInstruction> seen = new ArrayList<PLIRInstruction>();
 		
 		// Tree start
 		builder.append("digraph G {");
@@ -89,7 +94,7 @@ public class GraphvizRender
 			if (visited.contains(currBlock) == false)
 			{
 				visited.add(currBlock);
-				builder.append(renderBasicBlockIR(currBlock));
+				builder.append(renderBasicBlockIR(currBlock, seen));
 				for (PLIRBasicBlock child : currBlock.dominatorSet)
 				{
 					String toAdd = "\n" + prefix + currBlock.id + " -> " + prefix + child.id + ";";
