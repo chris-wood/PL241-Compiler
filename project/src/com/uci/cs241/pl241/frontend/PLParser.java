@@ -687,27 +687,45 @@ public class PLParser
 			
 			// Parse the follow-through and add it as the first child of the entry block
 			PLIRBasicBlock thenBlock = parse_statSequence(in);
+			
+//			if (thenBlock.joinNode != null)
+//			{
+//				thenBlock = thenBlock.joinNode;
+//			}
+			
 			entry.children.add(thenBlock);
 			thenBlock.parents.add(entry);
+			
 			
 			// Create the artificial join node and make it a child of the follow-through branch,
 			// and also the exit/join block of the entry block
 			PLIRBasicBlock joinNode = new PLIRBasicBlock();
 			
-			if (thenBlock.exitNode != null)
+			if (thenBlock.joinNode != null)
 			{
-				thenBlock.exitNode.children.add(joinNode);
-				entry.exitNode = entry.joinNode = joinNode;
-				joinNode.parents.add(thenBlock.exitNode);
-				thenBlock.exitNode.fixSpot();
+				thenBlock.joinNode.children.add(joinNode);
 			}
 			else
 			{
 				thenBlock.children.add(joinNode);
-				entry.exitNode = entry.joinNode = joinNode;
-				joinNode.parents.add(thenBlock);
-				thenBlock.fixSpot();
 			}
+			entry.joinNode = joinNode;
+			joinNode.parents.add(thenBlock);
+			
+//			if (thenBlock.joinNode != null)
+//			{
+//				thenBlock.joinNode.children.add(joinNode);
+//				entry.exitNode = entry.joinNode = joinNode;
+//				joinNode.parents.add(thenBlock.joinNode);
+//				thenBlock.joinNode.fixSpot();
+//			}
+//			else
+//			{
+//				thenBlock.children.add(joinNode);
+//				entry.exitNode = entry.joinNode = joinNode;
+//				joinNode.parents.add(thenBlock);
+//				thenBlock.fixSpot();
+//			}
 			
 			// Check for an else branch
 			int offset = 0;
@@ -726,11 +744,25 @@ public class PLParser
 				
 				// Parse the else block
 				elseBlock = parse_statSequence(in);
+				
+				if (elseBlock.joinNode != null)
+				{
+					elseBlock.joinNode.children.add(joinNode);
+					elseBlock.joinNode.fixSpot();
+					joinNode.parents.add(elseBlock.joinNode);
+				}
+				else
+				{
+					elseBlock.children.add(joinNode);
+					elseBlock.fixSpot();
+					joinNode.parents.add(elseBlock);
+				}
+				
 				entry.children.add(elseBlock);
-				elseBlock.children.add(joinNode);
-				elseBlock.fixSpot();
+//				elseBlock.children.add(joinNode);
+//				elseBlock.fixSpot();
 				elseBlock.parents.add(entry);
-				joinNode.parents.add(elseBlock);
+				
 				
 				// Check for necessary phis to be inserted in the join block
 				// We need phis for variables that were modified in both branches so we fall through with the right value
@@ -820,6 +852,7 @@ public class PLParser
 			else
 			{
 				entry.children.add(joinNode);
+				joinNode.parents.add(thenBlock);
 				joinNode.parents.add(entry);
 				scope.popScope();
 				blockDepth--;
@@ -1059,20 +1092,20 @@ public class PLParser
 			//// TODO: merge here
 			// Merge the block results here
 			entry = PLIRBasicBlock.merge(entry, body);
-			if (body.exitNode != null)
+			if (body.joinNode != null)
 			{	
 				// Carry over modifications and used
 				for (String sym : entry.modifiedIdents.keySet())
 				{
-					body.exitNode.addModifiedValue(sym, entry.modifiedIdents.get(sym));
+					body.joinNode.addModifiedValue(sym, entry.modifiedIdents.get(sym));
 				}
 				for (String sym : entry.usedIdents.keySet())
 				{
-					body.exitNode.addUsedValue(sym, entry.usedIdents.get(sym));
+					body.joinNode.addUsedValue(sym, entry.usedIdents.get(sym));
 				}
 				
 				// Carry over to the next node
-				result = body.exitNode;
+				result = body.joinNode;
 			}
 			else
 			{
@@ -1145,23 +1178,23 @@ public class PLParser
 			}
 			
 			// Merge the block results here
-			if (nextBlock != null)
+//			if (nextBlock != null)
 			{
 				result = PLIRBasicBlock.merge(result, nextBlock);
-				if (nextBlock.exitNode != null)
+				if (nextBlock.joinNode != null)
 				{	
 					// Carry over modifications and used
 					for (String sym : result.modifiedIdents.keySet())
 					{
-						nextBlock.exitNode.addModifiedValue(sym, result.modifiedIdents.get(sym));
+						nextBlock.joinNode.addModifiedValue(sym, result.modifiedIdents.get(sym));
 					}
 					for (String sym : result.usedIdents.keySet())
 					{
-						nextBlock.exitNode.addUsedValue(sym, result.usedIdents.get(sym));
+						nextBlock.joinNode.addUsedValue(sym, result.usedIdents.get(sym));
 					}
 					
 					// Carry over to the next node
-					result = result.exitNode;
+					result = result.joinNode;
 				}
 			}
 		}

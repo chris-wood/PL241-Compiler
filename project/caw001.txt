@@ -5,6 +5,36 @@ var a, b, c, d, e, f, g;
   let a <- call InputNum();
   let b <- call InputNum();
   let c <- b + 1;
+  let d <- 10;
+  if a == b then
+    if a == c then
+      if a == d then
+        call OutputNum(a)
+      else
+        call OutputNum(d)
+      fi
+    else
+      call OutputNum(c)
+    fi
+  else
+    if a == c then
+      call OutputNum(100)
+    else
+      call OutputNum(b)
+    fi
+  fi;
+  call OutputNewLine()
+}.
+
+
+
+// Nested dominator/cfg stuff - trying to get the graphs correct :-\ ...
+main 
+var a, b, c, d, e, f, g;
+{
+  let a <- call InputNum();
+  let b <- call InputNum();
+  let c <- b + 1;
   while a < 10 do
     let a <- a - 1;
     if b == 0 then

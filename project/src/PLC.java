@@ -119,7 +119,7 @@ public class PLC
 		
 		// Write out the dominator tree
 		PrintWriter domWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + "_dom.dot")));
-		domWriter.println(cfgdot);
+		domWriter.println(domdot);
 		domWriter.flush();
 		domWriter.close();	
 	}

@@ -56,7 +56,14 @@ public class PLIRBasicBlock
 	
 	public static PLIRBasicBlock merge(PLIRBasicBlock result, PLIRBasicBlock nextBlock)
 	{
-		// merge the blocks intermediate results here
+		// Remove instructions in nextBlock that appear in result 
+		for (PLIRInstruction inst : result.instructions)
+		{
+			System.err.println("Removing redundant instruction: " + inst.toString());
+			nextBlock.instructions.remove(inst);
+		}
+		
+		// Merge the blocks intermediate results here
 		for (String sym : nextBlock.modifiedIdents.keySet())
 		{
 			result.addModifiedValue(sym, nextBlock.modifiedIdents.get(sym));
@@ -89,23 +96,12 @@ public class PLIRBasicBlock
 			nextBlock.instructions.remove(inst);
 		}
 		
-		
-//		for (PLIRInstruction inst : result.instructions)
-//		{
-//			nextBlock.carriedInstructions.add(inst);
-//		}
-		
 		// Add to parent
 		nextBlock.parents.add(result);
 		
 		// If next is an entry, merge with what we have
 		if (nextBlock.isEntry)
 		{
-//			for (PLIRInstruction inst : nextBlock.instructions)
-//			{
-//				result.instructions.add(inst);
-//			}
-			
 			// Handle parents
 			if (nextBlock.children.size() > 0)
 			{
@@ -120,32 +116,20 @@ public class PLIRBasicBlock
 					result.dominatorSet.add(block);
 				}
 			}
-			
-			// Mark nextBlock as not being rendered
-//			nextBlock.omit = true;
 		}
 		
 		/// TODO: we should really be adding these to a set of "dominated" instructions... not the instructions of the BB
 		if (nextBlock.exitNode != null)
 		{
 			result.exitNode = nextBlock.exitNode;
-			
-			// TODO: keep this...
-//			for (PLIRInstruction inst : nextBlock.exitNode.instructions)
-//			{
-////				result.addInstruction(inst);
-//				result.dominatedInstructions.add(inst);
-//			}
-			
-//			for (PLIRInstruction inst : result.instructions)
-//			{
-////				result.addInstruction(inst);
-//				nextBlock.exitNode.carriedInstructions.add(inst);
-//			}
-			
 			result.fixSpot();
 			result.dominatorSet.add(nextBlock.exitNode);
-//			result = nextBlock.exitNode;
+		}
+		
+		if (nextBlock.joinNode != null)
+		{	
+			result.fixSpot();
+			result.joinNode = nextBlock.joinNode;
 		}
 		
 		return result;
