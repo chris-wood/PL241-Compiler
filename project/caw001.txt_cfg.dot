@@ -11,7 +11,7 @@ bb1[shape = box, label = "BB(1)\n" + "12 := write #10\n"];
 bb5[shape = box, label = "BB(5)\n"];
 bb9[shape = box, label = "BB(9)\n" + "22 := phi (18) (1)\n"];
 bb2[shape = box, label = "BB(2)\n"];
-bb11[shape = box, label = "BB(11)\n" + "23 := phi (22) (1)\n" + "24 := wln\n" + "25 := write (23)\n"];
+bb11[shape = box, label = "BB(11)\n" + "23 := phi (1) (22)\n" + "24 := wln\n" + "25 := write (23)\n"];
 bb12 -> bb6;
 bb12 -> bb10;
 bb6 -> bb3;

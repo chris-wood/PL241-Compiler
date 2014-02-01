@@ -818,10 +818,9 @@ public class PLParser
 					}
 					
 					offset++;
-					PLIRInstruction leftInst = elseBlock.modifiedIdents.get(var);
-					debug(leftInst.toString());
+					PLIRInstruction elseInst = elseBlock.modifiedIdents.get(var);
 					PLIRInstruction followInst = scope.getCurrentValue(var);
-					PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
+					PLIRInstruction phi = PLIRInstruction.create_phi(scope, followInst, elseInst, PLStaticSingleAssignment.globalSSAIndex);
 					joinNode.insertInstruction(phi, 0);
 					
 					// The current value in scope needs to be updated now with the result of the phi
