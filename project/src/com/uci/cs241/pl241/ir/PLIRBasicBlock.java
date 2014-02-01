@@ -55,14 +55,7 @@ public class PLIRBasicBlock
 	}
 	
 	public static PLIRBasicBlock merge(PLIRBasicBlock result, PLIRBasicBlock nextBlock)
-	{
-		// Remove instructions in nextBlock that appear in result 
-		for (PLIRInstruction inst : result.instructions)
-		{
-			System.err.println("Removing redundant instruction: " + inst.toString());
-			nextBlock.instructions.remove(inst);
-		}
-		
+	{	
 		// Merge the blocks intermediate results here
 		for (String sym : nextBlock.modifiedIdents.keySet())
 		{
@@ -81,27 +74,31 @@ public class PLIRBasicBlock
 			nextBlock.addUsedValue(sym, result.usedIdents.get(sym));
 		}
 		
-		// Not symmetric, order matters.
-		ArrayList<PLIRInstruction> toRemove = new ArrayList<PLIRInstruction>(); 
-		for (PLIRInstruction inst : nextBlock.instructions)
-		{
-			result.instructions.add(inst);
-			result.dominatedInstructions.add(inst);
-			toRemove.add(inst);
-		}
-		
-		// remove instructions from nextBlock.instructions here since we just added them to the BB above
-		for (PLIRInstruction inst : toRemove)
-		{
-			nextBlock.instructions.remove(inst);
-		}
-		
-		// Add to parent
-		nextBlock.parents.add(result);
-		
 		// If next is an entry, merge with what we have
 		if (nextBlock.isEntry)
 		{
+			// Remove instructions in nextBlock that appear in result 
+			for (PLIRInstruction inst : result.instructions)
+			{
+				System.err.println("Removing redundant instruction: " + inst.toString());
+				nextBlock.instructions.remove(inst);
+			}
+			
+			// Not symmetric, order matters.
+			ArrayList<PLIRInstruction> toRemove = new ArrayList<PLIRInstruction>(); 
+			for (PLIRInstruction inst : nextBlock.instructions)
+			{
+				result.instructions.add(inst);
+				result.dominatedInstructions.add(inst);
+				toRemove.add(inst);
+			}
+			
+			// Remove instructions from nextBlock.instructions here since we just added them to the BB above
+			for (PLIRInstruction inst : toRemove)
+			{
+				nextBlock.instructions.remove(inst);
+			}
+			
 			// Handle parents
 			if (nextBlock.children.size() > 0)
 			{
@@ -117,19 +114,76 @@ public class PLIRBasicBlock
 				}
 			}
 		}
+		else
+		{
+			// Remove instructions in nextBlock that appear in result 
+			for (PLIRInstruction inst : result.instructions)
+			{
+				System.err.println("Removing redundant instruction: " + inst.toString());
+				nextBlock.instructions.remove(inst);
+			}
+			
+			PLIRBasicBlock join = result;
+			ArrayList<Integer> seen = new ArrayList<Integer>();
+			while (join.joinNode != null && seen.contains(join.id) == false)
+			{
+				seen.add(join.id);
+				join = join.joinNode;
+			}
+			
+			// Not symmetric, order matters.
+			ArrayList<PLIRInstruction> toRemove = new ArrayList<PLIRInstruction>(); 
+			for (PLIRInstruction inst : nextBlock.instructions)
+			{
+				join.instructions.add(inst);
+				join.dominatedInstructions.add(inst);
+				toRemove.add(inst);
+			}
+			
+			// Remove instructions from nextBlock.instructions here since we just added them to the BB above
+			for (PLIRInstruction inst : toRemove)
+			{
+				nextBlock.instructions.remove(inst);
+			}
+		}
 		
 		/// TODO: we should really be adding these to a set of "dominated" instructions... not the instructions of the BB
 		if (nextBlock.exitNode != null)
 		{
 			result.exitNode = nextBlock.exitNode;
-			result.fixSpot();
 			result.dominatorSet.add(nextBlock.exitNode);
+			result.fixSpot();
 		}
 		
 		if (nextBlock.joinNode != null)
-		{	
+		{
 			result.fixSpot();
-			result.joinNode = nextBlock.joinNode;
+			
+			PLIRBasicBlock join = nextBlock;
+			ArrayList<Integer> seen = new ArrayList<Integer>();
+			while (join.joinNode != null && seen.contains(join.id) == false)
+			{
+				seen.add(join.id);
+				join = join.joinNode;
+				
+				for (String sym : result.modifiedIdents.keySet())
+				{
+					join.addModifiedValue(sym, result.modifiedIdents.get(sym));
+				}
+				for (String sym : result.usedIdents.keySet())
+				{
+					join.addUsedValue(sym, result.usedIdents.get(sym));
+				}
+			}
+			result.joinNode = join;
+			
+//			PLIRBasicBlock join = nextBlock.joinNode;
+//			ArrayList<Integer> seen = new ArrayList<Integer>();
+//			while (join.joinNode != null && seen.contains(join.id) == false)
+//			{
+//				seen.add(join.id);
+//				join = join.joinNode;
+//			}
 		}
 		
 		return result;

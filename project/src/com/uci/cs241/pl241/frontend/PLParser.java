@@ -23,6 +23,7 @@ public class PLParser
 	
 	// Useful things to help the parser
 	private boolean globalVariableParsing;
+	private ArrayList<PLIRInstruction> globalVariables = new ArrayList<PLIRInstruction>(); 
 	
 	// Other necessary things
 	private PLSymbolTable scope;
@@ -84,7 +85,7 @@ public class PLParser
 	// this is what's called - starting with the computation non-terminal
 	public PLIRBasicBlock parse(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRBasicBlock result = null;
+		PLIRBasicBlock result = new PLIRBasicBlock();
 		advance(in);
 		if (toksym == PLToken.mainToken)
 		{
@@ -96,9 +97,10 @@ public class PLParser
 			globalVariableParsing = true;
 			while (toksym == PLToken.varToken || toksym == PLToken.arrToken)
 			{
-				result = parse_varDecl(in); 
+				result = PLIRBasicBlock.merge(result, parse_varDecl(in)); 
 			}
 			globalVariableParsing = false;
+//			PLStaticSingleAssignment.globalSSAIndex = 0;
 			
 			while (toksym == PLToken.funcToken || toksym == PLToken.procToken)
 			{
@@ -125,6 +127,19 @@ public class PLParser
 				// eat the sequence of statements that make up the computation
 				advance(in);
 				result = parse_statSequence(in);
+				while (result.joinNode != null)
+				{
+					result = result.joinNode;
+				}
+				
+				// Add global variable initialization instructions as a separate BB
+//				PLIRBasicBlock globalBlock = new PLIRBasicBlock();
+//				for (PLIRInstruction global : globalVariables)
+//				{
+//					globalBlock.addInstruction(global);
+//				}
+//				result.parents.add(globalBlock);
+//				globalBlock.children.add(result);
 				
 				// parse the close of the computation
 				if (toksym == PLToken.closeBraceToken)
@@ -133,6 +148,7 @@ public class PLParser
 					if (toksym == PLToken.periodToken)
 					{
 						PLIRInstruction inst = new PLIRInstruction(scope, PLIRInstructionType.END);
+						result.addInstruction(inst);
 					}
 					else
 					{
@@ -186,7 +202,8 @@ public class PLParser
 			
 			// Add the sheet to scope
 			scope.addVarToScope(symName);
-//			scope.updateSymbol(symName, inst);
+			scope.updateSymbol(symName, inst);
+			globalVariables.add(inst);
 			
 			return block;
 		}
@@ -706,17 +723,24 @@ public class PLParser
 			// Create the artificial join node and make it a child of the follow-through branch,
 			// and also the exit/join block of the entry block
 			PLIRBasicBlock joinNode = new PLIRBasicBlock();
-			
 			if (thenBlock.joinNode != null)
 			{
-				thenBlock.joinNode.children.add(joinNode);
+				PLIRBasicBlock join = thenBlock.joinNode;
+				ArrayList<Integer> seen = new ArrayList<Integer>();
+				while (join.joinNode != null && seen.contains(join.id) == false)
+				{
+					seen.add(join.id);
+					join = join.joinNode;
+				}
+				join.children.add(joinNode);
+				joinNode.parents.add(join);
 			}
 			else
 			{
 				thenBlock.children.add(joinNode);
+				joinNode.parents.add(thenBlock);
 			}
 			entry.joinNode = joinNode;
-			joinNode.parents.add(thenBlock);
 			
 			// Check for an else branch
 			int offset = 0;
@@ -726,19 +750,22 @@ public class PLParser
 			{
 				PLIRInstruction uncond = UnCondBraFwd(follow);
 				thenBlock.addInstruction(uncond);
-				if (uncond.id == 22)
-				{
-					int a = 0;
-				}
 				advance(in);
 				
 				// Parse the else block and then configure the BB connections accordingly
 				elseBlock = parse_statSequence(in);
 				if (elseBlock.joinNode != null)
 				{
-					elseBlock.joinNode.children.add(joinNode);
-					elseBlock.joinNode.fixSpot();
-					joinNode.parents.add(elseBlock.joinNode);
+					PLIRBasicBlock join = elseBlock.joinNode;
+					ArrayList<Integer> seen = new ArrayList<Integer>();
+					while (join.joinNode != null && seen.contains(join.id) == false)
+					{
+						seen.add(join.id);
+						join = join.joinNode;
+					}
+					join.children.add(joinNode);
+					join.fixSpot();
+					joinNode.parents.add(join);
 				}
 				else
 				{
@@ -748,8 +775,6 @@ public class PLParser
 				}
 				
 				entry.children.add(elseBlock);
-//				elseBlock.children.add(joinNode);
-//				elseBlock.fixSpot();
 				elseBlock.parents.add(entry);
 				
 				
@@ -837,7 +862,6 @@ public class PLParser
 			else
 			{
 				entry.children.add(joinNode);
-				joinNode.parents.add(thenBlock);
 				joinNode.parents.add(entry);
 				scope.popScope();
 				blockDepth--;
@@ -916,9 +940,8 @@ public class PLParser
 			
 			// Parse the condition (relation) for the loop
 			PLIRBasicBlock entry = parse_relation(in);
-			PLIRInstruction x = entry.instructions.get(entry.instructions.size() - 1);
-			PLIRInstruction bgeInst = CondNegBraFwd(x);
-//			PLIRInstruction bgeInst = PLStaticSingleAssignment.instructions.get(PLStaticSingleAssignment.globalSSAIndex - 1);
+			PLIRInstruction entryCmpInst = entry.instructions.get(entry.instructions.size() - 1);
+			PLIRInstruction bgeInst = CondNegBraFwd(entryCmpInst);
 			
 			// Determine which identifiers are used in the entry/join node so we can defer generation (if PHIs are needed)
 			deferredPhiIdents.clear();
@@ -1003,15 +1026,20 @@ public class PLParser
 			// Make BB connections
 			if (body.joinNode != null)
 			{
-				body.joinNode.children.add(entry);
-				body.joinNode.fixSpot();
-				entry.parents.add(body.joinNode);
+				PLIRBasicBlock join = body.joinNode;
+				while (join.joinNode != null)
+				{
+					join = join.joinNode;
+				}
+				join.children.add(entry);
+				join.fixSpot();
+//				entry.parents.add(body.joinNode);
 			}
 			else
 			{
 				body.children.add(entry);
 				body.fixSpot();
-				entry.parents.add(body);
+//				entry.parents.add(body);
 			}
 			entry.children.add(body);
 			body.parents.add(entry);
@@ -1021,35 +1049,11 @@ public class PLParser
 			body.addInstruction(beqInst);
 			
 			// Fixup the conditional branch at the appropriate location
-			bgeInst.fixupLocation = x.fixupLocation;
+			bgeInst.fixupLocation = entryCmpInst.fixupLocation;
 			Fixup(bgeInst.fixupLocation, 0); 
 			
 			// Configure the dominator tree connections
 			entry.dominatorSet.add(body);
-			
-			//// TODO: merge here
-			// Merge the block results here
-//			entry = PLIRBasicBlock.merge(entry, body);
-//			if (body.joinNode != null)
-//			{	
-//				// Carry over modifications and used
-//				for (String sym : entry.modifiedIdents.keySet())
-//				{
-//					body.joinNode.addModifiedValue(sym, entry.modifiedIdents.get(sym));
-//				}
-//				for (String sym : entry.usedIdents.keySet())
-//				{
-//					body.joinNode.addUsedValue(sym, entry.usedIdents.get(sym));
-//				}
-//				
-//				// Carry over to the next node
-//				result = body.joinNode;
-//			}
-//			else
-//			{
-//				entry.isEntry = true;
-//				result = entry;
-//			}
 			
 			// Check for the closing od token and then eat it
 			if (toksym != PLToken.odToken)
@@ -1097,7 +1101,6 @@ public class PLParser
 		
 		if (isReturn)
 		{
-			// TODO: move into BB.setResult()
 			result.returnInst = result.getLastInst();
 			result.hasReturn = true;
 		}
@@ -1110,31 +1113,12 @@ public class PLParser
 			
 			if (isReturn)
 			{
-				// TODO: move into BB.setResult()
 				result.returnInst = result.getLastInst();
 				result.hasReturn = true;
 			}
 			
-			// Merge the block results here
-//			if (nextBlock != null)
-			{
-				result = PLIRBasicBlock.merge(result, nextBlock);
-				if (nextBlock.joinNode != null)
-				{	
-					// Carry over modifications and used
-					for (String sym : result.modifiedIdents.keySet())
-					{
-						nextBlock.joinNode.addModifiedValue(sym, result.modifiedIdents.get(sym));
-					}
-					for (String sym : result.usedIdents.keySet())
-					{
-						nextBlock.joinNode.addUsedValue(sym, result.usedIdents.get(sym));
-					}
-					
-					// Carry over to the next node
-					result = result.joinNode;
-				}
-			}
+			// Merge the block results 
+			result = PLIRBasicBlock.merge(result, nextBlock);
 		}
 		
 		// Fix the spot of the basic block (since we're leaving a statement sequence) and call it a day

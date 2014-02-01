@@ -8,7 +8,7 @@ var a, b, c, d, e, f, g;
   let d <- 10;
   let e <- call InputNum();
   if a == b then
-    let f <- e + 1;
+    call OutputNum(1337);
     if a == c then
       while a == d do
         let d <- d / 2;
@@ -22,12 +22,14 @@ var a, b, c, d, e, f, g;
       let a <- a + 1;
       call OutputNum(100)
     else
+      let f <- f + 1;
+      call OutputNum(0);
       call OutputNum(b)
     fi
   fi;
-  call OutputNewLine();
   call OutputNum(a);
   let f <- e + 1;
+  call OutputNewLine();
   call OutputNum(f)
 }.
 
