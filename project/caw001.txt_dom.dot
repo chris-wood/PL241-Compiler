@@ -1,11 +1,23 @@
 digraph G {
-bb13[shape = box, label = "BB(13)\n" + "0 := add #0 #1\n" + "11 := read\n" + "12 := read\n" + "13 := read\n" + "14 := read\n" + "15 := cmp (11) #1\n" + "16 := bge (15) #12\n"];
-bb30[shape = box, label = "BB(30)\n" + "17 := mul (11) (12)\n" + "18 := add (17) (13)\n" + "19 := phi (18) (23)\n" + "20 := cmp (11) #1\n" + "21 := bge (20) #5\n" + "26 := beq #0 #3\n"];
-bb48[shape = box, label = "BB(48)\n" + "27 := mul (11) (12)\n" + "28 := add (27) (13)\n"];
-bb43[shape = box, label = "BB(43)\n" + "29 := phi (19) (28)\n" + "30 := mul (11) (12)\n" + "31 := mul (30) (14)\n" + "32 := mul (11) (12)\n" + "33 := mul (32) (29)\n" + "34 := mul (11) (29)\n" + "35 := mul (34) (14)\n" + "36 := write (31)\n" + "37 := write (33)\n" + "38 := write (35)\n" + "39 := end\n"];
-bb39[shape = box, label = "BB(39)\n" + "22 := mul (11) (12)\n" + "23 := add (22) (14)\n" + "24 := wln\n" + "25 := beq #0 #-6\n"];
-bb13 -> bb30;
-bb13 -> bb48;
-bb13 -> bb43;
-bb30 -> bb39;
+bb10[shape = box, label = "BB(10)\n" + "0 := add #0 #1\n" + "8 := read\n" + "9 := read\n" + "10 := add (9) #1\n" + "11 := read\n" + "12 := cmp (8) (9)\n" + "13 := bne (12) #22\n"];
+bb28[shape = box, label = "BB(28)\n" + "14 := write #1337\n" + "15 := cmp (8) (10)\n" + "16 := bne (15) #7\n" + "25 := beq #0 #11\n"];
+bb49[shape = box, label = "BB(49)\n" + "26 := cmp (8) (10)\n" + "27 := bne (26) #6\n"];
+bb46[shape = box, label = "BB(46)\n" + "36 := phi (6) (34)\n" + "37 := phi (8) (35)\n" + "38 := phi (24) #10\n" + "39 := write (37)\n" + "40 := add (11) #1\n" + "41 := wln\n" + "42 := write (40)\n" + "43 := end\n"];
+bb34[shape = box, label = "BB(34)\n" + "17 := phi #10 (0)\n" + "18 := cmp (8) (17)\n" + "19 := bne (18) #3\n" + "22 := beq #0 #2\n"];
+bb45[shape = box, label = "BB(45)\n" + "23 := write (10)\n"];
+bb42[shape = box, label = "BB(42)\n" + "24 := phi (17) #10\n"];
+bb52[shape = box, label = "BB(52)\n" + "28 := add (8) #1\n" + "29 := write #100\n" + "30 := beq #0 #4\n"];
+bb60[shape = box, label = "BB(60)\n" + "6 := add #0 #0\n" + "31 := add (6) #1\n" + "32 := write #0\n" + "33 := write (9)\n"];
+bb57[shape = box, label = "BB(57)\n" + "34 := phi (6) (31)\n" + "35 := phi (28) (8)\n"];
+bb37[shape = box, label = "BB(37)\n" + "20 := write (8)\n" + "21 := beq #0 #-4\n"];
+bb10 -> bb28;
+bb10 -> bb49;
+bb10 -> bb46;
+bb28 -> bb34;
+bb28 -> bb45;
+bb28 -> bb42;
+bb49 -> bb52;
+bb49 -> bb60;
+bb49 -> bb57;
+bb34 -> bb37;
 }

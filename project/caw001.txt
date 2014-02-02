@@ -1,28 +1,3 @@
-/// 
-main
-var a, b, c, g, d, e, z, y, t, u;
-{
-let b <- call InputNum();
-let c <- call InputNum();
-let g <- call InputNum();
-let d <- call InputNum();
-if b < 1 then
-  let a <- (b * c) + g;
-  while b < 1 do
-    let a <- (b * c) + d;
-    call OutputNewLine()
-  od
-else
-  let a <- (b * c) + g
-fi;
-let y <- (b * c) * d;
-let u <- (b * c) * a;
-let t <- (b * a) * d;
-call OutputNum(y);
-call OutputNum(u);
-call OutputNum(t)
-}.
-
 // Nested dominator/cfg stuff - trying to get the graphs correct :-\ ...
 main 
 var a, b, c, d, e, f, g;
@@ -58,7 +33,30 @@ var a, b, c, d, e, f, g;
   call OutputNum(f)
 }.
 
-
+///  CSE TEST
+main
+var a, b, c, g, d, e, z, y, t, u;
+{
+let b <- call InputNum();
+let c <- call InputNum();
+let g <- call InputNum();
+let d <- call InputNum();
+if b < 1 then
+  let a <- (b * c) + g;
+  while b < 1 do
+    let a <- (b * c) + d;
+    call OutputNewLine()
+  od
+else
+  let a <- (b * c) + g
+fi;
+let y <- (b * c) * d;
+let u <- (b * c) * a;
+let t <- (b * a) * d;
+call OutputNum(y);
+call OutputNum(u);
+call OutputNum(t)
+}.
 
 // Nested dominator/cfg stuff - trying to get the graphs correct :-\ ...
 main 

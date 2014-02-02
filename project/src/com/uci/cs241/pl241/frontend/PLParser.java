@@ -387,7 +387,7 @@ public class PLParser
 			PLIRInstructionType opcode = operator == PLToken.timesToken ? PLIRInstructionType.MUL : PLIRInstructionType.DIV;
 			
 			PLIRInstruction termInst = new PLIRInstruction(scope, opcode, leftValue, rightValue);
-			termInst.overrideGenerate = true; //// CAW: removed?...
+			//termInst.overrideGenerate = true; //// CAW: removed?...
 			termInst.forceGenerate(scope);
 			
 			for (PLIRInstruction inst : factor.instructions)
@@ -436,7 +436,7 @@ public class PLParser
 			PLIRInstruction rightValue = rightNode.instructions.get(rightNode.instructions.size() - 1);
 			PLIRInstructionType opcode = operator == PLToken.plusToken ? PLIRInstructionType.ADD : PLIRInstructionType.SUB;
 			PLIRInstruction exprInst = new PLIRInstruction(scope, opcode, leftValue, rightValue);
-			exprInst.overrideGenerate = true; //// CAW: removed?...
+			//exprInst.overrideGenerate = true; //// CAW: removed?...
 			exprInst.forceGenerate(scope);
 			
 			for (PLIRInstruction inst : term.instructions)
@@ -712,6 +712,14 @@ public class PLParser
 			
 			// Parse the condition relation
 			PLIRBasicBlock entry = parse_relation(in);
+			for (PLIRInstruction inst : entry.instructions)
+			{
+				if (inst.kind == ResultKind.CONST)
+				{
+					inst.overrideGenerate = true;
+					inst.forceGenerate(scope);
+				}
+			}
 			PLIRInstruction x = entry.instructions.get(entry.instructions.size() - 1);
 			PLIRInstruction branch = CondNegBraFwd(x);
 			entry.addInstruction(branch);
@@ -967,6 +975,7 @@ public class PLParser
 			
 			// Build the BB of the statement sequence
 			PLIRBasicBlock body = parse_statSequence(in);
+			body.isWhileBody = true;
 			entry.joinNode = entry;
 			
 			PLIRInstruction cmpInst = entry.instructions.get(entry.instructions.size() - 1);
@@ -1035,10 +1044,10 @@ public class PLParser
 			if (body.joinNode != null)
 			{
 				PLIRBasicBlock join = body.joinNode;
-//				while (join.joinNode != null)
-//				{
-//					join = join.joinNode;
-//				}
+				while (join.joinNode != null)
+				{
+					join = join.joinNode;
+				}
 				join.children.add(entry);
 				join.fixSpot();
 //				entry.parents.add(body.joinNode);
@@ -1047,7 +1056,7 @@ public class PLParser
 			{
 				body.children.add(entry);
 				body.fixSpot();
-//				entry.parents.add(body);
+//				entry.children.add(body);
 			}
 			entry.children.add(body);
 			body.parents.add(entry);

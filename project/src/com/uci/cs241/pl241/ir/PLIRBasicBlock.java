@@ -33,6 +33,9 @@ public class PLIRBasicBlock
 	// For rendering
 	public boolean omit = false;
 	
+	// for BB connections
+	public boolean isWhileBody = false;
+	
 	// TODO: need to compute this for the dominator tree algorithm!!!
 	public int treeSize;
 	
@@ -55,153 +58,267 @@ public class PLIRBasicBlock
 		this.usedIdents = new HashMap<String, PLIRInstruction>();
 	}
 	
-	public static PLIRBasicBlock merge(PLIRBasicBlock result, PLIRBasicBlock nextBlock)
+	public static PLIRBasicBlock merge(PLIRBasicBlock oldBlock, PLIRBasicBlock newBlock)
 	{	
 		// Merge the blocks intermediate results here
-		for (String sym : nextBlock.modifiedIdents.keySet())
+		for (String sym : newBlock.modifiedIdents.keySet())
 		{
-			result.addModifiedValue(sym, nextBlock.modifiedIdents.get(sym));
+			oldBlock.addModifiedValue(sym, newBlock.modifiedIdents.get(sym));
 		}
-		for (String sym : result.modifiedIdents.keySet())
+		for (String sym : oldBlock.modifiedIdents.keySet())
 		{
-			nextBlock.addModifiedValue(sym, result.modifiedIdents.get(sym));
+			newBlock.addModifiedValue(sym, oldBlock.modifiedIdents.get(sym));
 		}
-		for (String sym : nextBlock.usedIdents.keySet())
+		for (String sym : newBlock.usedIdents.keySet())
 		{
-			result.addUsedValue(sym, nextBlock.usedIdents.get(sym));
+			oldBlock.addUsedValue(sym, newBlock.usedIdents.get(sym));
 		}
-		for (String sym : result.usedIdents.keySet())
+		for (String sym : oldBlock.usedIdents.keySet())
 		{
-			nextBlock.addUsedValue(sym, result.usedIdents.get(sym));
+			newBlock.addUsedValue(sym, oldBlock.usedIdents.get(sym));
 		}
 		
-		// If next is an entry, merge with what we have
-		if (nextBlock.isEntry)
+		// Walk to the right spot on the BB tree
+		PLIRBasicBlock leftJoin = oldBlock;
+		if (leftJoin.joinNode != null)
 		{
-			PLIRBasicBlock join = result;
-			if (nextBlock.joinNode != null)
-			{
-				ArrayList<Integer> seen = new ArrayList<Integer>();
-				while (join.joinNode != null && seen.contains(join.id) == false)
-				{
-					seen.add(join.id);
-					join = join.joinNode;
-				}
-			}
-			
-			if (result.id == 34 || nextBlock.id == 34)
-			{
-				System.out.println("asd");
-				int x = 0;
-			}
-			// Remove instructions in nextBlock that appear in result 
-			for (PLIRInstruction inst : result.instructions)
-			{
-				System.err.println("Removing redundant instruction: " + inst.toString());
-				nextBlock.instructions.remove(inst);
-			}
-			
-			// Not symmetric, order matters.
-			ArrayList<PLIRInstruction> toRemove = new ArrayList<PLIRInstruction>(); 
-			for (PLIRInstruction inst : nextBlock.instructions)
-			{
-				join.instructions.add(inst); // CAW RESULT
-				join.dominatedInstructions.add(inst); // CAW RESULT
-				toRemove.add(inst);
-			}
-			
-			// Remove instructions from nextBlock.instructions here since we just added them to the BB above
-			for (PLIRInstruction inst : toRemove)
-			{
-				nextBlock.instructions.remove(inst);
-			}
-			
-			// Handle parents
-			if (nextBlock.children.size() > 0)
-			{
-				for (PLIRBasicBlock block : nextBlock.children)
-				{
-//					result.children.add(block);
-					join.children.add(block);
-					block.parents.add(result);
-					block.parents.remove(nextBlock);
-				}
-			}
-			for (PLIRBasicBlock block : nextBlock.dominatorSet)
-			{
-				result.dominatorSet.add(block);
-//				join.dominatorSet.add(block);
-			}
-		}
-		else
-		{
-			// Remove instructions in nextBlock that appear in result 
-			for (PLIRInstruction inst : result.instructions)
-			{
-				System.err.println("Removing redundant instruction: " + inst.toString());
-				nextBlock.instructions.remove(inst);
-			}
-			
-			PLIRBasicBlock join = result;
 			ArrayList<Integer> seen = new ArrayList<Integer>();
-			while (join.joinNode != null && seen.contains(join.id) == false)
+			while (leftJoin.joinNode != null && seen.contains(leftJoin.id) == false)
 			{
-				seen.add(join.id);
-				join = join.joinNode;
-			}
-			
-			// Not symmetric, order matters.
-			ArrayList<PLIRInstruction> toRemove = new ArrayList<PLIRInstruction>(); 
-			for (PLIRInstruction inst : nextBlock.instructions)
-			{
-				join.instructions.add(inst);
-				join.dominatedInstructions.add(inst);
-				toRemove.add(inst);
-			}
-			
-			// Remove instructions from nextBlock.instructions here since we just added them to the BB above
-			for (PLIRInstruction inst : toRemove)
-			{
-				nextBlock.instructions.remove(inst);
+				seen.add(leftJoin.id);
+				leftJoin = leftJoin.joinNode;
 			}
 		}
 		
-		/// TODO: we should really be adding these to a set of "dominated" instructions... not the instructions of the BB
-		if (nextBlock.exitNode != null)
+		// Remove instructions in nextBlock that appear in result 
+		for (PLIRInstruction inst : oldBlock.instructions)
 		{
-			result.exitNode = nextBlock.exitNode;
-			result.dominatorSet.add(nextBlock.exitNode);
-			result.fixSpot();
+			System.err.println("Removing redundant instruction: " + inst.toString());
+			newBlock.instructions.remove(inst);
 		}
 		
-		if (nextBlock.joinNode != null)
+		// Not symmetric, order matters.
+		ArrayList<PLIRInstruction> toRemove = new ArrayList<PLIRInstruction>(); 
+		for (PLIRInstruction inst : newBlock.instructions)
 		{
-			result.fixSpot();
-			
-			PLIRBasicBlock join = nextBlock;
-			ArrayList<Integer> seen = new ArrayList<Integer>();
-			while (join.joinNode != null && seen.contains(join.id) == false)
+			leftJoin.instructions.add(inst); // CAW RESULT
+			leftJoin.dominatedInstructions.add(inst); // CAW RESULT
+			toRemove.add(inst);
+		}
+		
+		// Remove instructions from nextBlock.instructions here since we just added them to the BB above
+		for (PLIRInstruction inst : toRemove)
+		{
+			newBlock.instructions.remove(inst);
+		}
+		
+		// Handle parents
+		if (newBlock.children.size() > 0)
+		{
+			ArrayList<PLIRBasicBlock> childrenChildrenToRemove = new ArrayList<PLIRBasicBlock>();
+			for (PLIRBasicBlock block : newBlock.children)
 			{
-				seen.add(join.id);
-				join = join.joinNode;
+				// oldBlock children gets the immediate children
+				leftJoin.children.add(block);
 				
-				for (String sym : result.modifiedIdents.keySet())
+				// the joinNode of the child points back to the oldBlock
+				if (block.joinNode == null)
 				{
-					join.addModifiedValue(sym, result.modifiedIdents.get(sym));
+					block.parents.add(leftJoin);
+					if (block.children.contains(newBlock))
+					{
+						block.children.add(leftJoin);
+						block.children.remove(newBlock);
+					}
 				}
-				for (String sym : result.usedIdents.keySet())
+				else
 				{
-					join.addUsedValue(sym, result.usedIdents.get(sym));
+					block.joinNode.parents.add(leftJoin);
+					if (block.joinNode.children.contains(newBlock))
+					{
+						block.joinNode.children.add(leftJoin);
+						block.joinNode.children.remove(newBlock);
+					}
 				}
-			}
-			
-			if (join.instructions.size() > 0)
-			{
-				result.joinNode = join;
 			}
 		}
 		
-		return result;
+		// Add the dominator sets
+		for (PLIRBasicBlock block : newBlock.dominatorSet)
+		{
+			oldBlock.dominatorSet.add(block);
+			leftJoin.dominatorSet.add(block);
+		}
+		
+		oldBlock.fixSpot();
+		leftJoin.fixSpot();
+		
+		PLIRBasicBlock join = newBlock;
+		ArrayList<Integer> seen = new ArrayList<Integer>();
+		while (join.joinNode != null && seen.contains(join.id) == false)
+		{
+			seen.add(join.id);
+			join = join.joinNode;
+			
+			for (String sym : oldBlock.modifiedIdents.keySet())
+			{
+				join.addModifiedValue(sym, oldBlock.modifiedIdents.get(sym));
+			}
+			for (String sym : oldBlock.usedIdents.keySet())
+			{
+				join.addUsedValue(sym, oldBlock.usedIdents.get(sym));
+			}
+		}
+		
+		if (join.instructions.size() > 0)
+		{
+			oldBlock.joinNode = join;
+		}
+		
+//		// If next is an entry, merge with what we have
+////		if (nextBlock.isEntry)
+//		{
+//			PLIRBasicBlock join = result;
+//			if (join.joinNode != null)
+//			{
+//				ArrayList<Integer> seen = new ArrayList<Integer>();
+//				while (join.joinNode != null && seen.contains(join.id) == false)
+//				{
+//					seen.add(join.id);
+//					join = join.joinNode;
+//				}
+//			}
+//			
+//			PLIRBasicBlock nextJoin = nextBlock;
+//			if (nextJoin.joinNode != null)
+//			{
+//				ArrayList<Integer> seen = new ArrayList<Integer>();
+//				while (nextJoin.joinNode != null && seen.contains(nextJoin.id) == false)
+//				{
+//					seen.add(nextJoin.id);
+//					nextJoin = nextJoin.joinNode;
+//				}
+//			}
+//			
+//			if (result.id == 34 || nextBlock.id == 34)
+//			{
+//				System.out.println("asd");
+//				int x = 0;
+//			}
+//			
+//			// Remove instructions in nextBlock that appear in result 
+//			for (PLIRInstruction inst : result.instructions)
+//			{
+//				System.err.println("Removing redundant instruction: " + inst.toString());
+//				nextBlock.instructions.remove(inst);
+//			}
+//			
+//			// Not symmetric, order matters.
+//			ArrayList<PLIRInstruction> toRemove = new ArrayList<PLIRInstruction>(); 
+//			for (PLIRInstruction inst : nextBlock.instructions)
+////			for (PLIRInstruction inst : nextJoin.instructions)
+//			{
+//				join.instructions.add(inst); // CAW RESULT
+////				result.instructions.add(inst); // CAW RESULT
+//				join.dominatedInstructions.add(inst); // CAW RESULT
+////				result.dominatedInstructions.add(inst); // CAW RESULT
+//				toRemove.add(inst);
+//			}
+//			
+//			// Remove instructions from nextBlock.instructions here since we just added them to the BB above
+//			for (PLIRInstruction inst : toRemove)
+//			{
+//				nextBlock.instructions.remove(inst);
+////				nextJoin.instructions.remove(inst);
+//			}
+//			
+//			// Handle parents
+//			if (nextBlock.children.size() > 0)
+//			{
+//				for (PLIRBasicBlock block : nextBlock.children)
+//				{
+//					result.children.add(block);
+////					block.parents.add(result);
+////					join.children.add(block);
+////					block.parents.add(join);
+////					block.parents.remove(nextBlock);
+//				}
+//			}
+//			for (PLIRBasicBlock block : nextBlock.dominatorSet)
+//			{
+//				result.dominatorSet.add(block);
+////				join.dominatorSet.add(block);
+//			}
+//		}
+////		else
+////		{
+////			// Remove instructions in nextBlock that appear in result 
+////			for (PLIRInstruction inst : result.instructions)
+////			{
+////				System.err.println("Removing redundant instruction: " + inst.toString());
+////				nextBlock.instructions.remove(inst);
+////			}
+////			
+////			PLIRBasicBlock join = result;
+////			ArrayList<Integer> seen = new ArrayList<Integer>();
+////			while (join.joinNode != null && seen.contains(join.id) == false)
+////			{
+////				seen.add(join.id);
+////				join = join.joinNode;
+////			}
+////			
+////			// Not symmetric, order matters.
+////			ArrayList<PLIRInstruction> toRemove = new ArrayList<PLIRInstruction>(); 
+////			for (PLIRInstruction inst : nextBlock.instructions)
+////			{
+////				join.instructions.add(inst);
+////				join.dominatedInstructions.add(inst);
+////				toRemove.add(inst);
+////			}
+////			
+////			// Remove instructions from nextBlock.instructions here since we just added them to the BB above
+////			for (PLIRInstruction inst : toRemove)
+////			{
+////				nextBlock.instructions.remove(inst);
+////			}
+////		}
+//		
+//		/// TODO: we should really be adding these to a set of "dominated" instructions... not the instructions of the BB
+//		if (nextBlock.exitNode != null)
+//		{
+//			result.exitNode = nextBlock.exitNode;
+//			result.dominatorSet.add(nextBlock.exitNode);
+//			result.fixSpot();
+//		}
+//		
+//		if (nextBlock.joinNode != null)
+//		{
+//			result.fixSpot();
+//			
+//			PLIRBasicBlock join = nextBlock;
+//			ArrayList<Integer> seen = new ArrayList<Integer>();
+//			while (join.joinNode != null && seen.contains(join.id) == false)
+//			{
+//				seen.add(join.id);
+//				join = join.joinNode;
+//				
+//				for (String sym : result.modifiedIdents.keySet())
+//				{
+//					join.addModifiedValue(sym, result.modifiedIdents.get(sym));
+//				}
+//				for (String sym : result.usedIdents.keySet())
+//				{
+//					join.addUsedValue(sym, result.usedIdents.get(sym));
+//				}
+//			}
+//			
+//			if (join.instructions.size() > 0)
+//			{
+//				result.joinNode = join;
+//			}
+//		}
+		
+		return oldBlock;
 	}
 	
 	public void propagatePhi(String var, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited)
