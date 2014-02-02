@@ -105,7 +105,7 @@ public class PLParser
 			{
 				// TODO: merge together, but make a separate BB from the ones above, and tie the BB to the procedure/function name
 				int funcType = toksym;
-				result = this.parse_funcDecl(in);
+				result = this.parse_funcDecl(in); // a separate BB for each function/procedure
 				
 				switch (funcType)
 				{
@@ -537,15 +537,20 @@ public class PLParser
 					// The last instruction added to the BB is the one that holds the value for this assignment
 					PLIRInstruction inst = result.instructions.get(result.instructions.size() - 1);
 					
+					scope.updateSymbol(varName, inst); // (SSA ID) := expr
+					
+					// Add an entry to the DU chain
+					duChain.put(inst, new ArrayList<PLIRInstruction>());
+					
 					// If we aren't deferring generation because of a potential PHI usage, just replace with the current value in scope
-					if (deferredPhiIdents.contains(varName) == false)
-					{
-						scope.updateSymbol(varName, inst); // (SSA ID) := expr
-						
-						// Add an entry to the DU chain
-						duChain.put(inst, new ArrayList<PLIRInstruction>());
-					}
-					else // else, force the current instruction to be generated so it can be used in a phi later
+//					if (deferredPhiIdents.contains(varName) == false)
+//					{
+//						scope.updateSymbol(varName, inst); // (SSA ID) := expr
+//						
+//						// Add an entry to the DU chain
+//						duChain.put(inst, new ArrayList<PLIRInstruction>());
+//					}
+					if (deferredPhiIdents.contains(varName)) // else, force the current instruction to be generated so it can be used in a phi later
 					{
 						inst.kind = ResultKind.VAR;
 //						inst.generated = false;
@@ -613,6 +618,7 @@ public class PLParser
 						PLIRInstruction inst = new PLIRInstruction(scope, PLIRInstructionType.WRITE, exprInst);
 						result = new PLIRBasicBlock();
 						result.addInstruction(inst);
+						result.joinNode = null;
 						
 						// Update DU chain
 						if (duChain.containsKey(exprInst))
@@ -975,9 +981,8 @@ public class PLParser
 			
 			// Build the BB of the statement sequence
 			PLIRBasicBlock body = parse_statSequence(in);
-//			PLIRBasicBlock joinNode = new PLIRBasicBlock();
-			body.isWhileBody = true;
-			entry.joinNode = entry;
+			PLIRBasicBlock joinNode = new PLIRBasicBlock();
+			entry.joinNode = joinNode;
 			
 			PLIRInstruction cmpInst = entry.instructions.get(entry.instructions.size() - 1);
 			bgeInst.op1 = cmpInst;
@@ -1004,7 +1009,7 @@ public class PLParser
 				
 				// Inject the phi at the appropriate spot in the join node...
 				PLIRInstruction phi = PLIRInstruction.create_phi(scope, preInst, bodyInst, loopLocation);
-				entry.joinNode.insertInstruction(phi, 0); 
+				entry.insertInstruction(phi, 0); 
 				
 				// The current value in scope needs to be updated now with the result of the phi
 				scope.updateSymbol(var, phi);
@@ -1041,7 +1046,7 @@ public class PLParser
 			
 			////////////////////////////////////////////
 			
-			// Make BB connections
+			// Hook the body of the loop back to the entry
 			if (body.joinNode != null)
 			{
 				PLIRBasicBlock join = body.joinNode;
@@ -1051,16 +1056,18 @@ public class PLParser
 				}
 				join.children.add(entry);
 				join.fixSpot();
-//				entry.parents.add(body.joinNode);
 			}
 			else
 			{
 				body.children.add(entry);
 				body.fixSpot();
-//				entry.children.add(body);
 			}
 			entry.children.add(body);
 			body.parents.add(entry);
+			
+			// Patch up the follow-through branch
+			entry.children.add(joinNode); // CAW
+			joinNode.parents.add(entry); // CAW
 			
 			// Insert the unconditional branch at (location - pc)
 			PLIRInstruction beqInst = PLIRInstruction.create_BEQ(scope, loopLocation - PLStaticSingleAssignment.globalSSAIndex);
@@ -1072,6 +1079,7 @@ public class PLParser
 			
 			// Configure the dominator tree connections
 			entry.dominatorSet.add(body);
+			entry.dominatorSet.add(joinNode);
 			
 			// Check for the closing od token and then eat it
 			if (toksym != PLToken.odToken)

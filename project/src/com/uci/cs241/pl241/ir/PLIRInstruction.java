@@ -550,22 +550,14 @@ public class PLIRInstruction
 	    if (!(o instanceof PLIRInstruction)) return false;
 	    PLIRInstruction other = (PLIRInstruction)o;
 	    
+	    // the wonderful benefit of SSA :-)
 	    if (this.id == other.id)
 	    {
 	    	return true;
 	    }
-	    else 
+	    else
 	    {
-	    	// special case to handle commutative operations
-	    	switch (this.opcode)
-	    	{
-	    	case ADD:
-	    		
-	    	case MUL:
-	    		
-	    	default:
-	    		return false;
-	    	}
+	    	return false;
 	    }
 	}
 	
