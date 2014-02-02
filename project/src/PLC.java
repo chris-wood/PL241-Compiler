@@ -15,6 +15,7 @@ import com.uci.cs241.pl241.frontend.PLTokenizer;
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
 import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
+import com.uci.cs241.pl241.optimization.CSE;
 import com.uci.cs241.pl241.visualization.GraphvizRender;
 
 
@@ -64,6 +65,10 @@ public class PLC
 			root = root.parents.get(0);
 		}
 		
+		// Perform CSE, starting at the root
+		CSE cse = new CSE();
+//		cse.performCSE(root);
+		
 		// Display the instructions
 		System.out.println("\nBegin Instructions\n");
 		PrintWriter instWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + "_inst")));
@@ -112,13 +117,13 @@ public class PLC
 		String domdot = render.renderDominatorTree(root);
 		
 		// Write out the CFG string
-		PrintWriter cfgWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + "_cfg.dot")));
+		PrintWriter cfgWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + ".cfg.dot")));
 		cfgWriter.println(cfgdot);
 		cfgWriter.flush();
 		cfgWriter.close();
 		
 		// Write out the dominator tree
-		PrintWriter domWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + "_dom.dot")));
+		PrintWriter domWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + ".dom.dot")));
 		domWriter.println(domdot);
 		domWriter.flush();
 		domWriter.close();	

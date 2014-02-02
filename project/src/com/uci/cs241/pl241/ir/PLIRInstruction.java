@@ -49,7 +49,8 @@ public class PLIRInstruction
 		while (base != null)
 		{
 			prev = base;
-			base = base.refInst;
+			if (base.refInst == base) base = null;
+			else base = base.refInst;
 		}
 		this.origIdent = prev.origIdent;
 	}
