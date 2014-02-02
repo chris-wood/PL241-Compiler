@@ -1,3 +1,19 @@
+// asd - DOMINATOR TEST
+main 
+var a, b, c, d, e, f, g;
+{
+  let a <- call InputNum();
+  let b <- a;
+  let c <- b;
+  
+  while a > 0 do
+    let a <- a - 1;
+    call OutputNum(a)
+  od;
+
+  call OutputNum(100)
+}.
+
 // asd - HARD FUCKING TEST CASE WITH NESTED THINGS AND PHIS
 main 
 var a, b, c, d, e, f, g;
@@ -27,6 +43,25 @@ var a, b, c, d, e, f, g;
   else
     call OutputNum(100)
   fi;
+  call OutputNum(a);
+  call OutputNum(g)
+}.
+
+// asd - HARD FUCKING TEST CASE WITH NESTED THINGS AND PHIS
+main 
+var a, b, c, d, e, f, g;
+{
+  let a <- call InputNum();
+  let b <- a;
+  let c <- b;
+  let d <- b + c;
+  let e <- a + b;
+  let f <- a + c;
+  let g <- 10;
+  while a > 0 do
+    let a <- a - 1;
+    call OutputNum(a)
+  od;
   call OutputNum(a);
   call OutputNum(g)
 }.

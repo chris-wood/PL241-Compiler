@@ -67,7 +67,7 @@ public class PLC
 		
 		// Perform CSE, starting at the root
 		CSE cse = new CSE();
-//		cse.performCSE(root);
+		cse.performCSE(root);
 		
 		// Display the instructions
 		System.out.println("\nBegin Instructions\n");

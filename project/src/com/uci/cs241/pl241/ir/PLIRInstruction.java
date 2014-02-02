@@ -49,7 +49,7 @@ public class PLIRInstruction
 		while (base != null)
 		{
 			prev = base;
-			if (base.refInst == base) base = null;
+			if (base.refInst.id == base.id) base = null;
 			else base = base.refInst;
 		}
 		this.origIdent = prev.origIdent;
@@ -550,37 +550,23 @@ public class PLIRInstruction
 	    if (!(o instanceof PLIRInstruction)) return false;
 	    PLIRInstruction other = (PLIRInstruction)o;
 	    
-	    if (this.opcode == other.opcode)
+	    if (this.id == other.id)
 	    {
-	    	if (this.op1type == other.op1type && this.op1type == OperandType.INST && this.op1.equals(other.op1))
+	    	return true;
+	    }
+	    else 
+	    {
+	    	// special case to handle commutative operations
+	    	switch (this.opcode)
 	    	{
-	    		// op inst inst
-	    		if (this.op2type == other.op2type && this.op2type == OperandType.INST && this.op2.equals(other.op2))
-	    		{
-	    			return true;
-	    		}
-	    		// op inst const
-	    		else if (this.op2type == other.op2type && this.op2type == OperandType.CONST && this.i2 == other.i2)
-	    		{
-	    			return true;
-	    		}
-	    	} 
-	    	else if (this.op1type == other.op1type && this.op1type == OperandType.CONST && this.i1 == other.i1)
-	    	{
-	    		// op const inst 
-	    		if (this.op2type == other.op2type && this.op2type == OperandType.INST && this.op2.equals(other.op2))
-	    		{
-	    			return true;
-	    		}
-	    		// op const const 
-	    		else if (this.op2type == other.op2type && this.op2type == OperandType.CONST && this.i2 == other.i2)
-	    		{
-	    			return true;
-	    		}
+	    	case ADD:
+	    		
+	    	case MUL:
+	    		
+	    	default:
+	    		return false;
 	    	}
 	    }
-	    
-	    return false;
 	}
 	
 	@Override

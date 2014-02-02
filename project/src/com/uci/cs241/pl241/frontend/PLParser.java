@@ -975,6 +975,7 @@ public class PLParser
 			
 			// Build the BB of the statement sequence
 			PLIRBasicBlock body = parse_statSequence(in);
+//			PLIRBasicBlock joinNode = new PLIRBasicBlock();
 			body.isWhileBody = true;
 			entry.joinNode = entry;
 			
