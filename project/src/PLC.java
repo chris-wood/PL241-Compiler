@@ -56,18 +56,24 @@ public class PLC
 		//// RUN THE PARSER
 		scanner = new PLScanner(args[0]);
 		PLParser parser = new PLParser();
-		PLIRBasicBlock exit = parser.parse(scanner);
+		ArrayList<PLIRBasicBlock> blocks = parser.parse(scanner);
 		
-		// Find the root by walking up the tree in any direction
-		PLIRBasicBlock root = exit;
-		while (root.parents.isEmpty() == false)
+		for (PLIRBasicBlock block : blocks)
 		{
-			root = root.parents.get(0);
+			// Find the root by walking up the tree in any direction
+			PLIRBasicBlock root = block;
+			while (root.parents.isEmpty() == false)
+			{
+				root = root.parents.get(0);
+			}
+			
+			// Perform CSE, starting at the root
+			CSE cse = new CSE();
+			//cse.performCSE(root);
 		}
 		
-		// Perform CSE, starting at the root
-		CSE cse = new CSE();
-		cse.performCSE(root);
+		// Recover the main root
+		PLIRBasicBlock root = blocks.get(blocks.size() - 1);
 		
 		// Display the instructions
 		System.out.println("\nBegin Instructions\n");

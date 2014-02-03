@@ -32,6 +32,7 @@ public class PLIRBasicBlock
 	
 	// For rendering
 	public boolean omit = false;
+	public String label = "";
 	
 	// TODO: need to compute this for the dominator tree algorithm!!!
 	public int treeSize;
@@ -176,11 +177,6 @@ public class PLIRBasicBlock
 	
 	public void propagatePhi(String var, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited)
 	{
-		if (phi.id == 27)
-		{
-			System.out.println("here");
-		}
-		
 		PLIRInstruction findPhi = phi;
 		PLIRInstruction replacePhi = phi;
 		

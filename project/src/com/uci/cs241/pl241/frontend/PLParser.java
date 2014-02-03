@@ -23,6 +23,7 @@ public class PLParser
 	
 	// Useful things to help the parser
 	private boolean globalVariableParsing;
+	private boolean globalFunctionParsing;
 	private ArrayList<PLIRInstruction> globalVariables = new ArrayList<PLIRInstruction>(); 
 	
 	// Other necessary things
@@ -83,8 +84,10 @@ public class PLParser
 	}
 	
 	// this is what's called - starting with the computation non-terminal
-	public PLIRBasicBlock parse(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	public ArrayList<PLIRBasicBlock> parse(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
+		ArrayList<PLIRBasicBlock> blocks = new ArrayList<PLIRBasicBlock>();
+		
 		PLIRBasicBlock result = new PLIRBasicBlock();
 		advance(in);
 		if (toksym == PLToken.mainToken)
@@ -101,25 +104,27 @@ public class PLParser
 			}
 			globalVariableParsing = false;
 			
+			globalFunctionParsing = true;
 			while (toksym == PLToken.funcToken || toksym == PLToken.procToken)
 			{
-				// TODO: merge together, but make a separate BB from the ones above, and tie the BB to the procedure/function name
 				int funcType = toksym;
-				result = this.parse_funcDecl(in); // a separate BB for each function/procedure
+				PLIRBasicBlock funcEntry = this.parse_funcDecl(in); // a separate BB for each function/procedure
+				funcEntry.label = funcName;
+				blocks.add(funcEntry);
 				
 				switch (funcType)
 				{
 				case PLToken.funcToken:
-					funcBlockMap.put(funcName, result); // save this so that others may use it
+					funcBlockMap.put(funcName, funcEntry); // save this so that others may use it
 					funcFlagMap.put(funcName, true);
 					break;
 				case PLToken.procToken:
-					procBlockMap.put(funcName, result); // save this so that others may use it
+					procBlockMap.put(funcName, funcEntry); // save this so that others may use it
 					funcFlagMap.put(funcName, false);
 					break;
 				}
-				
 			}
+			globalFunctionParsing = false;
 			
 			if (toksym == PLToken.openBraceToken)
 			{
@@ -148,6 +153,7 @@ public class PLParser
 					{
 						PLIRInstruction inst = new PLIRInstruction(scope, PLIRInstructionType.END);
 						result.addInstruction(inst);
+						blocks.add(root);
 					}
 					else
 					{
@@ -169,7 +175,7 @@ public class PLParser
 			SyntaxError("Computation does not begin with main keyword");
 		}
 		
-		return root;
+		return blocks;
 	}
 
 	// non-terminal
@@ -255,8 +261,8 @@ public class PLParser
 		}
 		else
 		{
-//			debug("Previously unencountered identifier: " + sym);
-			SyntaxError("Previously unencountered identifier: " + sym);
+			debug("Previously unencountered identifier: " + sym);
+//			SyntaxError("Previously unencountered identifier: " + sym);
 		}
 		
 		PLIRInstruction inst = scope.getCurrentValue(sym);
@@ -648,6 +654,47 @@ public class PLParser
 						result = new PLIRBasicBlock();
 						result.hasReturn = funcFlagMap.get(funcName); // special case... this is a machine instruction, not a user-defined function
 						result.addInstruction(callInst);
+						result.isEntry = true;
+						
+						// Add the function BB connections 
+						if (this.funcBlockMap.containsKey(funcName))
+						{
+							result.children.add(funcBlockMap.get(funcName));
+							
+							// Navigate to join node on the function...
+							if (funcBlockMap.get(funcName).joinNode == null)
+							{
+								funcBlockMap.get(funcName).children.add(result);
+							}
+							else
+							{
+								PLIRBasicBlock join = funcBlockMap.get(funcName).joinNode;
+								while (join.joinNode != null)
+								{
+									join = join.joinNode;
+								}
+								join.children.add(result);
+							}
+						}
+						else if (this.procBlockMap.containsKey(funcName))
+						{
+							result.children.add(procBlockMap.get(funcName));
+							
+							// Navigate to join node on the function...
+							if (procBlockMap.get(funcName).joinNode == null)
+							{
+								procBlockMap.get(funcName).children.add(result);
+							}
+							else
+							{
+								PLIRBasicBlock join = procBlockMap.get(funcName).joinNode;
+								while (join.joinNode != null)
+								{
+									join = join.joinNode;
+								}
+								join.children.add(result);
+							}
+						}
 						
 						// Update DU chain
 						for (PLIRInstruction operand : operands)
@@ -684,6 +731,47 @@ public class PLParser
 				result = new PLIRBasicBlock();
 				result.hasReturn = funcFlagMap.get(funcName); // special case... this is a machine instruction, not a user-defined function
 				result.addInstruction(callInst);
+				result.isEntry = true;
+				
+				// Add the function BB connections 
+				if (this.funcBlockMap.containsKey(funcName))
+				{
+					result.children.add(funcBlockMap.get(funcName));
+					
+					// Navigate to join node on the function...
+					if (funcBlockMap.get(funcName).joinNode == null)
+					{
+						funcBlockMap.get(funcName).children.add(result);
+					}
+					else
+					{
+						PLIRBasicBlock join = funcBlockMap.get(funcName).joinNode;
+						while (join.joinNode != null)
+						{
+							join = join.joinNode;
+						}
+						join.children.add(result);
+					}
+				}
+				else if (this.procBlockMap.containsKey(funcName))
+				{
+					result.children.add(procBlockMap.get(funcName));
+					
+					// Navigate to join node on the function...
+					if (procBlockMap.get(funcName).joinNode == null)
+					{
+						procBlockMap.get(funcName).children.add(result);
+					}
+					else
+					{
+						PLIRBasicBlock join = procBlockMap.get(funcName).joinNode;
+						while (join.joinNode != null)
+						{
+							join = join.joinNode;
+						}
+						join.children.add(result);
+					}
+				}
 			}
 			else
 			{
@@ -1120,7 +1208,7 @@ public class PLParser
 		boolean isReturn = toksym == PLToken.returnToken;
 		PLIRBasicBlock result = parse_statement(in);
 		
-		if (root == null)
+		if (root == null && !globalFunctionParsing)
 		{
 			root = result;
 		}

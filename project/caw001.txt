@@ -1,6 +1,32 @@
 // asd - HARD FUCKING TEST CASE WITH NESTED THINGS AND PHIS
 main 
-var a, b, c, d, e, f, g;
+var a, b, c, d, e, f, g, x, y, z;
+
+procedure one;
+{
+call OutputNum(1);
+call OutputNum(2);
+call OutputNum(3);
+if a == 0 then
+  call OutputNewLine()
+fi;
+call OutputNewLine()
+};
+
+function foo;
+var i, d;
+{
+  let i <- 0;
+  while i < 10 do
+    let y <- y + 2;
+    let z <- x + 2;
+    let d <- y + z;
+    let i <- i + 1
+  od;
+  return d
+};
+
+
 {
   let a <- call InputNum();
   let b <- a;
@@ -13,6 +39,9 @@ var a, b, c, d, e, f, g;
     let a <- a - 1;
     call OutputNum(a)
   od;
+
+  // call one;
+  // call foo;
 
   if a == 10 then
     if a == 9 then
