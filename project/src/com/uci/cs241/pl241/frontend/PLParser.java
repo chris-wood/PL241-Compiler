@@ -518,6 +518,7 @@ public class PLParser
 		return relation;
 	}
 
+	private boolean insideWhile = false;
 	private PLIRBasicBlock parse_assignment(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRBasicBlock result = null;
@@ -556,10 +557,11 @@ public class PLParser
 //						// Add an entry to the DU chain
 //						duChain.put(inst, new ArrayList<PLIRInstruction>());
 //					}
-					if (deferredPhiIdents.contains(varName)) // else, force the current instruction to be generated so it can be used in a phi later
+//					if (deferredPhiIdents.contains(varName)) // else, force the current instruction to be generated so it can be used in a phi later
+					if (insideWhile)
 					{
 						inst.kind = ResultKind.VAR;
-//						inst.generated = false;
+						inst.overrideGenerate = true;
 						inst.forceGenerate(scope);
 					}
 					result.addModifiedValue(varName, inst);
@@ -1068,7 +1070,9 @@ public class PLParser
 			advance(in);
 			
 			// Build the BB of the statement sequence
+			insideWhile = true; // TODO: how will this handle nested while loops?...
 			PLIRBasicBlock body = parse_statSequence(in);
+			insideWhile = false;
 			PLIRBasicBlock joinNode = new PLIRBasicBlock();
 			entry.joinNode = joinNode;
 			
@@ -1093,7 +1097,9 @@ public class PLParser
 			for (String var : modded)
 			{
 				PLIRInstruction bodyInst = body.modifiedIdents.get(var);
+				bodyInst.forceGenerate(scope);
 				PLIRInstruction preInst = scope.getCurrentValue(var);
+				bodyInst.forceGenerate(scope);
 				
 				// Inject the phi at the appropriate spot in the join node...
 				PLIRInstruction phi = PLIRInstruction.create_phi(scope, preInst, bodyInst, loopLocation);

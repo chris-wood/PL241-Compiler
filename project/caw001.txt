@@ -1,3 +1,19 @@
+// asd - DOMINATOR TEST
+main 
+var a, b, c, d, e, f, g;
+{
+  let a <- call InputNum();
+  
+  while a > 0 do
+    let a <- a - 1;
+    let a <- a + 100;
+    let a <- a * 1000000;
+    call OutputNum(a)
+  od;
+
+  call OutputNewLine()
+}.
+
 // asd - HARD FUCKING TEST CASE WITH NESTED THINGS AND PHIS
 main 
 var a, b, c, d, e, f, g, x, y, z;
@@ -61,22 +77,21 @@ var i, d;
   call OutputNum(g)
 }.
 
-// asd - DOMINATOR TEST
-main 
-var a, b, c, d, e, f, g;
+// sample from notes
+main
+var n,f,g;
 {
-  let a <- call InputNum();
-  
-  while a > 0 do
-    let a <- a - 1;
-    let a <- a + 100;
-    let a <- a * 1000000;
-    call OutputNum(a)
+  let n <- 10;
+  let f <- 1;
+  while n > 0 do
+    call OutputNum(1);
+    let f <- f * n;
+    let n <- n - 1
   od;
 
-  call OutputNewLine()
+  let n <- f;
+  call OutputNum(f)
 }.
-
 
 // asd - DOMINATOR TEST
 main 

@@ -189,7 +189,7 @@ public class PLIRBasicBlock
 			System.err.println(bInst.toString());
 			boolean replaced = false;
 			
-			if (bInst.op1 != null && (bInst.op1.equals(findPhi.op1) || bInst.op1.equals(findPhi)))
+			if (bInst.op1 != null && (bInst.op1.equals(findPhi.op1) || bInst.op1.equals(findPhi.op1)))
 			{
 				bInst.replaceLeftOperand(replacePhi);
 				replaced = true;
@@ -217,7 +217,7 @@ public class PLIRBasicBlock
 			}
 			if (bInst.op2 != null && bInst.op2.equals(phi))
 			{
-				bInst.replaceLeftOperand(replacePhi);
+				bInst.replaceRightOperand(replacePhi);
 				replaced = true;
 			}
 			
