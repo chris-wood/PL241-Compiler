@@ -546,11 +546,6 @@ public class PLParser
 					inst.origIdent = varName;
 					inst.tempPosition = PLStaticSingleAssignment.globalSSAIndex;
 					
-//					scope.updateSymbol(varName, inst); // (SSA ID) := expr
-					
-					// Add an entry to the DU chain
-//					duChain.put(inst, new ArrayList<PLIRInstruction>());
-					
 					// If we aren't deferring generation because of a potential PHI usage, just replace with the current value in scope
 					if ((inst.op1 != null && deferredPhiIdents.contains(inst.op1.origIdent)) || 
 							(inst.op2 != null && deferredPhiIdents.contains(inst.op2.origIdent)))
@@ -560,7 +555,6 @@ public class PLParser
 						inst.forceGenerate(scope);
 					}
 					else if (deferredPhiIdents.contains(varName)) // else, force the current instruction to be generated so it can be used in a phi later
-//					if (insideWhile)
 					{
 						inst.kind = ResultKind.VAR;
 						inst.overrideGenerate = true;
@@ -1120,7 +1114,12 @@ public class PLParser
 				debug("new phi: " + phi.id + " := " + phi.toString());
 				phi.origIdent = var; // needed for propagation
 				offset++;
-				entry.insertInstruction(phi, 0); 
+				entry.insertInstruction(phi, 0);
+				
+				if (phi.id == 31)
+				{
+					debug("here");
+				}
 				
 				// The current value in scope needs to be updated now with the result of the phi
 				scope.updateSymbol(var, phi);

@@ -402,6 +402,10 @@ public class PLIRInstruction
 	
 	public void replaceRightOperand(PLIRInstruction newRight)
 	{
+		if (this.id == 31)
+		{
+			System.err.println("what?)");
+		}
 		op2 = newRight;
 		op2type = OperandType.INST;
 	}

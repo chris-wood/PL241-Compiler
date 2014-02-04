@@ -183,12 +183,12 @@ public class PLIRBasicBlock
 		// Propagate through the main instructions in this block's body
 		for (PLIRInstruction bInst : instructions)
 		{
-			System.err.println(bInst.toString());
-			System.err.println(bInst.origIdent);
-			if (bInst.opcode == PLIRInstructionType.WRITE)
-			{
-				System.err.println("here");
-			}
+//			System.err.println(bInst.toString());
+//			System.err.println(bInst.origIdent);
+//			if (bInst.opcode == PLIRInstructionType.WRITE)
+//			{
+//				System.err.println("here");
+//			}
 			boolean replaced = false;
 			
 			if (bInst.op1 != null && (bInst.op1.equals(findPhi.op1) || bInst.op1.equals(findPhi.op1)))
