@@ -560,13 +560,15 @@ public class PLParser
 						inst.overrideGenerate = true;
 						inst.forceGenerate(scope);
 					} 
-					else if (deferredPhiIdents.contains(varName) == false)
-					{
-						scope.updateSymbol(varName, inst); // (SSA ID) := expr
-						
-						// Add an entry to the DU chain
-						duChain.put(inst, new ArrayList<PLIRInstruction>());
-					}
+//					else if (deferredPhiIdents.contains(varName) == false)
+//					{
+//						scope.updateSymbol(varName, inst); // (SSA ID) := expr
+//						
+//						 Add an entry to the DU chain
+//						duChain.put(inst, new ArrayList<PLIRInstruction>());
+//					}
+					scope.updateSymbol(varName, inst); // (SSA ID) := expr
+					duChain.put(inst, new ArrayList<PLIRInstruction>());
 					result.addModifiedValue(varName, inst);
 				}
 				else
@@ -987,12 +989,12 @@ public class PLParser
 			ArrayList<String> modifiers = new ArrayList<String>();
 			for (String modded : thenBlock.modifiedIdents.keySet())
 			{
-				if (sharedModifiers.contains(modded) == false)
+				if (sharedModifiers.contains(modded) == false) // don't double-add
 				{
 					modifiers.add(modded);
 				}
 			}
-			debug("(if statement withoutb else) Inserting " + modifiers.size() + " phis");
+			debug("(if statement without else) Inserting " + modifiers.size() + " phis");
 			for (String var : modifiers)
 			{
 				// Check to make sure this thing was actually in scope!
@@ -1004,6 +1006,7 @@ public class PLParser
 				offset++;
 				PLIRInstruction leftInst = thenBlock.modifiedIdents.get(var);
 				PLIRInstruction followInst = scope.getCurrentValue(var);
+				debug(followInst.toString());
 				PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
 				joinNode.insertInstruction(phi, 0);
 				
@@ -1202,7 +1205,14 @@ public class PLParser
 			
 			// Insert the unconditional branch at (location - pc)
 			PLIRInstruction beqInst = PLIRInstruction.create_BEQ(scope, loopLocation - PLStaticSingleAssignment.globalSSAIndex);
-			body.addInstruction(beqInst);
+			if (body.joinNode != null)
+			{
+				body.joinNode.addInstruction(beqInst);
+			}
+			else
+			{
+				body.addInstruction(beqInst);
+			}
 			
 			// Fixup the conditional branch at the appropriate location
 			bgeInst.fixupLocation = entryCmpInst.fixupLocation;

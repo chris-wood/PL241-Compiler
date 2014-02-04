@@ -191,12 +191,12 @@ public class PLIRBasicBlock
 //			}
 			boolean replaced = false;
 			
-			if (bInst.op1 != null && (bInst.op1.equals(findPhi.op1) || bInst.op1.equals(findPhi.op1)))
-			{
-//				bInst.replaceLeftOperand(replacePhi);
-				bInst.replaceLeftOperand(scopeMap.get(var));
-				replaced = true;
-			}
+//			if (bInst.op1 != null && (bInst.op1.equals(findPhi.op1) || bInst.op1.equals(findPhi.op1)))
+//			{
+////				bInst.replaceLeftOperand(replacePhi);
+//				bInst.replaceLeftOperand(scopeMap.get(var));
+//				replaced = true;
+//			}
 			if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
 			{
 				bInst.replaceLeftOperand(scopeMap.get(var));
@@ -209,33 +209,40 @@ public class PLIRBasicBlock
 				replaced = true;
 			}
 			
-			if (bInst.op2 != null && (bInst.op2.equals(findPhi.op1) || bInst.op2.equals(findPhi.op2)))
-			{
-				bInst.replaceRightOperand(scopeMap.get(var));
-				replaced = true;
-			}
+//			if (bInst.op2 != null && (bInst.op2.equals(findPhi.op1) || bInst.op2.equals(findPhi.op2)))
+//			{
+//				bInst.replaceRightOperand(scopeMap.get(var));
+//				replaced = true;
+//			}
 			if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
 			{
-				bInst.replaceRightOperand(scopeMap.get(var));
-				replaced = true;
+				if (!(replaced && bInst.opcode == PLIRInstructionType.PHI))
+				{
+					bInst.replaceRightOperand(scopeMap.get(var));
+					replaced = true;
+				}
 			}
 			if (bInst.op2 != null && bInst.op2.equals(findPhi))
 			{
-				bInst.replaceRightOperand(scopeMap.get(var));
-				replaced = true;
-			}
-			
-			// If the phi value was used to replace some operand, and this same expression was used to save a result, replace
-			// with the newly generated result
-			if (replaced && bInst.origIdent.equals(phi.origIdent))
-			{
-				scopeMap.put(var, bInst);
+				if (!(replaced && bInst.opcode == PLIRInstructionType.PHI))
+				{
+					bInst.replaceRightOperand(scopeMap.get(var));
+					replaced = true;
+				}
 			}
 			
 			// Don't propagate past the phi, since it essentially replaces the current value
 			if (replaced && bInst.opcode == PLIRInstructionType.PHI)
 			{
 				findPhi = bInst; 
+				scopeMap.put(var, bInst);
+			}
+			
+			// If the phi value was used to replace some operand, and this same expression was used to save a result, replace
+			// with the newly generated result
+			else if (replaced && bInst.origIdent.equals(phi.origIdent))
+			{
+				System.out.println("now replacing " + phi.origIdent + " with : " + bInst.toString());
 				scopeMap.put(var, bInst);
 			}
 		}
@@ -246,19 +253,19 @@ public class PLIRBasicBlock
 			if (visited.contains(child) == false)
 			{
 				visited.add(child);
-				child.propagatePhi(var, phi, visited, scopeMap);
+				child.propagatePhi(var, scopeMap.get(var), visited, scopeMap);
 			}
 		}
 		
 		
-		if (this.joinNode != null)
-		{
+//		if (this.joinNode != null)
+//		{
 //			if (visited.contains(this.joinNode) == false)
 //			{
-				visited.add(this.joinNode);
-				joinNode.propagatePhi(var, phi, visited, scopeMap);
+//				visited.add(this.joinNode);
+//				joinNode.propagatePhi(var, scopeMap.get(var), visited, scopeMap);
 //			}
-		}
+//		}
 	}
 	
 	public void fixSpot()

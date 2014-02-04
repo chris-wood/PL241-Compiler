@@ -394,20 +394,26 @@ public class PLIRInstruction
 		}
 	}
 	
+	private boolean leftProtected = false;
 	public void replaceLeftOperand(PLIRInstruction newLeft)
 	{
-		op1 = newLeft;
-		op1type = OperandType.INST;
+		if (!leftProtected)
+		{
+			op1 = newLeft;
+			op1type = OperandType.INST;
+			leftProtected = true;
+		}
 	}
 	
+	private boolean rightProtected = false;
 	public void replaceRightOperand(PLIRInstruction newRight)
 	{
-		if (this.id == 31)
+		if (!rightProtected)
 		{
-			System.err.println("what?)");
+			op2 = newRight;
+			op2type = OperandType.INST;
+			rightProtected = true;
 		}
-		op2 = newRight;
-		op2type = OperandType.INST;
 	}
 	
 	public static PLIRInstruction create_cmp(PLSymbolTable table, PLIRInstruction left, PLIRInstruction right)

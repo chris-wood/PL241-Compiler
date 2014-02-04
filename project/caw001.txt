@@ -1,3 +1,48 @@
+// sample from notes
+main
+var n,f,g;
+{
+  let n <- 10;
+  let f <- 1;
+  while n > 0 do
+    call OutputNum(1);
+    let f <- f * n;
+    let n <- n - 1;
+    call OutputNum(f);
+    let f <- f + 100;
+    let n <- n * f;
+    call OutputNum(n)
+  od;
+
+  let n <- f;
+  call OutputNum(f);
+  call OutputNum(n)
+}.
+
+// asd - nested while test
+main 
+var a, b, c, d, e, f, g;
+{
+  let a <- call InputNum();
+  let b <- call InputNum();
+  
+  while a > 0 do
+    let a <- a - 1;
+    let a <- a + 100;
+    let a <- a * 1000000;
+    if a == 1 then
+      let a <- a + 1;
+      call OutputNum(1)
+    else
+      call OutputNum(0)
+    fi;
+    call OutputNum(a)
+  od;
+
+  call OutputNewLine()
+}.
+
+
 // asd - HARD FUCKING TEST CASE WITH NESTED THINGS AND PHIS
 main 
 var a, b, c, d, e, f, g, x, y, z;
