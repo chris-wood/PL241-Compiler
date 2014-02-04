@@ -19,6 +19,21 @@ var n,f,g;
   call OutputNum(n)
 }.
 
+// test case #1 from notes
+main
+var i,j;
+{
+  let i <- 0;
+  let j <- 0;
+  while i < 100 do
+    let j <- call InputNum();
+    let j <- j + 100000;
+    call OutputNum(j);
+    let i <- i + 1
+  od;
+  call OutputNum(i)
+}.
+
 // asd - nested while test
 main 
 var a, b, c, d, e, f, g;

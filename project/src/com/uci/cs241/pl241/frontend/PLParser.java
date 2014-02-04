@@ -628,7 +628,9 @@ public class PLParser
 						{
 							SyntaxError("Invalid parameter to OutputNum");
 						}
+						exprInst.forceGenerate(scope);
 						PLIRInstruction inst = new PLIRInstruction(scope, PLIRInstructionType.WRITE, exprInst);
+						inst.forceGenerate(scope);
 						result = new PLIRBasicBlock();
 						result.addInstruction(inst);
 						result.joinNode = null;
@@ -658,6 +660,7 @@ public class PLParser
 						}
 						
 						PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, true, operands);
+						callInst.forceGenerate(scope);
 						result = new PLIRBasicBlock();
 						result.hasReturn = funcFlagMap.get(funcName); // special case... this is a machine instruction, not a user-defined function
 						result.addInstruction(callInst);
@@ -716,6 +719,7 @@ public class PLParser
 				else if (toksym == PLToken.closeParenToken && funcName.equals("InputNum"))
 				{
 					PLIRInstruction inst = new PLIRInstruction(scope, PLIRInstructionType.READ);
+					inst.forceGenerate(scope);
 					result = new PLIRBasicBlock();
 					result.hasReturn = true; // special case... this is a machine instruction, not a user-defined function
 					result.addInstruction(inst);
@@ -723,6 +727,7 @@ public class PLParser
 				else if (toksym == PLToken.closeParenToken && funcName.equals("OutputNewLine"))
 				{
 					PLIRInstruction inst = new PLIRInstruction(scope, PLIRInstructionType.WLN);
+					inst.forceGenerate(scope);
 					result = new PLIRBasicBlock();
 					result.addInstruction(inst);
 				}
@@ -1171,9 +1176,12 @@ public class PLParser
 						debug("replacing phi " + phi.origIdent + " with " + var + ", " + bodyInst.toString());
 						bodyInst.overrideGenerate = true;
 						bodyInst.forceGenerate(scope);
-						debug(bodyInst.origIdent);
+						debug(bodyInst.toString());
+						debug(phi.toString());
+						if (bodyInst.op2type == OperandType.CONST) debug("hoorah");
 						phi.op2type = OperandType.INST;
 						phi.op2 = bodyInst;
+						debug(bodyInst.toString());
 					}
 				}
 			}
