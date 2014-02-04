@@ -19,6 +19,9 @@ public class PLIRInstruction
 	public PLIRInstruction op2;
 	public OperandType op2type;
 	
+	// 0 unless otherwise set!
+	public int tempPosition = 0;
+	
 	// TODO
 	public ArrayList<PLIRInstruction> callOperands;
 	
@@ -373,14 +376,21 @@ public class PLIRInstruction
 		if (kind == ResultKind.CONST)
 		{
 			generated = true;
-		} 
+		}
 		
-		if (!generated || overrideGenerate)
+		if ((!generated || overrideGenerate) && (id == 0))
 		{
 			kind = ResultKind.VAR;
 			generated = true;
 			overrideGenerate = false;
-			id = PLStaticSingleAssignment.addInstruction(table, this);
+			if (tempPosition > 0)
+			{
+				id = PLStaticSingleAssignment.injectInstruction(this, table, tempPosition);
+			}
+			else
+			{
+				id = PLStaticSingleAssignment.addInstruction(table, this);
+			}
 		}
 	}
 	
@@ -463,6 +473,9 @@ public class PLIRInstruction
 		
 		inst.isRemoved = false;
 		inst.forceGenerate(table, loc);
+		
+		// override the location
+		inst.id = loc + 1;
 		
 		return inst;
 	}

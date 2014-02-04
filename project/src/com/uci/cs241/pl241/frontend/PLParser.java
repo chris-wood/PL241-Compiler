@@ -394,7 +394,7 @@ public class PLParser
 			
 			PLIRInstruction termInst = new PLIRInstruction(scope, opcode, leftValue, rightValue);
 			//termInst.overrideGenerate = true; //// CAW: removed?...
-			termInst.forceGenerate(scope);
+//			termInst.forceGenerate(scope);
 			
 			for (PLIRInstruction inst : factor.instructions)
 			{
@@ -443,7 +443,7 @@ public class PLParser
 			PLIRInstructionType opcode = operator == PLToken.plusToken ? PLIRInstructionType.ADD : PLIRInstructionType.SUB;
 			PLIRInstruction exprInst = new PLIRInstruction(scope, opcode, leftValue, rightValue);
 			//exprInst.overrideGenerate = true; //// CAW: removed?...
-			exprInst.forceGenerate(scope);
+//			exprInst.forceGenerate(scope);
 			
 			for (PLIRInstruction inst : term.instructions)
 			{
@@ -543,26 +543,35 @@ public class PLParser
 					
 					// The last instruction added to the BB is the one that holds the value for this assignment
 					PLIRInstruction inst = result.instructions.get(result.instructions.size() - 1);
+					inst.origIdent = varName;
+					inst.tempPosition = PLStaticSingleAssignment.globalSSAIndex;
 					
-					scope.updateSymbol(varName, inst); // (SSA ID) := expr
+//					scope.updateSymbol(varName, inst); // (SSA ID) := expr
 					
 					// Add an entry to the DU chain
-					duChain.put(inst, new ArrayList<PLIRInstruction>());
+//					duChain.put(inst, new ArrayList<PLIRInstruction>());
 					
 					// If we aren't deferring generation because of a potential PHI usage, just replace with the current value in scope
-//					if (deferredPhiIdents.contains(varName) == false)
-//					{
-//						scope.updateSymbol(varName, inst); // (SSA ID) := expr
-//						
-//						// Add an entry to the DU chain
-//						duChain.put(inst, new ArrayList<PLIRInstruction>());
-//					}
-//					if (deferredPhiIdents.contains(varName)) // else, force the current instruction to be generated so it can be used in a phi later
-					if (insideWhile)
+					if ((inst.op1 != null && deferredPhiIdents.contains(inst.op1.origIdent)) || 
+							(inst.op2 != null && deferredPhiIdents.contains(inst.op2.origIdent)))
 					{
 						inst.kind = ResultKind.VAR;
 						inst.overrideGenerate = true;
 						inst.forceGenerate(scope);
+					}
+					else if (deferredPhiIdents.contains(varName)) // else, force the current instruction to be generated so it can be used in a phi later
+//					if (insideWhile)
+					{
+						inst.kind = ResultKind.VAR;
+						inst.overrideGenerate = true;
+						inst.forceGenerate(scope);
+					} 
+					else if (deferredPhiIdents.contains(varName) == false)
+					{
+						scope.updateSymbol(varName, inst); // (SSA ID) := expr
+						
+						// Add an entry to the DU chain
+						duChain.put(inst, new ArrayList<PLIRInstruction>());
 					}
 					result.addModifiedValue(varName, inst);
 				}
@@ -1070,9 +1079,10 @@ public class PLParser
 			advance(in);
 			
 			// Build the BB of the statement sequence
-			insideWhile = true; // TODO: how will this handle nested while loops?...
+//			insideWhile = true; // TODO: how will this handle nested while loops?...
 			PLIRBasicBlock body = parse_statSequence(in);
-			insideWhile = false;
+			deferredPhiIdents.clear();
+//			insideWhile = false;
 			PLIRBasicBlock joinNode = new PLIRBasicBlock();
 			entry.joinNode = joinNode;
 			
@@ -1094,15 +1104,22 @@ public class PLParser
 				modded.add(i1);
 			}
 			debug("(while loop) Inserting " + modded.size() + " phis");
+			int offset = 0;
+			ArrayList<PLIRInstruction> phisGenerated = new ArrayList<PLIRInstruction>(); 
 			for (String var : modded)
 			{
 				PLIRInstruction bodyInst = body.modifiedIdents.get(var);
-				bodyInst.forceGenerate(scope);
+//				bodyInst.forceGenerate(scope);
 				PLIRInstruction preInst = scope.getCurrentValue(var);
-				bodyInst.forceGenerate(scope);
+//				bodyInst.forceGenerate(scope);
 				
 				// Inject the phi at the appropriate spot in the join node...
-				PLIRInstruction phi = PLIRInstruction.create_phi(scope, preInst, bodyInst, loopLocation);
+				PLIRInstruction phi = PLIRInstruction.create_phi(scope, preInst, bodyInst, loopLocation + offset);
+				phisGenerated.add(phi);
+//				phi.forceGenerate(scope);
+				debug("new phi: " + phi.id + " := " + phi.toString());
+				phi.origIdent = var; // needed for propagation
+				offset++;
 				entry.insertInstruction(phi, 0); 
 				
 				// The current value in scope needs to be updated now with the result of the phi
@@ -1135,7 +1152,28 @@ public class PLParser
 				debug("propagating phi throughout the body via recursive descent of the BB graph: " + phi.toString());
 				ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
 				visited.add(entry);
-				body.propagatePhi(var, phi, visited);
+				HashMap<String, PLIRInstruction> scopeMap = new HashMap<String, PLIRInstruction>(); 
+				scopeMap.put(var, phi);
+				body.propagatePhi(var, phi, visited, scopeMap);
+			}
+			
+			// Go through the phis and make sure we adjusted the values accordingly
+			// Second pass, really..
+			for (PLIRInstruction phi : phisGenerated)
+			{
+				for (String var : modded)
+				{
+					if (var.equals(phi.origIdent))
+					{
+						PLIRInstruction bodyInst = body.modifiedIdents.get(var);
+						debug("replacing phi " + phi.origIdent + " with " + var + ", " + bodyInst.toString());
+						bodyInst.overrideGenerate = true;
+						bodyInst.forceGenerate(scope);
+						debug(bodyInst.origIdent);
+						phi.op2type = OperandType.INST;
+						phi.op2 = bodyInst;
+					}
+				}
 			}
 			
 			////////////////////////////////////////////

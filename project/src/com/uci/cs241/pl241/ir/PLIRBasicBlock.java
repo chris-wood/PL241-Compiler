@@ -90,7 +90,7 @@ public class PLIRBasicBlock
 		// Remove instructions in nextBlock that appear in result 
 		for (PLIRInstruction inst : oldBlock.instructions)
 		{
-			System.err.println("Removing redundant instruction: " + inst.toString());
+//			System.err.println("Removing redundant instruction: " + inst.toString());
 			newBlock.instructions.remove(inst);
 		}
 		
@@ -175,23 +175,26 @@ public class PLIRBasicBlock
 		return oldBlock;
 	}
 	
-	public void propagatePhi(String var, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited)
+	public void propagatePhi(String var, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited, HashMap<String, PLIRInstruction> scopeMap)
 	{
 		PLIRInstruction findPhi = phi;
 		PLIRInstruction replacePhi = phi;
-		
-		HashMap<String, PLIRInstruction> scopeMap = new HashMap<String, PLIRInstruction>();
-		scopeMap.put(var, replacePhi);
 		
 		// Propagate through the main instructions in this block's body
 		for (PLIRInstruction bInst : instructions)
 		{
 			System.err.println(bInst.toString());
+			System.err.println(bInst.origIdent);
+			if (bInst.opcode == PLIRInstructionType.WRITE)
+			{
+				System.err.println("here");
+			}
 			boolean replaced = false;
 			
 			if (bInst.op1 != null && (bInst.op1.equals(findPhi.op1) || bInst.op1.equals(findPhi.op1)))
 			{
-				bInst.replaceLeftOperand(replacePhi);
+//				bInst.replaceLeftOperand(replacePhi);
+				bInst.replaceLeftOperand(scopeMap.get(var));
 				replaced = true;
 			}
 			if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
@@ -199,15 +202,16 @@ public class PLIRBasicBlock
 				bInst.replaceLeftOperand(scopeMap.get(var));
 				replaced = true;
 			}
-			if (bInst.op1 != null && bInst.op1.equals(phi))
+			if (bInst.op1 != null && bInst.op1.equals(findPhi))
 			{
-				bInst.replaceLeftOperand(replacePhi);
+//				bInst.replaceLeftOperand(replacePhi);
+				bInst.replaceLeftOperand(scopeMap.get(var));
 				replaced = true;
 			}
 			
 			if (bInst.op2 != null && (bInst.op2.equals(findPhi.op1) || bInst.op2.equals(findPhi.op2)))
 			{
-				bInst.replaceRightOperand(replacePhi);
+				bInst.replaceRightOperand(scopeMap.get(var));
 				replaced = true;
 			}
 			if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
@@ -215,13 +219,15 @@ public class PLIRBasicBlock
 				bInst.replaceRightOperand(scopeMap.get(var));
 				replaced = true;
 			}
-			if (bInst.op2 != null && bInst.op2.equals(phi))
+			if (bInst.op2 != null && bInst.op2.equals(findPhi))
 			{
-				bInst.replaceRightOperand(replacePhi);
+				bInst.replaceRightOperand(scopeMap.get(var));
 				replaced = true;
 			}
 			
-			if (replaced)
+			// If the phi value was used to replace some operand, and this same expression was used to save a result, replace
+			// with the newly generated result
+			if (replaced && bInst.origIdent.equals(phi.origIdent))
 			{
 				scopeMap.put(var, bInst);
 			}
@@ -230,8 +236,7 @@ public class PLIRBasicBlock
 			if (replaced && bInst.opcode == PLIRInstructionType.PHI)
 			{
 				findPhi = bInst; 
-//				phi = bInst; // now use the new value
-//				break; 
+				scopeMap.put(var, bInst);
 			}
 		}
 	
@@ -241,7 +246,7 @@ public class PLIRBasicBlock
 			if (visited.contains(child) == false)
 			{
 				visited.add(child);
-				child.propagatePhi(var, phi, visited);
+				child.propagatePhi(var, phi, visited, scopeMap);
 			}
 		}
 		
@@ -251,7 +256,7 @@ public class PLIRBasicBlock
 //			if (visited.contains(this.joinNode) == false)
 //			{
 				visited.add(this.joinNode);
-				joinNode.propagatePhi(var, phi, visited);
+				joinNode.propagatePhi(var, phi, visited, scopeMap);
 //			}
 		}
 	}
