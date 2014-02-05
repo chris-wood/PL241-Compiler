@@ -1921,6 +1921,7 @@ public class PLParser
 	private PLIRBasicBlock parse_funcBody(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRBasicBlock result = null;
+		String name = funcName; // save
 		
 		while (toksym == PLToken.varToken || toksym == PLToken.arrToken)
 		{
