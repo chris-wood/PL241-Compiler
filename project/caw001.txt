@@ -1,3 +1,87 @@
+// asd - HARD FUCKING TEST CASE WITH NESTED THINGS AND PHIS
+main 
+var a, b, c, d, e, f, g, x, y, z;
+array[10] output;
+
+procedure one( x1, x2, x3, x4, x5 );
+{
+call OutputNum(x);
+call OutputNum(2);
+call OutputNum(3);
+if a == 0 then
+  call OutputNewLine()
+fi;
+call OutputNewLine()
+};
+
+function foo( x1, x2, x3, x4, x5 );
+var i, d;
+array[5] input;
+{
+  let i <- 0;
+  while i < 10 do
+    let y <- y + 2;
+    let z <- x + 2;
+    let d <- y + z;
+    let i <- i + 1
+  od;
+  return d
+};
+
+
+{
+  let a <- call InputNum();
+  let b <- a;
+  let c <- b;
+  let d <- b + c;
+  let e <- a + b;
+  let f <- a + c;
+  let g <- 10;
+  let a <- 1;
+  while a > 0 do
+    let a <- a - 1;
+    call OutputNum(a)
+  od;
+
+  call one(a,b,c,d,e);
+  // call foo;
+
+  if a == 10 then
+    if a == 9 then
+      let g <- g + a;
+      call OutputNum(9);
+      call OutputNum(g)
+    else 
+      while a > 0 do
+        let a <- a - 1;
+        call OutputNum(a)
+      od
+    fi
+  else
+    call OutputNum(100)
+  fi;
+  call OutputNum(a);
+  call OutputNum(g)
+}.
+
+// asd - testing if/else with modifier in only one branch!
+main 
+var a, b;
+array[5] input;
+{
+  let a <- call InputNum();
+  let input[1] <- 22;
+  let input[2] <- a;
+  call OutputNum(input[1]);
+  call OutputNum(a);
+  if input[1] == 0 then
+    call OutputNum(input[2])
+  else
+    call OutputNum(1337)
+  fi;
+  call OutputNewLine()
+}.
+
 // sample from notes
 main
 var n,f,g;
@@ -417,27 +501,6 @@ var a, b, c, d, e, f, g;
   fi;
   call OutputNum(a);
   call OutputNum(g)
-}.
-
-// asd - testing if/else with modifier in only one branch!
-main 
-var a, b, c;
-{
-  let a <- call InputNum();
-  let b <- a + 2;
-  call OutputNum(a);
-  if a == 0 then
-    let a <- 100;
-    call OutputNum(a)
-  else
-    let a <- 10;
-    let b <- 100;
-    call OutputNum(a)
-  fi;
-  call OutputNum(b);
-  call OutputNum(a);
-  call OutputNum(1);
-  call OutputNum(2)
 }.
 
 // asd - fixed!

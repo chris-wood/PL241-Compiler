@@ -30,6 +30,9 @@ public class PLIRBasicBlock
 	public boolean hasReturn = false;
 	public PLIRInstruction returnInst;
 	
+	// instruction array handling
+	public ArrayList<PLIRInstruction> arrayOperands;
+	
 	// For rendering
 	public boolean omit = false;
 	public String label = "";

@@ -18,12 +18,16 @@ public class PLIRInstruction
 	public int i2;
 	public PLIRInstruction op2;
 	public OperandType op2type;
+	public String op2address;
 	
-	// 0 unless otherwise set!
+	// 0 unless otherwise set, obviously
 	public int tempPosition = 0;
 	
-	// TODO
+	// Array information
+	public boolean isArray = false;
 	public ArrayList<PLIRInstruction> callOperands;
+	public ArrayList<PLIRInstruction> dependents = new ArrayList<PLIRInstruction>();
+	public PLIRInstruction storedValue;
 	
 	// Temporary value for combining constants
 	public boolean generated = false;
@@ -99,7 +103,7 @@ public class PLIRInstruction
 	
 	public enum OperandType
 	{
-		CONST, INST, NULL, ADDRESS
+		CONST, INST, NULL, ADDRESS, FP, BASEADDRESS
 	};
 	
 	public PLIRInstruction(PLSymbolTable table)
@@ -483,6 +487,7 @@ public class PLIRInstruction
 		
 		inst.isRemoved = false;
 		inst.forceGenerate(table, loc);
+		inst.type = OperandType.INST;
 		
 		// override the location
 		inst.id = loc + 1;
@@ -554,16 +559,24 @@ public class PLIRInstruction
 		if (isFunc)
 		{
 			newInst.opcode = PLIRInstructionType.FUNC;
+			newInst.type = OperandType.INST;
 		}
 		else
 		{
 			newInst.opcode = PLIRInstructionType.PROC;
+			newInst.type = OperandType.NULL;
 		}
 		
 		// Generate the special instruction now
+		newInst.overrideGenerate = true;
 		newInst.forceGenerate(table);
 		
 		return newInst;
+	}
+	
+	public static ArrayList<PLIRInstruction> create_array(PLSymbolTable table, String varName)
+	{
+		return null;
 	}
 	
 	@Override
@@ -595,6 +608,9 @@ public class PLIRInstruction
 		{
 			return "(" + this.refInst.id + ")";
 		}
+		
+		if (opcode == null)
+			System.err.println("hmm...");
 		
 		switch (opcode)
 		{
@@ -655,6 +671,12 @@ public class PLIRInstruction
 			case PROC:
 				s = "proc";
 				break;
+			case LOAD:
+				s = "load";
+				break;
+			case STORE:
+				s = "store";
+				break;
 		}
 		
 		if (callOperands != null)
@@ -664,6 +686,11 @@ public class PLIRInstruction
 			// Append the operands
 			for (PLIRInstruction operand : callOperands)
 			{
+				if (operand.type == null)
+				{
+					System.err.println(this.opcode);
+					System.err.println(this.id);
+				}
 				switch (operand.type)
 				{
 					case INST:
@@ -681,7 +708,36 @@ public class PLIRInstruction
 					case ADDRESS:
 						s = s + " (" + operand.id + ")";
 						break;
+					case FP:
+						s = s + " FP";
+						break;
+//					case BASEADDRESS:
+//						s = s + " " + operand.
 				}
+			}
+		}
+		else if (op2type == null) // single operand instruction
+		{
+			switch (op1type)
+			{
+				case INST:
+					PLIRInstruction op = op1;
+					while (op.isRemoved)
+					{
+						System.err.println("recursing from " + this.id + " to: " + op.refInst);
+						op = op.refInst;
+					}
+					s = s + " (" + op.id + ")";
+					break;
+				case CONST:
+					s = s + " #" + i1;
+					break;
+				case ADDRESS:
+					s = s + " (" + op1.id + ")";
+					break;
+				case FP:
+					s = s + " FP";
+					break;
 			}
 		}
 		else // this is a normal IR instruction, so render it as usual
@@ -703,6 +759,9 @@ public class PLIRInstruction
 				case ADDRESS:
 					s = s + " (" + op1.id + ")";
 					break;
+				case FP:
+					s = s + " FP";
+					break;
 			}
 			
 			switch (op2type)
@@ -721,6 +780,9 @@ public class PLIRInstruction
 					break;
 				case ADDRESS:
 					s = s + " (" + op2.id + ")";
+					break;
+				case BASEADDRESS:
+					s = s + " " + op2address;
 					break;
 			}
 		}
