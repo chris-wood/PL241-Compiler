@@ -1,3 +1,46 @@
+// asd - nested while test
+main 
+var a, b, c, d, e, f, g;
+{
+  let a <- call InputNum();
+  let b <- call InputNum();
+  let c <- call InputNum();
+
+  let d <- c + 1;
+
+  while a > 0 do
+    let a <- a - 1;
+    let a <- a + 100;
+    let a <- c * 1000000;
+    let b <- c * 1000000;
+    if a == 1 then
+      let a <- a + 1;
+      call OutputNum(1)
+    else
+      if b == 1 then
+        call OutputNum(0);
+        call OutputNum(b)
+      fi
+    fi;
+    call OutputNum(a);
+    let g <- c + 1;
+    call OutputNum(g)
+  od;
+
+
+  let e <- c + 1;
+  let f <- 0;
+  
+
+  
+
+  call OutputNum(d);
+  call OutputNum(e);
+  call OutputNum(f);
+
+  call OutputNewLine()
+}.
+
 // asd - HARD FUCKING TEST CASE WITH NESTED THINGS AND PHIS
 main 
 var a, b, c, d, e, f, g, x, y, z;

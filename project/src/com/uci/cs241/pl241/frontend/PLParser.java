@@ -104,6 +104,7 @@ public class PLParser
 			}
 			globalVariableParsing = false;
 			
+			// Parse global functions and procedures
 			globalFunctionParsing = true;
 			while (toksym == PLToken.funcToken || toksym == PLToken.procToken)
 			{
@@ -126,6 +127,7 @@ public class PLParser
 			}
 			globalFunctionParsing = false;
 			
+			// Parse the main computation
 			if (toksym == PLToken.openBraceToken)
 			{
 				// eat the sequence of statements that make up the computation
@@ -135,15 +137,6 @@ public class PLParser
 				{
 					result = result.joinNode;
 				}
-				
-				// Add global variable initialization instructions as a separate BB
-//				PLIRBasicBlock globalBlock = new PLIRBasicBlock();
-//				for (PLIRInstruction global : globalVariables)
-//				{
-//					globalBlock.addInstruction(global);
-//				}
-//				result.parents.add(globalBlock);
-//				globalBlock.children.add(result);
 				
 				// parse the close of the computation
 				if (toksym == PLToken.closeBraceToken)
@@ -167,7 +160,7 @@ public class PLParser
 			}
 			else
 			{
-				SyntaxError("'{' missing in computation non-terminal");
+				SyntaxError("'{' missing in computation non-terminal (there is no main body!)");
 			}
 		}
 		else
@@ -194,8 +187,9 @@ public class PLParser
 			inst.i2 = 0;
 			inst.op2type = OperandType.CONST;
 			inst.kind = ResultKind.CONST;
-			inst.overrideGenerate = true;
-			inst.forceGenerate(scope);
+			inst.type = OperandType.CONST;
+//			inst.overrideGenerate = true;
+//			inst.forceGenerate(scope);
 			
 			// Eat the symbol, create the block with the single instruction, add the ident to the list
 			// of used identifiers, and return

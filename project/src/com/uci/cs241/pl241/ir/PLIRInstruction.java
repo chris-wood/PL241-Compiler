@@ -48,6 +48,9 @@ public class PLIRInstruction
 	
 	public void removeInstruction(EliminationReason reason, PLIRInstruction ref)
 	{
+		PLStaticSingleAssignment.displayInstructions();
+		System.err.println("CSE: " + this.id + " referencing " + ref.id);
+		
 		isRemoved = true;
 		elimReason = reason;
 		refInst = ref;
@@ -61,6 +64,8 @@ public class PLIRInstruction
 			else base = base.refInst;
 		}
 		this.origIdent = prev.origIdent;
+		
+		System.err.println("CSE: " + this.id + " referencing " + ref.id);
 	}
 	
 	public enum PLIRInstructionType 
@@ -722,7 +727,7 @@ public class PLIRInstruction
 			{
 				case INST:
 					PLIRInstruction op = op1;
-					while (op.isRemoved)
+					while (op.isRemoved && op.id != this.id)
 					{
 						System.err.println("recursing from " + this.id + " to: " + op.refInst);
 						op = op.refInst;
@@ -746,9 +751,9 @@ public class PLIRInstruction
 			{
 				case INST:
 					PLIRInstruction op = op1;
-					while (op.isRemoved)
+					while (op.isRemoved && op.id != this.id && op.refInst.id != this.id)
 					{
-						System.err.println("recursing from " + this.id + " to: " + op.refInst);
+						System.err.println("recursing from " + this.id + " to: " + op.refInst.id);
 						op = op.refInst;
 					}
 					s = s + " (" + op.id + ")";
@@ -768,7 +773,7 @@ public class PLIRInstruction
 			{
 				case INST:
 					PLIRInstruction op = op2;
-					while (op.isRemoved)
+					while (op.isRemoved && op.id != this.id)
 					{
 						System.err.println("recursing from " + this.id + " to: " + op.refInst);
 						op = op.refInst;

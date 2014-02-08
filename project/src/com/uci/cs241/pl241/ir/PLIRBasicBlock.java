@@ -2,7 +2,9 @@ package com.uci.cs241.pl241.ir;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
+import com.uci.cs241.pl241.ir.PLIRInstruction.OperandType;
 import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
 
 public class PLIRBasicBlock
@@ -43,6 +45,12 @@ public class PLIRBasicBlock
 	// ID information for the BB
 	public int id;
 	public static int bbid = 0;
+	
+	// for live range calculation
+	public int mark; 
+	public PLIRBasicBlock fail;
+	public PLIRBasicBlock branch;
+	public HashSet<PLIRInstruction> liveAtEnd;
 	
 	public PLIRBasicBlock()
 	{
@@ -94,7 +102,10 @@ public class PLIRBasicBlock
 		for (PLIRInstruction inst : oldBlock.instructions)
 		{
 //			System.err.println("Removing redundant instruction: " + inst.toString());
-			newBlock.instructions.remove(inst);
+			if (inst.type != OperandType.CONST)
+			{
+				newBlock.instructions.remove(inst);
+			}
 		}
 		
 		// Not symmetric, order matters.
@@ -148,11 +159,11 @@ public class PLIRBasicBlock
 		// Add the dominator sets
 		for (PLIRBasicBlock block : newBlock.dominatorSet)
 		{
-			oldBlock.dominatorSet.add(block);
+//			oldBlock.dominatorSet.add(block);
 			leftJoin.dominatorSet.add(block);
 		}
 		
-		oldBlock.fixSpot();
+//		oldBlock.fixSpot();
 		leftJoin.fixSpot();
 		
 		PLIRBasicBlock join = newBlock;

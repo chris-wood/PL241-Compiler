@@ -58,6 +58,24 @@ public class CSE
 				}
 			}
 			
+			// Sort the instructions based on their ID... just in case they somehow got out of sync
+			boolean sorted = false;
+			while (!sorted)
+			{
+				sorted = true;
+				for (int i = 0; i < block.instructions.size() - 1; i++)
+				{
+					if (block.instructions.get(i).id > block.instructions.get(i + 1).id)
+					{
+						PLIRInstruction inst = block.instructions.get(i);
+						PLIRInstruction next = block.instructions.get(i + 1);
+						block.instructions.set(i, next);
+						block.instructions.set(i + 1, inst);
+						sorted = false;
+					}
+				}
+			}
+			
 			// Check for subexpression elimination on the parent
 			for (PLIRInstruction inst : block.instructions)
 			{
@@ -65,15 +83,49 @@ public class CSE
 				{
 					for (PLIRInstruction parentInst : domList.get(inst.opcode))
 					{
-						if (inst.equals(parentInst))
+						System.err.println(block.id +  ") " + "Trying CSE with " + inst.id + " " + parentInst.id + ", " + parentInst.toString());
+						if (inst.equals(parentInst) && inst.id > parentInst.id) // really shouldn't have to do this, but just in case
 						{
 							inst.removeInstruction(EliminationReason.CSE, parentInst);
 						}
-						else if (inst.opcode == parentInst.opcode) // special case to handle commutative operations
+						else if (inst.opcode == parentInst.opcode && inst.id > parentInst.id) // special case to handle commutative operations
 						{
-					    	switch (inst.opcode)
-					    	{
-					    	case ADD:
+							if (inst.op1type == OperandType.INST && inst.op2type == OperandType.INST)
+							{
+								if (inst.op1.equals(parentInst.op1) && inst.op2.equals(inst.op2))
+								{
+									inst.removeInstruction(EliminationReason.CSE, parentInst);
+								}
+							}
+							else if (inst.op1type == OperandType.CONST && inst.op2type == OperandType.INST)
+							{
+								if (inst.i1 == parentInst.i1 && inst.op2.equals(inst.op2))
+								{
+									inst.removeInstruction(EliminationReason.CSE, parentInst);
+								}
+							}
+							else if (inst.op1type == OperandType.INST && inst.op2type == OperandType.CONST)
+							{
+								if (inst.op1.equals(parentInst.op1) && inst.i2 == parentInst.i2)
+								{
+									inst.removeInstruction(EliminationReason.CSE, parentInst);
+								}
+							}
+							else if (inst.op1type == OperandType.CONST && inst.op2type == OperandType.CONST)
+							{
+								if (inst.i1 == parentInst.i1 && inst.i2 == parentInst.i2)
+								{
+									inst.removeInstruction(EliminationReason.CSE, parentInst);
+								}
+							}
+							
+							
+							
+							
+//					    	switch (inst.opcode)
+//					    	{
+//					    	case ADD:
+					    		
 					    		
 //					    		// case #1: add const const
 //					    		//          add const const
@@ -136,7 +188,7 @@ public class CSE
 //						    		}
 //					    		
 //					    		break;
-					    	case MUL:
+//					    	case MUL:
 					    		
 //					    		// case #1: mul const const
 //					    		//          mul const const
@@ -190,13 +242,13 @@ public class CSE
 //					    			
 //						    		}
 					    		
-					    		break;
-					    	default:
-					    		break;
-					    	}
+//					    		break;
+//					    	default:
+//					    		break;
+//					    	}
 						}
 					}
-					domList.get(inst.opcode).add(inst);
+					domList.get(inst.opcode).add(0, inst);
 				}
 			}
 			
@@ -204,7 +256,7 @@ public class CSE
 			visited.add(block.id);
 			
 			// DFS on the children now
-			for (PLIRBasicBlock child : block.children)
+			for (PLIRBasicBlock child : block.dominatorSet)
 			{
 				cseOnBlock(domList, visited, child);
 			}

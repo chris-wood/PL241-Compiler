@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
+import com.uci.cs241.pl241.backend.RegisterAllocator;
 import com.uci.cs241.pl241.frontend.PLEndOfFileException;
 import com.uci.cs241.pl241.frontend.PLParser;
 import com.uci.cs241.pl241.frontend.PLScanner;
@@ -58,10 +59,13 @@ public class PLC
 		PLParser parser = new PLParser();
 		ArrayList<PLIRBasicBlock> blocks = parser.parse(scanner);
 		
+		// Recover the main root
+		PLIRBasicBlock root = blocks.get(blocks.size() - 1);
+		
 		for (PLIRBasicBlock block : blocks)
 		{
 			// Find the root by walking up the tree in any direction
-			PLIRBasicBlock root = block;
+			root = block;
 			while (root.parents.isEmpty() == false)
 			{
 				root = root.parents.get(0);
@@ -69,13 +73,11 @@ public class PLC
 			
 			// Perform CSE, starting at the root
 			CSE cse = new CSE();
-			//cse.performCSE(root);
+			cse.performCSE(root);
 		}
 		
-		// Recover the main root
-		PLIRBasicBlock root = blocks.get(blocks.size() - 1);
-		
 		// Display the instructions
+		root = blocks.get(blocks.size() - 1);
 		System.out.println("\nBegin Instructions\n");
 		PrintWriter instWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + "_inst")));
 		PLStaticSingleAssignment.displayInstructions();
@@ -133,5 +135,10 @@ public class PLC
 		domWriter.println(domdot);
 		domWriter.flush();
 		domWriter.close();	
+		
+		//////// register allocation
+		root = blocks.get(blocks.size() - 1);
+		RegisterAllocator ra = new RegisterAllocator();
+		ra.ComputeLiveRange(root);
 	}
 }
