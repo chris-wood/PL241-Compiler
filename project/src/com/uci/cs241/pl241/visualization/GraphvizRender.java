@@ -4,6 +4,8 @@ import java.util.ArrayList;
 
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
+import com.uci.cs241.pl241.optimization.Edge;
+import com.uci.cs241.pl241.optimization.InterferenceGraph;
 
 // Sample graph
 //digraph G {
@@ -121,6 +123,20 @@ public class GraphvizRender
 		// CFG DAG end
 		builder.append("\n}");
 		
+		return builder.toString();
+	}
+	
+	public String renderInterferenceGraph(InterferenceGraph graph)
+	{
+		StringBuilder builder = new StringBuilder();
+		ArrayList<Integer> seen = new ArrayList<Integer>();
+		builder.append("digraph interference_graph {\n");
+		builder.append("    node [shape = circle];\n");
+		for (Edge e : graph.edgeSet)
+		{
+			builder.append(e.u + " -> " + e.v + ";\n");
+		}
+		builder.append("}\n");
 		return builder.toString();
 	}
 }

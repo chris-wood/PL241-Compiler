@@ -1,0 +1,34 @@
+package com.uci.cs241.pl241.optimization;
+
+import java.util.ArrayList;
+
+public class InterferenceGraph 
+{
+	public ArrayList<Edge> edgeSet;
+	
+	public InterferenceGraph()
+	{
+		edgeSet = new ArrayList<Edge>();
+	}
+	
+	public void AddEdge(int u, int v)
+	{
+		for (Edge e : edgeSet)
+		{
+			if (e.u == u && e.v == v)
+			{
+				return;
+			}
+		}
+		edgeSet.add(new Edge(u, v));
+	}
+	
+	public void displayEdges()
+	{
+		System.out.println("Displaying the edge set: ");
+		for (Edge e : edgeSet)
+		{
+			System.out.println(e.u + "," + e.v);
+		}
+	}
+}

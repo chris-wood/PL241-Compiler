@@ -1,4 +1,4 @@
-package com.uci.cs241.pl241.backend;
+package com.uci.cs241.pl241.optimization;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -10,46 +10,24 @@ import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
 public class RegisterAllocator 
 {
 	
+	public InterferenceGraph ig;
+	
 	// Graph coloring algorithm
-	public void Color(ArrayList<Edge> edgeSet)
+	public void Color(InterferenceGraph graph)
 	{
 		
-	}
-	
-	class Edge 
-	{
-		public int u, v;
-		public Edge(int uu, int vv) { u = uu; v = vv; }
 	}
 	
 	// Global parameters for the liverange calculation and liveset derivation
 	ArrayList<PLIRBasicBlock> stack;
-	ArrayList<Edge> edgeSet; // the edge set of the interference graph
-	
-	private void AddEdge(int u, int v)
-	{
-		for (Edge e : edgeSet)
-		{
-			if (e.u == u && e.v == v)
-			{
-				return;
-			}
-		}
-		edgeSet.add(new Edge(u, v));
-	}
 	
 	public void ComputeLiveRange(PLIRBasicBlock entryBlock)
 	{
 		stack = new ArrayList<PLIRBasicBlock>();
-		edgeSet = new ArrayList<Edge>();
+		ig = new InterferenceGraph();
 		
 		LRTraverse(entryBlock, 1);
-		
-		System.out.println("Displaying the edge set: ");
-		for (Edge e : edgeSet)
-		{
-			System.out.println(e.u + "," + e.v);
-		}
+		ig.displayEdges();
 	}
 	
 	private HashSet<PLIRInstruction> LRTraverse(PLIRBasicBlock b, int branch)
@@ -104,7 +82,7 @@ public class RegisterAllocator
 				for (PLIRInstruction x : live)
 				{
 //					edgeSet.add(new Edge(inst.id, x.id));
-					AddEdge(inst.id, x.id);
+					ig.AddEdge(inst.id, x.id);
 				}
 				if (inst.op1 != null)
 				{
@@ -127,7 +105,7 @@ public class RegisterAllocator
 				for (PLIRInstruction x : live)
 				{
 //					edgeSet.add(new Edge(inst.id, x.id));
-					AddEdge(inst.id, x.id);
+					ig.AddEdge(inst.id, x.id);
 				}
 				if (branch == 1)
 				{
@@ -172,7 +150,7 @@ public class RegisterAllocator
 						for (PLIRInstruction x : liveprime)
 						{
 //							edgeSet.add(new Edge(inst.id, x.id));
-							AddEdge(inst.id, x.id);
+							ig.AddEdge(inst.id, x.id);
 						}
 						if (inst.op1 != null)
 						{

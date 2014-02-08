@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
-import com.uci.cs241.pl241.backend.RegisterAllocator;
 import com.uci.cs241.pl241.frontend.PLEndOfFileException;
 import com.uci.cs241.pl241.frontend.PLParser;
 import com.uci.cs241.pl241.frontend.PLScanner;
@@ -17,6 +16,8 @@ import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
 import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
 import com.uci.cs241.pl241.optimization.CSE;
+import com.uci.cs241.pl241.optimization.InterferenceGraph;
+import com.uci.cs241.pl241.optimization.RegisterAllocator;
 import com.uci.cs241.pl241.visualization.GraphvizRender;
 
 
@@ -134,11 +135,17 @@ public class PLC
 		PrintWriter domWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + ".dom.dot")));
 		domWriter.println(domdot);
 		domWriter.flush();
-		domWriter.close();	
+		domWriter.close();
 		
 		//////// register allocation
 		root = blocks.get(blocks.size() - 1);
 		RegisterAllocator ra = new RegisterAllocator();
 		ra.ComputeLiveRange(root);
+		InterferenceGraph ig = ra.ig;
+		String igdot = render.renderInterferenceGraph(ig);
+		PrintWriter igWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + ".ig.dot")));
+		igWriter.println(igdot);
+		igWriter.flush();
+		igWriter.close();	
 	}
 }
