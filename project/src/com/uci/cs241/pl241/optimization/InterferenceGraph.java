@@ -24,6 +24,7 @@ public class InterferenceGraph
 				return;
 			}
 		}
+		System.out.println("Adding: " + u + "," + v);
 		edgeSet.add(new Edge(u, v));
 	}
 	

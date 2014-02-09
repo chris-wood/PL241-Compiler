@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import com.uci.cs241.pl241.frontend.PLEndOfFileException;
 import com.uci.cs241.pl241.frontend.PLParser;
@@ -63,6 +64,45 @@ public class PLC
 		// Recover the main root
 		PLIRBasicBlock root = blocks.get(blocks.size() - 1);
 		
+		// Filter basic blocks...
+		HashSet<Integer> seenInst = new HashSet<Integer>();
+		HashSet<PLIRBasicBlock> seenBlocks = new HashSet<PLIRBasicBlock>();
+		ArrayList<PLIRBasicBlock> stack = new ArrayList<PLIRBasicBlock>();
+		stack.add(root);
+		while (stack.isEmpty() == false)
+		{
+			PLIRBasicBlock curr = stack.get(0);
+			stack.remove(0);
+			if (seenBlocks.contains(curr) == false)
+			{
+				seenBlocks.add(curr);
+				HashSet<PLIRInstruction> toRemove = new HashSet<PLIRInstruction>(); 
+				for (int i = 0; i < curr.instructions.size(); i++)
+				{
+					if (PLStaticSingleAssignment.isIncluded(curr.instructions.get(i).id) == false || 
+							seenInst.contains(curr.instructions.get(i).id))
+					{
+						toRemove.add(curr.instructions.get(i));
+					}
+					else
+					{
+						seenInst.add(curr.instructions.get(i).id);
+					}
+				}
+				for (PLIRInstruction inst : toRemove)
+				{
+					curr.instructions.remove(inst);
+				}
+				
+				// Push on children
+				for (PLIRBasicBlock child : curr.children)
+				{
+					stack.add(child);
+				}
+			}
+		}
+		
+		root = blocks.get(blocks.size() - 1);
 		for (PLIRBasicBlock block : blocks)
 		{
 			// Find the root by walking up the tree in any direction

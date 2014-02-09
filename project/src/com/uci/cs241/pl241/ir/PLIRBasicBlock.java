@@ -47,10 +47,10 @@ public class PLIRBasicBlock
 	public static int bbid = 0;
 	
 	// for live range calculation
-	public int mark; 
-	public PLIRBasicBlock fail;
-	public PLIRBasicBlock branch;
-	public HashSet<PLIRInstruction> liveAtEnd;
+	public int mark = 0;
+//	public PLIRBasicBlock fail;
+//	public PLIRBasicBlock branch;
+	public HashSet<Integer> liveAtEnd;
 	
 	public PLIRBasicBlock()
 	{

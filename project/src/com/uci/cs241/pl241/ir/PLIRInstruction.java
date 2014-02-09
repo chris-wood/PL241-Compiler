@@ -425,7 +425,7 @@ public class PLIRInstruction
 		}
 	}
 	
-	public boolean isBranch()
+	public boolean isNotLiveInstruction()
 	{
 		switch (opcode)
 		{
@@ -435,6 +435,8 @@ public class PLIRInstruction
 		case BGT:
 		case BGE:
 		case BLE:
+//		case MOVE:
+//		case CMP:
 			return true;
 		default:
 			return false;

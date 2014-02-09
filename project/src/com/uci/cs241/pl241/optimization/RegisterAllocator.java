@@ -16,7 +16,7 @@ public class RegisterAllocator
 	// Graph coloring algorithm
 	public void Color(InterferenceGraph graph)
 	{
-		
+		// TODO
 	}
 	
 	// Global parameters for the liverange calculation and liveset derivation
@@ -31,49 +31,73 @@ public class RegisterAllocator
 		ig.displayEdges();
 	}
 	
-	private HashSet<PLIRInstruction> LRTraverse(PLIRBasicBlock b, int branch)
+	private HashSet<Integer> LRTraverse(PLIRBasicBlock b, int branch)
 	{
 		stack.add(b);
 		int depth0 = stack.size();
+		
+		
+		branch = b.mark == 0 ? 1 : 2;
 		b.mark = depth0;
 		
-		HashSet<PLIRInstruction> live = new HashSet<PLIRInstruction>();
+		
+		System.out.println("block " + b.id + " mark = " + b.mark);
+		
+		HashSet<Integer> live = new HashSet<Integer>();
 		for (int i = 0; i < b.children.size(); i++)
 		{
 			// if |children| == 1, then i == 0 is branch
 			// if |children| == 2, then i == 0 is branch and i == 1 is fail
 			PLIRBasicBlock child = b.children.get(i);
-			if (child.mark == 0)
+			if (child.mark == 0 || child.mark == Integer.MAX_VALUE)
 			{
 				if (i == 0)
 				{
+					System.out.println("Traversing left to: " + child.id);
 					live = LRTraverse(child, 1);
 					b.mark = b.mark < child.mark ? b.mark : child.mark;
 				}
 				else
 				{
+					System.out.println("Traversing right to: " + child.id);
 					live.addAll(LRTraverse(child, 2));
 					b.mark = b.mark < child.mark ? b.mark : child.mark;
 				}
 			}
 		}
 		
-//		if (b.branch != null && b.branch.mark == 0)
+		
+//		if (b.joinNode != null && b.joinNode.mark == 0)
 //		{
-//			live = LRTraverse(b.branch, 1);
-//			b.mark = b.mark < b.fail.mark ? b.mark : b.fail.mark;
-//		}
-//		
-//		if (b.fail != null && b.fail.mark == 0)
-//		{
-//			live.addAll(LRTraverse(b.fail, 2));
-//			b.mark = b.mark < b.fail.mark ? b.mark : b.fail.mark;
+//			live.addAll(LRTraverse(b.joinNode, 2));
+//			b.mark = b.mark < b.joinNode.mark ? b.mark : b.joinNode.mark;
 //		}
 		
-		b.liveAtEnd = new HashSet<PLIRInstruction>();
+		
+//		
+//		if (b.children.size() > 0)
+//		{
+//			if (branch == 1 && b.children.get(0).mark == 0)
+//			{
+//				PLIRBasicBlock child = b.children.get(0);
+//				live.addAll(LRTraverse(child, 1));
+//				b.mark = b.mark < child.mark ? b.mark : child.mark;
+//			}
+//			else if (branch == 2 && b.children.get(1).mark == 0)
+//			{
+//				PLIRBasicBlock child = b.children.get(1);
+//				live.addAll(LRTraverse(child, 2));
+//				b.mark = b.mark < child.mark ? b.mark : child.mark;
+//			}
+//		}
+		
+		b.liveAtEnd = new HashSet<Integer>();
 		b.liveAtEnd.addAll(live);
+		System.out.println("Live at end of " + b.id + ": " + b.liveAtEnd + ",  mark = " + b.mark);
 		
 		// Traverse regular instructions, bottom-up
+		if (b.mark != Integer.MAX_VALUE)
+		{
 		for (int i = b.instructions.size() - 1; i >= 0; i--)
 		{
 			PLIRInstruction inst = b.instructions.get(i);
@@ -81,14 +105,14 @@ public class RegisterAllocator
 			{
 				inst = inst.refInst;
 			}
-			if (PLStaticSingleAssignment.isIncluded(inst.id) && inst.isBranch() == false && inst.opcode != PLIRInstructionType.PHI)
-			{
-				live.remove(inst);
-				for (PLIRInstruction x : live)
+			if (PLStaticSingleAssignment.isIncluded(inst.id) && inst.isNotLiveInstruction() == false && inst.opcode != PLIRInstructionType.PHI)
+			{	
+				live.remove(inst.id);
+				for (Integer x : live)
 				{
 //					edgeSet.add(new Edge(inst.id, x.id));
-					System.err.println("Adding edge: " + inst.toString() + " " + x.toString());
-					ig.AddEdge(inst.id, x.id);
+//					System.err.println("Adding edge: " + inst.toString() + " " + x.toString());
+					ig.AddEdge(inst.id, x);
 				}
 				if (inst.op1 != null && PLStaticSingleAssignment.isIncluded(inst.op1.id))
 				{
@@ -97,7 +121,7 @@ public class RegisterAllocator
 					{
 						op = op.refInst;
 					}
-					live.add(op);
+					live.add(op.id);
 				}
 				if (inst.op2 != null  && PLStaticSingleAssignment.isIncluded(inst.op2.id))
 				{
@@ -106,9 +130,19 @@ public class RegisterAllocator
 					{
 						op = op.refInst;
 					}
-					live.add(op);
+					live.add(op.id);
 				}
+				
+				System.out.println("After " + inst.id + ": " + live);
 			}
+		}
+		}
+		
+		// if we already visited this node, then this time we MUST have come from the right
+//		branch = b.mark == Integer.MAX_VALUE ? 2 : 1;
+		if (b.id == 30)
+		{
+			System.out.println("end node, ");
 		}
 		
 		// Traverse phi instructions, bottom-up
@@ -119,13 +153,13 @@ public class RegisterAllocator
 			{
 				inst = inst.refInst;
 			}
-			if (PLStaticSingleAssignment.isIncluded(inst.id) && inst.isBranch() == false && inst.opcode == PLIRInstructionType.PHI)
+			if (PLStaticSingleAssignment.isIncluded(inst.id) && inst.isNotLiveInstruction() == false && inst.opcode == PLIRInstructionType.PHI)
 			{
-				live.remove(inst);
-				for (PLIRInstruction x : live)
+				live.remove(inst.id);
+				for (Integer x : live)
 				{
 //					edgeSet.add(new Edge(inst.id, x.id));
-					ig.AddEdge(inst.id, x.id);
+					ig.AddEdge(inst.id, x);
 				}
 				if (branch == 1)
 				{
@@ -136,7 +170,7 @@ public class RegisterAllocator
 						{
 							op = op.refInst;
 						}
-						live.add(op);
+						live.add(op.id);
 					}
 				}
 				else
@@ -148,26 +182,28 @@ public class RegisterAllocator
 						{
 							op = op.refInst;
 						}
-						live.add(op);
+						live.add(op.id);
 					}
 				}
+				
+				System.out.println("After phi " + inst.id + ": " + live);
 			}
 		}
 		
 		// March forward
 		if (b.mark == depth0) 
 		{
-			while (stack.get(stack.size() - 1).id != b.id)
+			PLIRBasicBlock bb = stack.get(stack.size() - 1);
+			while (bb.id != b.id)
 			{
 				// b' = pop
-				PLIRBasicBlock bb = stack.get(stack.size() - 1);
 				stack.remove(stack.size() - 1);
 				
 				// Add live set to stack (since we went bottom up)
 				bb.liveAtEnd.addAll(live);
 				
 				// live'
-				HashSet<PLIRInstruction> liveprime = new HashSet<PLIRInstruction>();
+				HashSet<Integer> liveprime = new HashSet<Integer>();
 				liveprime.addAll(bb.liveAtEnd);
 				
 				// Walk backwards, bottom-up again
@@ -178,13 +214,15 @@ public class RegisterAllocator
 					{
 						inst = inst.refInst;
 					}
-					if (PLStaticSingleAssignment.isIncluded(inst.id) && inst.isBranch() == false && inst.opcode != PLIRInstructionType.PHI)
+					if (PLStaticSingleAssignment.isIncluded(inst.id) && inst.isNotLiveInstruction() == false && inst.opcode != PLIRInstructionType.PHI)
 					{
-						liveprime.remove(inst);
-						for (PLIRInstruction x : liveprime)
+						liveprime.remove(inst.id);
+						
+						
+						for (Integer x : liveprime)
 						{
 //							edgeSet.add(new Edge(inst.id, x.id));
-							ig.AddEdge(inst.id, x.id);
+							ig.AddEdge(inst.id, x);
 						}
 						if (inst.op1 != null  && PLStaticSingleAssignment.isIncluded(inst.op1.id))
 						{
@@ -193,7 +231,7 @@ public class RegisterAllocator
 							{
 								op = op.refInst;
 							}
-							liveprime.add(op);
+							liveprime.add(op.id);
 						}
 						if (inst.op2 != null  && PLStaticSingleAssignment.isIncluded(inst.op2.id))
 						{
@@ -202,20 +240,24 @@ public class RegisterAllocator
 							{
 								op = op.refInst;
 							}
-							liveprime.add(op);
+							liveprime.add(op.id);
 						}
+						
+						System.out.println("Prime after " + inst.id + ": " + liveprime);
 					}
 				}
 				
 				// infinity == -1
-				bb.mark = -1;
+				System.out.println("Setting bprime" + bb.id + " mark = " + bb.mark);
+				bb.mark = Integer.MAX_VALUE;
 			}
 			
 			// pop(stack)
 			stack.remove(stack.size() - 1);
 			
 			// b.mark := infty
-			b.mark = -1;
+			System.out.println("Setting b " + b.id + " mark = " + b.mark);
+			b.mark = Integer.MAX_VALUE;
 		}
 		
 		return live;
