@@ -130,11 +130,11 @@ public class GraphvizRender
 	{
 		StringBuilder builder = new StringBuilder();
 		ArrayList<Integer> seen = new ArrayList<Integer>();
-		builder.append("digraph interference_graph {\n");
+		builder.append("graph interference_graph {\n");
 		builder.append("    node [shape = circle];\n");
 		for (Edge e : graph.edgeSet)
 		{
-			builder.append(e.u + " -> " + e.v + ";\n");
+			builder.append(e.u + " -- " + e.v + ";\n");
 		}
 		builder.append("}\n");
 		return builder.toString();

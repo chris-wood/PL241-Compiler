@@ -425,6 +425,22 @@ public class PLIRInstruction
 		}
 	}
 	
+	public boolean isBranch()
+	{
+		switch (opcode)
+		{
+		case BEQ:
+		case BNE:
+		case BLT:
+		case BGT:
+		case BGE:
+		case BLE:
+			return true;
+		default:
+			return false;
+		}
+	}
+	
 	public static PLIRInstruction create_cmp(PLSymbolTable table, PLIRInstruction left, PLIRInstruction right)
 	{
 		PLIRInstruction inst = new PLIRInstruction(table);

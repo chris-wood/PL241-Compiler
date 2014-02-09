@@ -13,6 +13,10 @@ public class InterferenceGraph
 	
 	public void AddEdge(int u, int v)
 	{
+		if (u == 0 || v == 0)
+		{
+			System.err.println("here");
+		}
 		for (Edge e : edgeSet)
 		{
 			if (e.u == u && e.v == v)

@@ -18,6 +18,18 @@ public class PLStaticSingleAssignment
 	{
 	}
 	
+	public static boolean isIncluded(int id)
+	{
+		for (PLIRInstruction inst : instructions)
+		{
+			if (inst.id == id)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public static int addInstruction(PLSymbolTable table, PLIRInstruction inst)
 	{
 //		if (globalSSAIndex == 30)

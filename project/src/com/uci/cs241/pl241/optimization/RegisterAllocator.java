@@ -6,6 +6,7 @@ import java.util.HashSet;
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
 import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
+import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
 
 public class RegisterAllocator 
 {
@@ -76,21 +77,36 @@ public class RegisterAllocator
 		for (int i = b.instructions.size() - 1; i >= 0; i--)
 		{
 			PLIRInstruction inst = b.instructions.get(i);
-			if (inst.opcode != PLIRInstructionType.PHI)
+			while (inst.refInst != null)
+			{
+				inst = inst.refInst;
+			}
+			if (PLStaticSingleAssignment.isIncluded(inst.id) && inst.isBranch() == false && inst.opcode != PLIRInstructionType.PHI)
 			{
 				live.remove(inst);
 				for (PLIRInstruction x : live)
 				{
 //					edgeSet.add(new Edge(inst.id, x.id));
+					System.err.println("Adding edge: " + inst.toString() + " " + x.toString());
 					ig.AddEdge(inst.id, x.id);
 				}
-				if (inst.op1 != null)
+				if (inst.op1 != null && PLStaticSingleAssignment.isIncluded(inst.op1.id))
 				{
-					live.add(inst.op1);
+					PLIRInstruction op = inst.op1;
+					while (op.refInst != null)
+					{
+						op = op.refInst;
+					}
+					live.add(op);
 				}
-				if (inst.op2 != null)
+				if (inst.op2 != null  && PLStaticSingleAssignment.isIncluded(inst.op2.id))
 				{
-					live.add(inst.op2);
+					PLIRInstruction op = inst.op2;
+					while (op.refInst != null)
+					{
+						op = op.refInst;
+					}
+					live.add(op);
 				}
 			}
 		}
@@ -99,7 +115,11 @@ public class RegisterAllocator
 		for (int i = b.instructions.size() - 1; i >= 0; i--)
 		{
 			PLIRInstruction inst = b.instructions.get(i);
-			if (inst.opcode == PLIRInstructionType.PHI)
+			while (inst.refInst != null)
+			{
+				inst = inst.refInst;
+			}
+			if (PLStaticSingleAssignment.isIncluded(inst.id) && inst.isBranch() == false && inst.opcode == PLIRInstructionType.PHI)
 			{
 				live.remove(inst);
 				for (PLIRInstruction x : live)
@@ -109,16 +129,26 @@ public class RegisterAllocator
 				}
 				if (branch == 1)
 				{
-					if (inst.op1 != null)
+					if (inst.op1 != null  && PLStaticSingleAssignment.isIncluded(inst.op1.id))
 					{
-						live.add(inst.op1);
+						PLIRInstruction op = inst.op1;
+						while (op.refInst != null)
+						{
+							op = op.refInst;
+						}
+						live.add(op);
 					}
 				}
 				else
 				{
-					if (inst.op2 != null)
+					if (inst.op2 != null  && PLStaticSingleAssignment.isIncluded(inst.op2.id))
 					{
-						live.add(inst.op2);
+						PLIRInstruction op = inst.op2;
+						while (op.refInst != null)
+						{
+							op = op.refInst;
+						}
+						live.add(op);
 					}
 				}
 			}
@@ -144,7 +174,11 @@ public class RegisterAllocator
 				for (int i = b.instructions.size() - 1; i >= 0; i--)
 				{
 					PLIRInstruction inst = b.instructions.get(i);
-					if (inst.opcode != PLIRInstructionType.PHI)
+					while (inst.refInst != null)
+					{
+						inst = inst.refInst;
+					}
+					if (PLStaticSingleAssignment.isIncluded(inst.id) && inst.isBranch() == false && inst.opcode != PLIRInstructionType.PHI)
 					{
 						liveprime.remove(inst);
 						for (PLIRInstruction x : liveprime)
@@ -152,13 +186,23 @@ public class RegisterAllocator
 //							edgeSet.add(new Edge(inst.id, x.id));
 							ig.AddEdge(inst.id, x.id);
 						}
-						if (inst.op1 != null)
+						if (inst.op1 != null  && PLStaticSingleAssignment.isIncluded(inst.op1.id))
 						{
-							liveprime.add(inst.op1);
+							PLIRInstruction op = inst.op1;
+							while (op.refInst != null)
+							{
+								op = op.refInst;
+							}
+							liveprime.add(op);
 						}
-						if (inst.op2 != null)
+						if (inst.op2 != null  && PLStaticSingleAssignment.isIncluded(inst.op2.id))
 						{
-							liveprime.add(inst.op2);
+							PLIRInstruction op = inst.op2;
+							while (op.refInst != null)
+							{
+								op = op.refInst;
+							}
+							liveprime.add(op);
 						}
 					}
 				}

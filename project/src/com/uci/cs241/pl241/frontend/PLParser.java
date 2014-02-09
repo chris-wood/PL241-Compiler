@@ -569,7 +569,7 @@ public class PLParser
 				load.forceGenerate(scope);
 				exprNode.addInstruction(load);
 				leftInst = load;
-			}
+			} 
 			
 			PLIRInstruction rightInst = rightNode.getLastInst();
 			if (rightInst.isArray)
@@ -623,6 +623,7 @@ public class PLParser
 			else
 			{
 				exprInst.type = OperandType.INST;
+				exprInst.forceGenerate(scope);
 			}
 			
 			
