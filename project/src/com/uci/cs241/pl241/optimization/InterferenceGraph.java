@@ -35,9 +35,36 @@ public class InterferenceGraph
 		return -1;
 	}
 	
-	public void removeVertex(int v)
+	public ArrayList<Integer> removeVertex(int v)
 	{
+		ArrayList<Integer> neighbors = adjList.get(v);
 		
+		// Drop v from the set
+		adjList.remove(v);
+		
+		// Remove all edges that were incident to v
+		for (Integer u : neighbors)
+		{
+			for (int n = 0; n < adjList.get(u).size(); n++)
+			{
+				if (v == adjList.get(u).get(n))
+				{
+					adjList.get(u).remove(n);
+				}
+			}
+		}
+		
+		return neighbors;
+	}
+	
+	public void addVertex(int v, ArrayList<Integer> neighbors)
+	{
+		adjList.put(v, neighbors);
+	}
+	
+	public boolean isEmpty()
+	{
+		return adjList.keySet().isEmpty();
 	}
 	
 	public void addEdge(int u, int v)

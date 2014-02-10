@@ -23,6 +23,18 @@ public class RegisterAllocator
 			// else take hte node with the lowest count => and spill to memory
 		}
 		
+		ArrayList<Integer> neighbors = ig.removeVertex(x);
+		
+		// If the graph isn't empty, recursively color
+		if (ig.isEmpty() == false)
+		{
+			Color(ig);
+		}
+		
+		// add x and its edges back to G
+		ig.addVertex(x, neighbors);
+		
+		// choose a color for x that is different from its neighbors
 	}
 	
 	// Global parameters for the liverange calculation and liveset derivation
