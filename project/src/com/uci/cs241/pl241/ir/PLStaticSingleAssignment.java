@@ -7,7 +7,7 @@ import java.util.HashMap;
 
 import com.uci.cs241.pl241.frontend.PLSymbolTable;
 import com.uci.cs241.pl241.ir.PLIRInstruction.EliminationReason;
-import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
+import com.uci.cs241.pl241.ir.PLIRInstruction.InstructionType;
 
 public class PLStaticSingleAssignment
 {

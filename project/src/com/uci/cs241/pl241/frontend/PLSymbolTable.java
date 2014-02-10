@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.uci.cs241.pl241.ir.PLIRInstruction;
-import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
+import com.uci.cs241.pl241.ir.PLIRInstruction.InstructionType;
 
 public class PLSymbolTable
 {
@@ -13,9 +13,11 @@ public class PLSymbolTable
 	public HashMap<String, ArrayList<String>> varScopeTable;
 	public HashMap<String, HashMap<String, PLIRInstruction>> symTable;
 	public HashMap<String, ArrayList<PLIRInstruction>> prevSymTable;
+	public HashMap<String, Function> functions;
 	public String name;
+	public ArrayList<PLIRInstruction> globalVariables;
 	
-	public HashMap<String, HashMap<PLIRInstructionType, ArrayList<PLIRInstruction>>> instTypeMap = new HashMap<String, HashMap<PLIRInstructionType, ArrayList<PLIRInstruction>>>();
+	public HashMap<String, HashMap<InstructionType, ArrayList<PLIRInstruction>>> instTypeMap = new HashMap<String, HashMap<InstructionType, ArrayList<PLIRInstruction>>>();
 	
 	public PLSymbolTable()
 	{
@@ -24,9 +26,11 @@ public class PLSymbolTable
 		symTable = new HashMap<String, HashMap<String, PLIRInstruction>>();
 		prevSymTable = new HashMap<String, ArrayList<PLIRInstruction>>();
 		currentScope = new ArrayList<String>();
+		functions = new HashMap<String, Function>();
+		globalVariables = new ArrayList<PLIRInstruction>();
 	}
 	
-	public ArrayList<PLIRInstruction> getDominatedInstructions(PLIRInstructionType type)
+	public ArrayList<PLIRInstruction> getDominatedInstructions(InstructionType type)
 	{
 		switch (type)
 		{
@@ -39,7 +43,7 @@ public class PLSymbolTable
 			String scope = getCurrentScope();
 			if (instTypeMap.containsKey(scope) == false)
 			{
-				instTypeMap.put(scope, new HashMap<PLIRInstructionType, ArrayList<PLIRInstruction>>());
+				instTypeMap.put(scope, new HashMap<InstructionType, ArrayList<PLIRInstruction>>());
 				instTypeMap.get(scope).put(type, new ArrayList<PLIRInstruction>());
 			}
 			
@@ -47,6 +51,30 @@ public class PLSymbolTable
 		default:
 			return null;
 		}
+	}
+	
+	public boolean isGlobalVariable(String v)
+	{
+		for (PLIRInstruction glob : globalVariables)
+		{
+			if (glob.origIdent.equals(v)) return true;
+		}
+		return false;
+	}
+	
+	public void addGlobalVariable(PLIRInstruction inst)
+	{
+		globalVariables.add(inst);
+	}
+	
+	public void addFunction(String name, ArrayList<PLIRInstruction> params)
+	{
+		functions.put(name, new Function(name, params, true));
+	}
+	
+	public void addProcedure(String name, ArrayList<PLIRInstruction> params)
+	{
+		functions.put(name, new Function(name, params, false));
 	}
 	
 	public void addDominatedInstruction(PLIRInstruction type)
@@ -62,7 +90,7 @@ public class PLSymbolTable
 			String scope = getCurrentScope();
 			if (instTypeMap.containsKey(scope) == false)
 			{
-				instTypeMap.put(scope, new HashMap<PLIRInstructionType, ArrayList<PLIRInstruction>>());
+				instTypeMap.put(scope, new HashMap<InstructionType, ArrayList<PLIRInstruction>>());
 				instTypeMap.get(scope).put(type.opcode, new ArrayList<PLIRInstruction>());
 			}
 			if (instTypeMap.get(scope).containsKey(type.opcode) == false)

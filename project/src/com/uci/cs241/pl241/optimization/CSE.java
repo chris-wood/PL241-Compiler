@@ -6,7 +6,7 @@ import java.util.HashMap;
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction.EliminationReason;
 import com.uci.cs241.pl241.ir.PLIRInstruction.OperandType;
-import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
+import com.uci.cs241.pl241.ir.PLIRInstruction.InstructionType;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
 
 public class CSE 
@@ -15,16 +15,16 @@ public class CSE
 	{
 		PLIRBasicBlock ret = root;
 		
-		HashMap<PLIRInstructionType, ArrayList<PLIRInstruction>> domList = 
-				new HashMap<PLIRInstructionType, ArrayList<PLIRInstruction>>();
+		HashMap<InstructionType, ArrayList<PLIRInstruction>> domList = 
+				new HashMap<InstructionType, ArrayList<PLIRInstruction>>();
 		
 		// Initialize the map
-		domList.put(PLIRInstructionType.NEG, new ArrayList<PLIRInstruction>());
-		domList.put(PLIRInstructionType.ADD, new ArrayList<PLIRInstruction>());
-		domList.put(PLIRInstructionType.SUB, new ArrayList<PLIRInstruction>());
-		domList.put(PLIRInstructionType.MUL, new ArrayList<PLIRInstruction>());
-		domList.put(PLIRInstructionType.DIV, new ArrayList<PLIRInstruction>());
-		domList.put(PLIRInstructionType.CMP, new ArrayList<PLIRInstruction>());
+		domList.put(InstructionType.NEG, new ArrayList<PLIRInstruction>());
+		domList.put(InstructionType.ADD, new ArrayList<PLIRInstruction>());
+		domList.put(InstructionType.SUB, new ArrayList<PLIRInstruction>());
+		domList.put(InstructionType.MUL, new ArrayList<PLIRInstruction>());
+		domList.put(InstructionType.DIV, new ArrayList<PLIRInstruction>());
+		domList.put(InstructionType.CMP, new ArrayList<PLIRInstruction>());
 		
 		// Record what's already been visited to prevent loops on while loop BBs
 		ArrayList<Integer> visited = new ArrayList<Integer>();
@@ -35,7 +35,7 @@ public class CSE
 		return ret;
 	}
 	
-	private void cseOnBlock(HashMap<PLIRInstructionType, ArrayList<PLIRInstruction>> parentDomList, 
+	private void cseOnBlock(HashMap<InstructionType, ArrayList<PLIRInstruction>> parentDomList, 
 			ArrayList<Integer> visited, PLIRBasicBlock block)
 	{
 		// Avoid cyclic loops from while loops
@@ -45,11 +45,11 @@ public class CSE
 		}
 		else
 		{
-			HashMap<PLIRInstructionType, ArrayList<PLIRInstruction>> domList = 
-					new HashMap<PLIRInstructionType, ArrayList<PLIRInstruction>>();
+			HashMap<InstructionType, ArrayList<PLIRInstruction>> domList = 
+					new HashMap<InstructionType, ArrayList<PLIRInstruction>>();
 			
 			// Re-populate the map
-			for (PLIRInstructionType key : parentDomList.keySet())
+			for (InstructionType key : parentDomList.keySet())
 			{
 				domList.put(key, new ArrayList<PLIRInstruction>());
 				for (PLIRInstruction inst : parentDomList.get(key))

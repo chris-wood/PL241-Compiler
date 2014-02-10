@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
+import com.uci.cs241.pl241.ir.PLIRInstruction.InstructionType;
 
 public class PLIRInstructionManager
 {

@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import com.uci.cs241.pl241.ir.PLIRInstruction.OperandType;
-import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
+import com.uci.cs241.pl241.ir.PLIRInstruction.InstructionType;
 
 public class PLIRBasicBlock
 {
@@ -230,7 +230,7 @@ public class PLIRBasicBlock
 //			}
 			if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
 			{
-				if (!(replaced && bInst.opcode == PLIRInstructionType.PHI))
+				if (!(replaced && bInst.opcode == InstructionType.PHI))
 				{
 					bInst.replaceRightOperand(scopeMap.get(var));
 					replaced = true;
@@ -238,7 +238,7 @@ public class PLIRBasicBlock
 			}
 			if (bInst.op2 != null && bInst.op2.equals(findPhi))
 			{
-				if (!(replaced && bInst.opcode == PLIRInstructionType.PHI))
+				if (!(replaced && bInst.opcode == InstructionType.PHI))
 				{
 					bInst.replaceRightOperand(scopeMap.get(var));
 					replaced = true;
@@ -246,7 +246,7 @@ public class PLIRBasicBlock
 			}
 			
 			// Don't propagate past the phi, since it essentially replaces the current value
-			if (replaced && bInst.opcode == PLIRInstructionType.PHI)
+			if (replaced && bInst.opcode == InstructionType.PHI)
 			{
 				findPhi = bInst; 
 				scopeMap.put(var, bInst);

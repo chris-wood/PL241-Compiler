@@ -1,3 +1,45 @@
+// function calls with arbitrary parameters
+main 
+var a, b, c, d, e, f, g, x, y, z;
+array[10] output;
+
+procedure one( x1, x2 );
+var x3;
+{
+  let x3 <- x1 + x2;
+  call OutputNum(x3);
+  call OutputNum(b)
+};
+
+{
+  let a <- call InputNum();
+  let b <- call InputNum();
+  let output[0] <- 10;
+  
+  call one(a,b);
+
+  call OutputNum(a);
+  call OutputNum(output[0])
+}.
+
+
+// Simple array test - store x2 and load x2 with writes after
+main 
+var a, b, c, d, e;
+array[5] input;
+{
+  let a <- call InputNum();
+  let b <- call InputNum();
+
+  let input[0] <- 0;
+  let input[1] <- a + b;
+
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(input[0]);
+  call OutputNum(input[1])
+}.
+
 // Interference graph test from class notes
 main 
 var a, b, c, d, e;
@@ -18,7 +60,7 @@ var a, b, c, d, e;
   call OutputNum(a)
 }.
 
-// asd - nested while test
+// nested while test
 main 
 var a, b, c, d, e, f, g;
 {
@@ -61,73 +103,7 @@ var a, b, c, d, e, f, g;
   call OutputNewLine()
 }.
 
-// asd - HARD FUCKING TEST CASE WITH NESTED THINGS AND PHIS
-main 
-var a, b, c, d, e, f, g, x, y, z;
-array[10] output;
-
-procedure one( x1, x2, x3, x4, x5 );
-{
-call OutputNum(x);
-call OutputNum(2);
-call OutputNum(3);
-if a == 0 then
-  call OutputNewLine()
-fi;
-call OutputNewLine()
-};
-
-function foo( x1, x2, x3, x4, x5 );
-var i, d;
-array[5] input;
-{
-  let i <- 0;
-  while i < 10 do
-    let y <- y + 2;
-    let z <- x + 2;
-    let d <- y + z;
-    let i <- i + 1
-  od;
-  return d
-};
-
-
-{
-  let a <- call InputNum();
-  let b <- a;
-  let c <- b;
-  let d <- b + c;
-  let e <- a + b;
-  let f <- a + c;
-  let g <- 10;
-  let a <- 1;
-  while a > 0 do
-    let a <- a - 1;
-    call OutputNum(a)
-  od;
-
-  call one(a,b,c,d,e);
-  // call foo;
-
-  if a == 10 then
-    if a == 9 then
-      let g <- g + a;
-      call OutputNum(9);
-      call OutputNum(g)
-    else 
-      while a > 0 do
-        let a <- a - 1;
-        call OutputNum(a)
-      od
-    fi
-  else
-    call OutputNum(100)
-  fi;
-  call OutputNum(a);
-  call OutputNum(g)
-}.
-
-// asd - testing if/else with modifier in only one branch!
+// testing if/else with modifier in only one branch!
 main 
 var a, b;
 array[5] input;
@@ -181,7 +157,7 @@ var i,j;
   call OutputNum(i)
 }.
 
-// asd - nested while test
+// nested while test
 main 
 var a, b, c, d, e, f, g;
 {
@@ -205,7 +181,7 @@ var a, b, c, d, e, f, g;
 }.
 
 
-// asd - HARD FUCKING TEST CASE WITH NESTED THINGS AND PHIS
+// HARD FUCKING TEST CASE WITH NESTED THINGS AND PHIS
 main 
 var a, b, c, d, e, f, g, x, y, z;
 
@@ -290,7 +266,7 @@ var n,f,g;
   call OutputNum(n)
 }.
 
-// asd - DOMINATOR TEST
+// DOMINATOR TEST
 main 
 var a, b, c, d, e, f, g;
 {
@@ -306,7 +282,7 @@ var a, b, c, d, e, f, g;
   call OutputNewLine()
 }.
 
-// asd - DOMINATOR TEST
+// DOMINATOR TEST
 main 
 var a, b, c, d, e, f, g;
 {
@@ -321,7 +297,7 @@ var a, b, c, d, e, f, g;
 }.
 
 
-// asd - HARD FUCKING TEST CASE WITH NESTED THINGS AND PHIS
+// HARD FUCKING TEST CASE WITH NESTED THINGS AND PHIS
 main 
 var a, b, c, d, e, f, g;
 {
@@ -489,7 +465,7 @@ var a, b, c, d, e, f, g;
   call OutputNum(g)
 }.
 
-// asd - Test case for graphs
+// Test case for graphs
 main 
 var a, b, c, d, e, f, g;
 {
@@ -508,7 +484,7 @@ var a, b, c, d, e, f, g;
   call OutputNum(g)
 }.
 
-// asd - HARD FUCKING TEST CASE WITH NESTED THINGS AND PHIS
+// HARD FUCKING TEST CASE WITH NESTED THINGS AND PHIS
 main 
 var a, b, c, d, e, f, g;
 {
@@ -541,7 +517,7 @@ var a, b, c, d, e, f, g;
   call OutputNum(g)
 }.
 
-// asd - modified in-class exercise with an obvious CSE and nested IF statements
+// modified in-class exercise with an obvious CSE and nested IF statements
 main 
 var a, b, c, d, e, f, g;
 {
@@ -566,7 +542,7 @@ var a, b, c, d, e, f, g;
   call OutputNum(g)
 }.
 
-// asd - fixed!
+// fixed!
 main 
 var a, b, c;
 {
@@ -583,7 +559,7 @@ var a, b, c;
   call OutputNum(2)
 }.
 
-// asd - the if statement parsing for the phi is incorrect - it puts the everything at the wrong spot
+// the if statement parsing for the phi is incorrect - it puts the everything at the wrong spot
 main 
 var a, b, c;
 {

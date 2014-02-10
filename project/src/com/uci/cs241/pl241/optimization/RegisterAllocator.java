@@ -5,7 +5,7 @@ import java.util.HashSet;
 
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
-import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
+import com.uci.cs241.pl241.ir.PLIRInstruction.InstructionType;
 import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
 
 public class RegisterAllocator 
@@ -98,7 +98,7 @@ public class RegisterAllocator
 			{
 				inst = inst.refInst;
 			}
-			if (PLStaticSingleAssignment.isIncluded(inst.id) && inst.isNotLiveInstruction() == false && inst.opcode != PLIRInstructionType.PHI)
+			if (PLStaticSingleAssignment.isIncluded(inst.id) && inst.isNotLiveInstruction() == false && inst.opcode != InstructionType.PHI)
 			{	
 				live.remove(inst.id);
 				for (Integer x : live)
@@ -146,7 +146,7 @@ public class RegisterAllocator
 			{
 				inst = inst.refInst;
 			}
-			if (PLStaticSingleAssignment.isIncluded(inst.id) && inst.isNotLiveInstruction() == false && inst.opcode == PLIRInstructionType.PHI)
+			if (PLStaticSingleAssignment.isIncluded(inst.id) && inst.isNotLiveInstruction() == false && inst.opcode == InstructionType.PHI)
 			{
 				live.remove(inst.id);
 				for (Integer x : live)
@@ -207,7 +207,7 @@ public class RegisterAllocator
 					{
 						inst = inst.refInst;
 					}
-					if (PLStaticSingleAssignment.isIncluded(inst.id) && inst.isNotLiveInstruction() == false && inst.opcode != PLIRInstructionType.PHI)
+					if (PLStaticSingleAssignment.isIncluded(inst.id) && inst.isNotLiveInstruction() == false && inst.opcode != InstructionType.PHI)
 					{
 						liveprime.remove(inst.id);
 						

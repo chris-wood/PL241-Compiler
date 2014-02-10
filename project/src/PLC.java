@@ -178,14 +178,14 @@ public class PLC
 		domWriter.close();
 		
 		//////// register allocation
-		root = blocks.get(blocks.size() - 1);
-		RegisterAllocator ra = new RegisterAllocator();
-		ra.ComputeLiveRange(root);
-		InterferenceGraph ig = ra.ig;
-		String igdot = render.renderInterferenceGraph(ig);
-		PrintWriter igWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + ".ig.dot")));
-		igWriter.println(igdot);
-		igWriter.flush();
-		igWriter.close();	
+//		root = blocks.get(blocks.size() - 1);
+//		RegisterAllocator ra = new RegisterAllocator();
+//		ra.ComputeLiveRange(root);
+//		InterferenceGraph ig = ra.ig;
+//		String igdot = render.renderInterferenceGraph(ig);
+//		PrintWriter igWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + ".ig.dot")));
+//		igWriter.println(igdot);
+//		igWriter.flush();
+//		igWriter.close();	
 	}
 }

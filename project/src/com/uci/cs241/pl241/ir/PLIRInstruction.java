@@ -10,7 +10,7 @@ public class PLIRInstruction
 {
 	// Instruction descriptions
 	public int id;
-	public PLIRInstructionType opcode;
+	public InstructionType opcode;
 	public OperandType type;
 	public int i1;
 	public PLIRInstruction op1;
@@ -19,6 +19,8 @@ public class PLIRInstruction
 	public PLIRInstruction op2;
 	public OperandType op2type;
 	public String op2address;
+	public String dummyName;
+	public int paramNumber;
 	
 	// 0 unless otherwise set, obviously
 	public int tempPosition = 0;
@@ -68,7 +70,7 @@ public class PLIRInstruction
 		System.err.println("CSE: " + this.id + " referencing " + ref.id);
 	}
 	
-	public enum PLIRInstructionType 
+	public enum InstructionType 
 	{
 		NEG,
 		ADD,
@@ -85,6 +87,7 @@ public class PLIRInstruction
 		
 		PROC,
 		FUNC,
+		LOADPARAM,
 		
 		END,
 		
@@ -108,7 +111,7 @@ public class PLIRInstruction
 	
 	public enum OperandType
 	{
-		CONST, INST, NULL, ADDRESS, FP, BASEADDRESS
+		CONST, INST, NULL, ADDRESS, FP, BASEADDRESS, FUNC_PARAM
 	};
 	
 	public PLIRInstruction(PLSymbolTable table)
@@ -116,7 +119,7 @@ public class PLIRInstruction
 		// blank slate to be filled in by the parser or static factory methods in this class	
 	}
 	
-	public PLIRInstruction(PLSymbolTable table, PLIRInstructionType opcode)
+	public PLIRInstruction(PLSymbolTable table, InstructionType opcode)
 	{
 		this.opcode = opcode;
 		op1 = op2 = null;
@@ -124,7 +127,7 @@ public class PLIRInstruction
 		forceGenerate(table); // always generate right away...
 	}
 	
-	public PLIRInstruction(PLSymbolTable table, PLIRInstructionType opcode, PLIRInstruction singleOperand)
+	public PLIRInstruction(PLSymbolTable table, InstructionType opcode, PLIRInstruction singleOperand)
 	{
 		this.opcode = opcode;
 		op1 = singleOperand;
@@ -149,7 +152,7 @@ public class PLIRInstruction
 		forceGenerate(table); // always generate right away...
 	}
 	
-	public PLIRInstruction(PLSymbolTable table, PLIRInstructionType opcode, PLIRInstruction left, PLIRInstruction right)
+	public PLIRInstruction(PLSymbolTable table, InstructionType opcode, PLIRInstruction left, PLIRInstruction right)
 	{
 		this.opcode = opcode;
 		op1 = left;
@@ -201,7 +204,7 @@ public class PLIRInstruction
 			right.forceGenerate(table);
 		}
 		
-		if (opcode == PLIRInstructionType.CMP)
+		if (opcode == InstructionType.CMP)
 		{
 			kind = ResultKind.COND;
 			forceGenerate(table);
@@ -212,7 +215,7 @@ public class PLIRInstruction
 		}
 	}
 	
-	public PLIRInstruction(PLSymbolTable table, PLIRInstructionType opcode, PLIRInstruction left, OperandType leftType, PLIRInstruction right, OperandType rightType)
+	public PLIRInstruction(PLSymbolTable table, InstructionType opcode, PLIRInstruction left, OperandType leftType, PLIRInstruction right, OperandType rightType)
 	{
 		this.opcode = opcode;
 		op1 = left;
@@ -263,7 +266,7 @@ public class PLIRInstruction
 			right.forceGenerate(table);
 		}
 		
-		if (opcode == PLIRInstructionType.CMP)
+		if (opcode == InstructionType.CMP)
 		{
 			kind = ResultKind.COND;
 			forceGenerate(table);
@@ -275,7 +278,7 @@ public class PLIRInstruction
 		}
 	}
 	
-	public PLIRInstruction(PLSymbolTable table, PLIRInstructionType opcode, PLIRInstruction left, OperandType leftType, int right)
+	public PLIRInstruction(PLSymbolTable table, InstructionType opcode, PLIRInstruction left, OperandType leftType, int right)
 	{
 		this.opcode = opcode;
 		op1 = left;
@@ -320,7 +323,7 @@ public class PLIRInstruction
 			left.forceGenerate(table);
 		}
 		
-		if (opcode == PLIRInstructionType.CMP)
+		if (opcode == InstructionType.CMP)
 		{
 			kind = ResultKind.COND;
 			forceGenerate(table);
@@ -332,7 +335,7 @@ public class PLIRInstruction
 		}
 	}
 	
-	public PLIRInstruction(PLSymbolTable table, PLIRInstructionType opcode, int left, int right)
+	public PLIRInstruction(PLSymbolTable table, InstructionType opcode, int left, int right)
 	{
 		this.opcode = opcode;
 		op1 = op2 = null;
@@ -446,7 +449,7 @@ public class PLIRInstruction
 	public static PLIRInstruction create_cmp(PLSymbolTable table, PLIRInstruction left, PLIRInstruction right)
 	{
 		PLIRInstruction inst = new PLIRInstruction(table);
-		inst.opcode = PLIRInstructionType.CMP;
+		inst.opcode = InstructionType.CMP;
 		inst.kind = ResultKind.VAR;
 		
 		if (left.kind == ResultKind.CONST)
@@ -481,7 +484,7 @@ public class PLIRInstruction
 	public static PLIRInstruction create_phi(PLSymbolTable table, PLIRInstruction b1, PLIRInstruction b2, int loc)
 	{
 		PLIRInstruction inst = new PLIRInstruction(table);
-		inst.opcode = PLIRInstructionType.PHI;
+		inst.opcode = InstructionType.PHI;
 		inst.kind = ResultKind.VAR;
 		
 		if (b1.kind == ResultKind.CONST)
@@ -532,22 +535,22 @@ public class PLIRInstruction
 		switch (token)
 		{
 		case PLToken.eqlToken:
-			inst.opcode = PLIRInstructionType.BNE;
+			inst.opcode = InstructionType.BNE;
 			break;
 		case PLToken.neqToken:
-			inst.opcode = PLIRInstructionType.BEQ;
+			inst.opcode = InstructionType.BEQ;
 			break;
 		case PLToken.lssToken:
-			inst.opcode = PLIRInstructionType.BGE;
+			inst.opcode = InstructionType.BGE;
 			break;
 		case PLToken.geqToken:
-			inst.opcode = PLIRInstructionType.BLT;
+			inst.opcode = InstructionType.BLT;
 			break;
 		case PLToken.leqToken:
-			inst.opcode = PLIRInstructionType.BGT;
+			inst.opcode = InstructionType.BGT;
 			break;
 		case PLToken.gttToken:
-			inst.opcode = PLIRInstructionType.BLE;
+			inst.opcode = InstructionType.BLE;
 			break;
 		}
 		
@@ -564,7 +567,7 @@ public class PLIRInstruction
 		inst.op1 = inst.op2 = null;
 		inst.op1type = OperandType.CONST; // op1 will be 0
 		inst.op2type = OperandType.CONST; // op2 will be an offset
-		inst.opcode = PLIRInstructionType.BEQ;
+		inst.opcode = InstructionType.BEQ;
 		inst.forceGenerate(table);
 		return inst;
 	}
@@ -581,12 +584,12 @@ public class PLIRInstruction
 		
 		if (isFunc)
 		{
-			newInst.opcode = PLIRInstructionType.FUNC;
+			newInst.opcode = InstructionType.FUNC;
 			newInst.type = OperandType.INST;
 		}
 		else
 		{
-			newInst.opcode = PLIRInstructionType.PROC;
+			newInst.opcode = InstructionType.PROC;
 			newInst.type = OperandType.NULL;
 		}
 		
@@ -633,180 +636,188 @@ public class PLIRInstruction
 		}
 		
 		if (opcode == null)
-			System.err.println("hmm...");
-		
-		switch (opcode)
 		{
-			case ADD:
-				s = "add";
-				break;
-			case SUB:
-				s = "sub";
-				break;
-			case MUL:
-				s = "mul";
-				break;
-			case DIV:
-				s = "div";
-				break;
-			case ADDA:
-				s = "adda";
-				break;
-			case WRITE:
-				s = "write";
-				break;
-			case READ:
-				s = "read";
-				break;
-			case WLN:
-				s = "wln";
-				break;
-			case END:
-				s = "end";
-				break;
-			case CMP:
-				s = "cmp";
-				break;
-			case BEQ:
-				s = "beq";
-				break;
-			case BNE:
-				s = "bne";
-				break;
-			case BLT:
-				s = "blt";
-				break;
-			case BGE:
-				s = "bge";
-				break;
-			case BLE:
-				s = "ble";
-				break;
-			case BGT:
-				s = "bgt";
-				break;
-			case PHI:
-				s = "phi";
-				break;
-			case FUNC:
-				s = "func";
-				break;
-			case PROC:
-				s = "proc";
-				break;
-			case LOAD:
-				s = "load";
-				break;
-			case STORE:
-				s = "store";
-				break;
+			System.err.println("Dummy placeholder variable encountered: " + dummyName);
 		}
-		
-		if (callOperands != null)
+		else
 		{
-			s = s + " " + funcName;
-			
-			// Append the operands
-			for (PLIRInstruction operand : callOperands)
+		
+			switch (opcode)
 			{
-				if (operand.type == null)
+				case ADD:
+					s = "add";
+					break;
+				case SUB:
+					s = "sub";
+					break;
+				case MUL:
+					s = "mul";
+					break;
+				case DIV:
+					s = "div";
+					break;
+				case ADDA:
+					s = "adda";
+					break;
+				case WRITE:
+					s = "write";
+					break;
+				case READ:
+					s = "read";
+					break;
+				case WLN:
+					s = "wln";
+					break;
+				case END:
+					s = "end";
+					break;
+				case CMP:
+					s = "cmp";
+					break;
+				case BEQ:
+					s = "beq";
+					break;
+				case BNE:
+					s = "bne";
+					break;
+				case BLT:
+					s = "blt";
+					break;
+				case BGE:
+					s = "bge";
+					break;
+				case BLE:
+					s = "ble";
+					break;
+				case BGT:
+					s = "bgt";
+					break;
+				case PHI:
+					s = "phi";
+					break;
+				case FUNC:
+					s = "func";
+					break;
+				case PROC:
+					s = "proc";
+					break;
+				case LOADPARAM:
+					s = "loadparam " + paramNumber;
+					break;
+				case LOAD:
+					s = "load";
+					break;
+				case STORE:
+					s = "store";
+					break;
+			}
+			
+			if (callOperands != null)
+			{
+				s = s + " " + funcName;
+				
+				// Append the operands
+				for (PLIRInstruction operand : callOperands)
 				{
-					System.err.println(this.opcode);
-					System.err.println(this.id);
+					if (operand.type == null)
+					{
+						System.err.println(this.opcode);
+						System.err.println(this.id);
+					}
+					switch (operand.type)
+					{
+						case INST:
+							PLIRInstruction op = operand;
+							while (op.isRemoved && op.refInst.id != this.id)
+							{
+								System.err.println("recursing to: " + op.refInst);
+								op = op.refInst;
+							}
+							s = s + " (" + op.id + ")";
+							break;
+						case CONST:
+							s = s + " #" + operand.tempVal;
+							break;
+						case ADDRESS:
+							s = s + " (" + operand.id + ")";
+							break;
+						case FP:
+							s = s + " FP";
+							break;
+//						case BASEADDRESS:
+//							s = s + " " + operand.
+					}
 				}
-				switch (operand.type)
+			}
+			else if (op2type == null && op1type != null) // single operand instruction
+			{
+				switch (op1type)
 				{
 					case INST:
-						PLIRInstruction op = operand;
-						while (op.isRemoved && op.refInst.id != this.id)
+						PLIRInstruction op = op1;
+						while (op.isRemoved && op.id != this.id)
 						{
-							System.err.println("recursing to: " + op.refInst);
+							System.err.println("recursing from " + this.id + " to: " + op.refInst);
 							op = op.refInst;
 						}
 						s = s + " (" + op.id + ")";
 						break;
 					case CONST:
-						s = s + " #" + operand.tempVal;
+						s = s + " #" + i1;
 						break;
 					case ADDRESS:
-						s = s + " (" + operand.id + ")";
+						s = s + " (" + op1.id + ")";
 						break;
 					case FP:
 						s = s + " FP";
 						break;
-//					case BASEADDRESS:
-//						s = s + " " + operand.
 				}
 			}
-		}
-		else if (op2type == null) // single operand instruction
-		{
-			switch (op1type)
+			else if (op2type != null && op1type != null) // this is a normal IR instruction, so render it as usual
 			{
-				case INST:
-					PLIRInstruction op = op1;
-					while (op.isRemoved && op.id != this.id)
-					{
-						System.err.println("recursing from " + this.id + " to: " + op.refInst);
-						op = op.refInst;
-					}
-					s = s + " (" + op.id + ")";
-					break;
-				case CONST:
-					s = s + " #" + i1;
-					break;
-				case ADDRESS:
-					s = s + " (" + op1.id + ")";
-					break;
-				case FP:
-					s = s + " FP";
-					break;
-			}
-		}
-		else // this is a normal IR instruction, so render it as usual
-		{
-			switch (op1type)
-			{
-				case INST:
-					PLIRInstruction op = op1;
-					while (op.isRemoved && op.id != this.id && op.refInst.id != this.id)
-					{
-						System.err.println("recursing from " + this.id + " to: " + op.refInst.id);
-						op = op.refInst;
-					}
-					s = s + " (" + op.id + ")";
-					break;
-				case CONST:
-					s = s + " #" + i1;
-					break;
-				case ADDRESS:
-					s = s + " (" + op1.id + ")";
-					break;
-				case FP:
-					s = s + " FP";
-					break;
-			}
-			
-			switch (op2type)
-			{
-				case INST:
-					PLIRInstruction op = op2;
-					while (op.isRemoved && op.id != this.id)
-					{
-						System.err.println("recursing from " + this.id + " to: " + op.refInst);
-						op = op.refInst;
-					}
-					s = s + " (" + op.id + ")";
-					break;
-				case CONST:
-					s = s + " #" + i2;
-					break;
-				case ADDRESS:
-					s = s + " (" + op2.id + ")";
-					break;
-				case BASEADDRESS:
-					s = s + " " + op2address;
-					break;
+				switch (op1type)
+				{
+					case INST:
+						PLIRInstruction op = op1;
+						while (op.isRemoved && op.id != this.id && op.refInst.id != this.id)
+						{
+							System.err.println("recursing from " + this.id + " to: " + op.refInst.id);
+							op = op.refInst;
+						}
+						s = s + " (" + op.id + ")";
+						break;
+					case CONST:
+						s = s + " #" + i1;
+						break;
+					case ADDRESS:
+						s = s + " (" + op1.id + ")";
+						break;
+					case FP:
+						s = s + " FP";
+						break;
+				}
+				
+				switch (op2type)
+				{
+					case INST:
+						PLIRInstruction op = op2;
+						while (op.isRemoved && op.id != this.id)
+						{
+							System.err.println("recursing from " + this.id + " to: " + op.refInst);
+							op = op.refInst;
+						}
+						s = s + " (" + op.id + ")";
+						break;
+					case CONST:
+						s = s + " #" + i2;
+						break;
+					case ADDRESS:
+						s = s + " (" + op2.id + ")";
+						break;
+					case BASEADDRESS:
+						s = s + " " + op2address;
+						break;
+				}
 			}
 		}
 		

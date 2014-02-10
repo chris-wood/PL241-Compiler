@@ -7,7 +7,7 @@ import java.util.HashMap;
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
 import com.uci.cs241.pl241.ir.PLIRInstruction.OperandType;
-import com.uci.cs241.pl241.ir.PLIRInstruction.PLIRInstructionType;
+import com.uci.cs241.pl241.ir.PLIRInstruction.InstructionType;
 import com.uci.cs241.pl241.ir.PLIRInstruction.ResultKind;
 import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
 
@@ -23,8 +23,7 @@ public class PLParser
 	
 	// Useful things to help the parser
 	private boolean globalVariableParsing;
-	private boolean globalFunctionParsing;
-	private ArrayList<PLIRInstruction> globalVariables = new ArrayList<PLIRInstruction>(); 
+	private boolean globalFunctionParsing; 
 	
 	// Other necessary things
 	private PLSymbolTable scope;
@@ -144,7 +143,7 @@ public class PLParser
 					advance(in);
 					if (toksym == PLToken.periodToken)
 					{
-						PLIRInstruction inst = new PLIRInstruction(scope, PLIRInstructionType.END);
+						PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.END);
 						result.addInstruction(inst);
 						blocks.add(root);
 					}
@@ -177,11 +176,11 @@ public class PLParser
 		String symName = sym;
 		PLIRBasicBlock block = null;
 		
-		if (globalVariableParsing)
+		if (globalVariableParsing) // initialize each variable to the constant 0
 		{
 			// Initialize the variable to 0
 			PLIRInstruction inst = new PLIRInstruction(scope);
-			inst.opcode = PLIRInstructionType.ADD;
+			inst.opcode = InstructionType.ADD;
 			inst.i1 = 0;
 			inst.op1type = OperandType.CONST;
 			inst.i2 = 0;
@@ -202,7 +201,8 @@ public class PLParser
 			// Add the sheet to scope
 			scope.addVarToScope(symName);
 			scope.updateSymbol(symName, inst);
-			globalVariables.add(inst);
+			scope.addGlobalVariable(inst);
+//			globalVariables.add(inst);
 			
 			return block;
 		}
@@ -216,7 +216,6 @@ public class PLParser
 				// Memorize the ident we saw here
 				if (instArray != null)
 				{
-//					System.err.println("inst " + sym + " from scope: " + instArray);
 					instArray.wasIdent = true;
 					instArray.origIdent = sym;
 				}
@@ -237,7 +236,6 @@ public class PLParser
 				// Memorize the ident we saw here
 				if (inst != null)
 				{
-//					System.err.println("inst " + sym + " from scope: " + inst);
 					inst.wasIdent = true;
 					inst.origIdent = sym;
 				}
@@ -253,10 +251,35 @@ public class PLParser
 				return block;
 			}
 		}
+		else if (parsingFunctionBody)
+		{	
+			PLIRInstruction inst = null;
+			// Ensure this parameter is specified in the body of the function, else syntax error
+			Function func = scope.functions.get(funcName);
+			if (func.isParameter(sym) == false)
+			{	
+				SyntaxError("Undeclared identifier.");
+			} 
+			else if (scope.isGlobalVariable(sym))
+			{
+				inst = scope.getCurrentValue(sym);
+			}
+			else
+			{
+				inst = func.getOperandByName(sym);
+			}
+			
+			advance(in);
+			
+			block = new PLIRBasicBlock();
+			block.addInstruction(inst);
+			block.addUsedValue(symName, inst);
+			
+			return block;
+		}
 		else
 		{
-			debug("Previously unencountered identifier: " + sym);
-//			SyntaxError("Previously unencountered identifier: " + sym);
+			debug("Previously unencountered variable: " + sym);
 		}
 		
 		PLIRInstruction inst = scope.getCurrentValue(sym);
@@ -272,6 +295,7 @@ public class PLParser
 		// of used identifiers, and return
 		advance(in);
 		
+		// Create & return the new basic block
 		block = new PLIRBasicBlock();
 		block.addInstruction(inst);
 		block.addUsedValue(symName, inst);
@@ -284,7 +308,7 @@ public class PLParser
 	{	
 		// Result: add 0 tokenValue
 		// this just puts an immediate value in a temporary variable (no moves!)
-		PLIRInstruction li = new PLIRInstruction(scope, PLIRInstructionType.ADD, 0, Integer.parseInt(sym));
+		PLIRInstruction li = new PLIRInstruction(scope, InstructionType.ADD, 0, Integer.parseInt(sym));
 		li.type = OperandType.CONST;
 		advance(in);
 		PLIRBasicBlock block = new PLIRBasicBlock();
@@ -392,7 +416,7 @@ public class PLParser
 			{
 				// Need to load from memory - insert the load
 				PLIRInstruction inst1 = new PLIRInstruction(scope);
-				inst1.opcode = PLIRInstructionType.MUL;
+				inst1.opcode = InstructionType.MUL;
 				inst1.op1type = OperandType.CONST;
 				inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE!
 				inst1.op2type = factor.arrayOperands.get(0).type;
@@ -404,14 +428,14 @@ public class PLParser
 				inst1.forceGenerate(scope);
 				
 				PLIRInstruction inst2 = new PLIRInstruction(scope);
-				inst2.opcode = PLIRInstructionType.ADD;
+				inst2.opcode = InstructionType.ADD;
 				inst2.op1type = OperandType.FP;
 				inst2.op2type = OperandType.BASEADDRESS;
 				inst2.op2address = leftInst.origIdent + "_baseaddr";
 				inst2.forceGenerate(scope);
 				
 				PLIRInstruction inst3 = new PLIRInstruction(scope);
-				inst3.opcode = PLIRInstructionType.ADDA;
+				inst3.opcode = InstructionType.ADDA;
 				inst3.op1type = OperandType.INST;
 				inst3.op1 = inst1;
 				inst3.op2type = OperandType.INST;
@@ -420,7 +444,7 @@ public class PLParser
 				
 				
 				PLIRInstruction load = new PLIRInstruction(scope);
-				load.opcode = PLIRInstructionType.LOAD;
+				load.opcode = InstructionType.LOAD;
 				load.op1type = OperandType.ADDRESS;
 				load.op1 = factor.getLastInst();
 				load.forceGenerate(scope);
@@ -433,7 +457,7 @@ public class PLParser
 			{
 				// Need to load from memory - insert the load
 				PLIRInstruction inst1 = new PLIRInstruction(scope);
-				inst1.opcode = PLIRInstructionType.MUL;
+				inst1.opcode = InstructionType.MUL;
 				inst1.op1type = OperandType.CONST;
 				inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE!
 				inst1.op2type = rightNode.arrayOperands.get(0).type;
@@ -445,14 +469,14 @@ public class PLParser
 				inst1.forceGenerate(scope);
 				
 				PLIRInstruction inst2 = new PLIRInstruction(scope);
-				inst2.opcode = PLIRInstructionType.ADD;
+				inst2.opcode = InstructionType.ADD;
 				inst2.op1type = OperandType.FP;
 				inst2.op2type = OperandType.BASEADDRESS;
 				inst2.op2address = rightInst.origIdent + "_baseaddr";
 				inst2.forceGenerate(scope);
 				
 				PLIRInstruction inst3 = new PLIRInstruction(scope);
-				inst3.opcode = PLIRInstructionType.ADDA;
+				inst3.opcode = InstructionType.ADDA;
 				inst3.op1type = OperandType.INST;
 				inst3.op1 = inst1;
 				inst3.op2type = OperandType.INST;
@@ -461,7 +485,7 @@ public class PLParser
 				
 				
 				PLIRInstruction load = new PLIRInstruction(scope);
-				load.opcode = PLIRInstructionType.LOAD;
+				load.opcode = InstructionType.LOAD;
 				load.op1type = OperandType.ADDRESS;
 				load.op1 = rightNode.getLastInst();
 				load.forceGenerate(scope);
@@ -471,7 +495,7 @@ public class PLParser
 			
 			
 			
-			PLIRInstructionType opcode = operator == PLToken.timesToken ? PLIRInstructionType.MUL : PLIRInstructionType.DIV;
+			InstructionType opcode = operator == PLToken.timesToken ? InstructionType.MUL : InstructionType.DIV;
 			
 			PLIRInstruction termInst = new PLIRInstruction(scope, opcode, leftInst, rightInst);
 			if (termInst.kind == ResultKind.CONST)
@@ -535,7 +559,7 @@ public class PLParser
 			{
 				// Need to load from memory - insert the load
 				PLIRInstruction inst1 = new PLIRInstruction(scope);
-				inst1.opcode = PLIRInstructionType.MUL;
+				inst1.opcode = InstructionType.MUL;
 				inst1.op1type = OperandType.CONST;
 				inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE!
 				inst1.op2type = term.arrayOperands.get(0).type;
@@ -547,14 +571,14 @@ public class PLParser
 				inst1.forceGenerate(scope);
 				
 				PLIRInstruction inst2 = new PLIRInstruction(scope);
-				inst2.opcode = PLIRInstructionType.ADD;
+				inst2.opcode = InstructionType.ADD;
 				inst2.op1type = OperandType.FP;
 				inst2.op2type = OperandType.BASEADDRESS;
 				inst2.op2address = leftInst.origIdent + "_baseaddr";
 				inst2.forceGenerate(scope);
 				
 				PLIRInstruction inst3 = new PLIRInstruction(scope);
-				inst3.opcode = PLIRInstructionType.ADDA;
+				inst3.opcode = InstructionType.ADDA;
 				inst3.op1type = OperandType.INST;
 				inst3.op1 = inst1;
 				inst3.op2type = OperandType.INST;
@@ -563,7 +587,7 @@ public class PLParser
 				
 				
 				PLIRInstruction load = new PLIRInstruction(scope);
-				load.opcode = PLIRInstructionType.LOAD;
+				load.opcode = InstructionType.LOAD;
 				load.op1type = OperandType.ADDRESS;
 				load.op1 = term.getLastInst();
 				load.forceGenerate(scope);
@@ -576,7 +600,7 @@ public class PLParser
 			{
 				// Need to load from memory - insert the load
 				PLIRInstruction inst1 = new PLIRInstruction(scope);
-				inst1.opcode = PLIRInstructionType.MUL;
+				inst1.opcode = InstructionType.MUL;
 				inst1.op1type = OperandType.CONST;
 				inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE!
 				inst1.op2type = rightNode.arrayOperands.get(0).type;
@@ -588,14 +612,14 @@ public class PLParser
 				inst1.forceGenerate(scope);
 				
 				PLIRInstruction inst2 = new PLIRInstruction(scope);
-				inst2.opcode = PLIRInstructionType.ADD;
+				inst2.opcode = InstructionType.ADD;
 				inst2.op1type = OperandType.FP;
 				inst2.op2type = OperandType.BASEADDRESS;
 				inst2.op2address = rightInst.origIdent + "_baseaddr";
 				inst2.forceGenerate(scope);
 				
 				PLIRInstruction inst3 = new PLIRInstruction(scope);
-				inst3.opcode = PLIRInstructionType.ADDA;
+				inst3.opcode = InstructionType.ADDA;
 				inst3.op1type = OperandType.INST;
 				inst3.op1 = inst1;
 				inst3.op2type = OperandType.INST;
@@ -604,7 +628,7 @@ public class PLParser
 				
 				
 				PLIRInstruction load = new PLIRInstruction(scope);
-				load.opcode = PLIRInstructionType.LOAD;
+				load.opcode = InstructionType.LOAD;
 				load.op1type = OperandType.ADDRESS;
 				load.op1 = rightNode.getLastInst();
 				load.forceGenerate(scope);
@@ -614,7 +638,7 @@ public class PLParser
 			
 			
 			
-			PLIRInstructionType opcode = operator == PLToken.plusToken ? PLIRInstructionType.ADD : PLIRInstructionType.SUB;
+			InstructionType opcode = operator == PLToken.plusToken ? InstructionType.ADD : InstructionType.SUB;
 			PLIRInstruction exprInst = new PLIRInstruction(scope, opcode, leftInst, rightInst);
 			if (exprInst.kind == ResultKind.CONST)
 			{
@@ -684,7 +708,7 @@ public class PLParser
 		{
 			// Need to load from memory - insert the load
 			PLIRInstruction inst1 = new PLIRInstruction(scope);
-			inst1.opcode = PLIRInstructionType.MUL;
+			inst1.opcode = InstructionType.MUL;
 			inst1.op1type = OperandType.CONST;
 			inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE!
 			inst1.op2type = left.arrayOperands.get(0).type;
@@ -696,14 +720,14 @@ public class PLParser
 			inst1.forceGenerate(scope);
 			
 			PLIRInstruction inst2 = new PLIRInstruction(scope);
-			inst2.opcode = PLIRInstructionType.ADD;
+			inst2.opcode = InstructionType.ADD;
 			inst2.op1type = OperandType.FP;
 			inst2.op2type = OperandType.BASEADDRESS;
 			inst2.op2address = leftInst.origIdent + "_baseaddr";
 			inst2.forceGenerate(scope);
 			
 			PLIRInstruction inst3 = new PLIRInstruction(scope);
-			inst3.opcode = PLIRInstructionType.ADDA;
+			inst3.opcode = InstructionType.ADDA;
 			inst3.op1type = OperandType.INST;
 			inst3.op1 = inst1;
 			inst3.op2type = OperandType.INST;
@@ -712,7 +736,7 @@ public class PLParser
 			
 			
 			PLIRInstruction load = new PLIRInstruction(scope);
-			load.opcode = PLIRInstructionType.LOAD;
+			load.opcode = InstructionType.LOAD;
 			load.op1type = OperandType.ADDRESS;
 			load.op1 = left.getLastInst();
 			load.forceGenerate(scope);
@@ -725,7 +749,7 @@ public class PLParser
 		{
 			// Need to load from memory - insert the load
 			PLIRInstruction inst1 = new PLIRInstruction(scope);
-			inst1.opcode = PLIRInstructionType.MUL;
+			inst1.opcode = InstructionType.MUL;
 			inst1.op1type = OperandType.CONST;
 			inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE!
 			inst1.op2type = right.arrayOperands.get(0).type;
@@ -737,14 +761,14 @@ public class PLParser
 			inst1.forceGenerate(scope);
 			
 			PLIRInstruction inst2 = new PLIRInstruction(scope);
-			inst2.opcode = PLIRInstructionType.ADD;
+			inst2.opcode = InstructionType.ADD;
 			inst2.op1type = OperandType.FP;
 			inst2.op2type = OperandType.BASEADDRESS;
 			inst2.op2address = rightInst.origIdent + "_baseaddr";
 			inst2.forceGenerate(scope);
 			
 			PLIRInstruction inst3 = new PLIRInstruction(scope);
-			inst3.opcode = PLIRInstructionType.ADDA;
+			inst3.opcode = InstructionType.ADDA;
 			inst3.op1type = OperandType.INST;
 			inst3.op1 = inst1;
 			inst3.op2type = OperandType.INST;
@@ -753,7 +777,7 @@ public class PLParser
 			
 			
 			PLIRInstruction load = new PLIRInstruction(scope);
-			load.opcode = PLIRInstructionType.LOAD;
+			load.opcode = InstructionType.LOAD;
 			load.op1type = OperandType.ADDRESS;
 			load.op1 = right.getLastInst();
 			load.forceGenerate(scope);
@@ -837,7 +861,7 @@ public class PLParser
 					{
 						// arrayOperands.size() == # of indices to generate
 						PLIRInstruction inst1 = new PLIRInstruction(scope);
-						inst1.opcode = PLIRInstructionType.MUL;
+						inst1.opcode = InstructionType.MUL;
 						inst1.op1type = OperandType.CONST;
 						inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE!
 						inst1.op2type = desigBlock.arrayOperands.get(0).type;
@@ -849,14 +873,14 @@ public class PLParser
 						inst1.forceGenerate(scope);
 						
 						PLIRInstruction inst2 = new PLIRInstruction(scope);
-						inst2.opcode = PLIRInstructionType.ADD;
+						inst2.opcode = InstructionType.ADD;
 						inst2.op1type = OperandType.FP;
 						inst2.op2type = OperandType.BASEADDRESS;
 						inst2.op2address = varName + "_baseaddr";
 						inst2.forceGenerate(scope);
 						
 						PLIRInstruction inst3 = new PLIRInstruction(scope);
-						inst3.opcode = PLIRInstructionType.ADDA;
+						inst3.opcode = InstructionType.ADDA;
 						inst3.op1type = OperandType.INST;
 						inst3.op1 = inst1;
 						inst3.op2type = OperandType.INST;
@@ -864,7 +888,7 @@ public class PLParser
 						inst3.forceGenerate(scope);
 						
 						PLIRInstruction inst4 = new PLIRInstruction(scope);
-						inst4.opcode = PLIRInstructionType.STORE;
+						inst4.opcode = InstructionType.STORE;
 						inst4.op1type = OperandType.INST;
 						inst4.op1 = inst3;
 						inst4.op2type = result.getLastInst().type;
@@ -961,9 +985,9 @@ public class PLParser
 						{	
 							// Need to load from memory - insert the load
 							PLIRInstruction inst1 = new PLIRInstruction(scope);
-							inst1.opcode = PLIRInstructionType.MUL;
+							inst1.opcode = InstructionType.MUL;
 							inst1.op1type = OperandType.CONST;
-							inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE!
+							inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE! just a byte offset
 							inst1.op2type = callExprBlock.arrayOperands.get(0).type;
 							inst1.op2 = callExprBlock.arrayOperands.get(0);
 							if (inst1.op2type == OperandType.CONST)
@@ -973,14 +997,14 @@ public class PLParser
 							inst1.forceGenerate(scope);
 							
 							PLIRInstruction inst2 = new PLIRInstruction(scope);
-							inst2.opcode = PLIRInstructionType.ADD;
+							inst2.opcode = InstructionType.ADD;
 							inst2.op1type = OperandType.FP;
 							inst2.op2type = OperandType.BASEADDRESS;
 							inst2.op2address = exprInst.origIdent + "_baseaddr";
 							inst2.forceGenerate(scope);
 							
 							PLIRInstruction inst3 = new PLIRInstruction(scope);
-							inst3.opcode = PLIRInstructionType.ADDA;
+							inst3.opcode = InstructionType.ADDA;
 							inst3.op1type = OperandType.INST;
 							inst3.op1 = inst1;
 							inst3.op2type = OperandType.INST;
@@ -988,13 +1012,13 @@ public class PLParser
 							inst3.forceGenerate(scope);
 							
 							PLIRInstruction load = new PLIRInstruction(scope);
-							load.opcode = PLIRInstructionType.LOAD;
+							load.opcode = InstructionType.LOAD;
 							load.op1type = OperandType.ADDRESS;
 							load.op1 = inst3;
 							load.forceGenerate(scope);
 							result.addInstruction(load);
 							
-							PLIRInstruction inst = new PLIRInstruction(scope, PLIRInstructionType.WRITE, load);
+							PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.WRITE, load);
 							inst.forceGenerate(scope);
 							
 							result.addInstruction(inst1);
@@ -1011,7 +1035,7 @@ public class PLParser
 						else
 						{
 							exprInst.forceGenerate(scope);
-							PLIRInstruction inst = new PLIRInstruction(scope, PLIRInstructionType.WRITE, exprInst);
+							PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.WRITE, exprInst);
 							inst.forceGenerate(scope);
 							result.addInstruction(inst);
 							
@@ -1037,7 +1061,7 @@ public class PLParser
 							{	
 								// Need to load from memory - insert the load
 								PLIRInstruction inst1 = new PLIRInstruction(scope);
-								inst1.opcode = PLIRInstructionType.MUL;
+								inst1.opcode = InstructionType.MUL;
 								inst1.op1type = OperandType.CONST;
 								inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE!
 								inst1.op2type = callExprBlock.arrayOperands.get(0).type;
@@ -1049,14 +1073,14 @@ public class PLParser
 								inst1.forceGenerate(scope);
 								
 								PLIRInstruction inst2 = new PLIRInstruction(scope);
-								inst2.opcode = PLIRInstructionType.ADD;
+								inst2.opcode = InstructionType.ADD;
 								inst2.op1type = OperandType.FP;
 								inst2.op2type = OperandType.BASEADDRESS;
 								inst2.op2address = exprInst.origIdent + "_baseaddr";
 								inst2.forceGenerate(scope);
 								
 								PLIRInstruction inst3 = new PLIRInstruction(scope);
-								inst3.opcode = PLIRInstructionType.ADDA;
+								inst3.opcode = InstructionType.ADDA;
 								inst3.op1type = OperandType.INST;
 								inst3.op1 = inst1;
 								inst3.op2type = OperandType.INST;
@@ -1064,7 +1088,7 @@ public class PLParser
 								inst3.forceGenerate(scope);
 								
 								PLIRInstruction load = new PLIRInstruction(scope);
-								load.opcode = PLIRInstructionType.LOAD;
+								load.opcode = InstructionType.LOAD;
 								load.op1type = OperandType.ADDRESS;
 								load.op1 = inst3;
 								load.forceGenerate(scope);
@@ -1154,7 +1178,7 @@ public class PLParser
 				}
 				else if (toksym == PLToken.closeParenToken && funcName.equals("InputNum"))
 				{
-					PLIRInstruction inst = new PLIRInstruction(scope, PLIRInstructionType.READ);
+					PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.READ);
 					inst.type = OperandType.INST;
 					inst.forceGenerate(scope);
 					result = new PLIRBasicBlock();
@@ -1163,7 +1187,7 @@ public class PLParser
 				}
 				else if (toksym == PLToken.closeParenToken && funcName.equals("OutputNewLine"))
 				{
-					PLIRInstruction inst = new PLIRInstruction(scope, PLIRInstructionType.WLN);
+					PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.WLN);
 					inst.forceGenerate(scope);
 					result = new PLIRBasicBlock();
 					result.addInstruction(inst);
@@ -1841,6 +1865,7 @@ public class PLParser
 			funcName = sym; // save for recovery later on
 			result = parse_ident(in);
 			
+			isFunction = toksym == PLToken.funcToken ? true : false;
 			if (toksym != PLToken.semiToken)
 			{
 				result = parse_formalParam(in);
@@ -1874,11 +1899,12 @@ public class PLParser
 		return result;
 	}
 
+	public boolean isFunction = false;
 	private PLIRBasicBlock parse_formalParam(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRBasicBlock result = null;
 		
-		int numParams = 0;
+		ArrayList<PLIRInstruction> params = new ArrayList<PLIRInstruction>();
 		if (toksym == PLToken.openParenToken)
 		{
 			advance(in);
@@ -1889,14 +1915,41 @@ public class PLParser
 				advance(in);
 			}
 			else
-			{
-				result = parse_ident(in);
-				numParams++;
+			{	
+				// Pull out the identifier of the next token...
+//				params.add(sym);
+				
+				PLIRInstruction dummy = new PLIRInstruction(scope);
+				dummy.dummyName = sym;
+				dummy.origIdent = sym;
+				dummy.type = OperandType.FUNC_PARAM;
+				dummy.opcode = InstructionType.LOADPARAM;
+				dummy.overrideGenerate = true;
+				dummy.paramNumber = params.size();
+				dummy.forceGenerate(scope);
+				
+				// Add to the list of operands
+				params.add(dummy);
+				
+				advance(in);
+				
 				while (toksym == PLToken.commaToken)
 				{
 					advance(in);
-					result = parse_ident(in);
-					numParams++;
+					
+					dummy = new PLIRInstruction(scope);
+					dummy.dummyName = sym;
+					dummy.origIdent = sym;
+					dummy.type = OperandType.FUNC_PARAM;
+					dummy.opcode = InstructionType.LOADPARAM;
+					dummy.overrideGenerate = true;
+					dummy.paramNumber = params.size();
+					dummy.forceGenerate(scope);
+					
+					// Add to the list of operands
+					params.add(dummy);
+					
+					advance(in);
 				}
 				
 				if (toksym != PLToken.closeParenToken)
@@ -1908,15 +1961,26 @@ public class PLParser
 			}
 		}
 		
-		paramMap.put(funcName, numParams);
+		paramMap.put(funcName, params.size());
+		if (isFunction)
+		{
+			scope.addFunction(funcName, params);
+		}
+		else
+		{
+			scope.addProcedure(funcName, params);
+		}
 		
 		return result;
 	}
 
+	public boolean parsingFunctionBody = false;
 	private PLIRBasicBlock parse_funcBody(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRBasicBlock result = null;
 		String name = funcName; // save
+		
+		parsingFunctionBody = true;
 		
 		while (toksym == PLToken.varToken || toksym == PLToken.arrToken)
 		{
@@ -1941,6 +2005,8 @@ public class PLParser
 			}
 			advance(in);
 		}
+		
+		parsingFunctionBody = false;
 		
 		return result;
 	}
