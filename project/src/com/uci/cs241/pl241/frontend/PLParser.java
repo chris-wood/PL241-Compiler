@@ -988,12 +988,29 @@ public class PLParser
 							inst1.opcode = InstructionType.MUL;
 							inst1.op1type = OperandType.CONST;
 							inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE! just a byte offset
-							inst1.op2type = callExprBlock.arrayOperands.get(0).type;
-							inst1.op2 = callExprBlock.arrayOperands.get(0);
-							if (inst1.op2type == OperandType.CONST)
+//							inst1.op2type = callExprBlock.arrayOperands.get(0).type;
+//							inst1.op2 = callExprBlock.arrayOperands.get(0);
+//							if (inst1.op2type == OperandType.CONST)
+//							{
+//								inst1.i2 = inst1.op2.tempVal;
+//							}
+							
+							// If it's a store, then we need to load it from memory...
+							if (exprInst.opcode == InstructionType.STORE)
 							{
-								inst1.i2 = inst1.op2.tempVal;
+								inst1.op2type = OperandType.ADDRESS;
+								inst1.op2 = exprInst;
 							}
+							else
+							{
+								inst1.op2type = callExprBlock.arrayOperands.get(0).type;
+								inst1.op2 = callExprBlock.arrayOperands.get(0);
+								if (inst1.op2type == OperandType.CONST)
+								{
+									inst1.i2 = inst1.op2.tempVal;
+								}
+							}
+							
 							inst1.forceGenerate(scope);
 							
 							PLIRInstruction inst2 = new PLIRInstruction(scope);
@@ -1015,6 +1032,7 @@ public class PLParser
 							load.opcode = InstructionType.LOAD;
 							load.op1type = OperandType.ADDRESS;
 							load.op1 = inst3;
+							load.type = OperandType.INST;
 							load.forceGenerate(scope);
 							result.addInstruction(load);
 							
@@ -1064,12 +1082,23 @@ public class PLParser
 								inst1.opcode = InstructionType.MUL;
 								inst1.op1type = OperandType.CONST;
 								inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE!
-								inst1.op2type = callExprBlock.arrayOperands.get(0).type;
-								inst1.op2 = callExprBlock.arrayOperands.get(0);
-								if (inst1.op2type == OperandType.CONST)
+								
+								// If it's a store, then we need to load it from memory...
+								if (exprInst.opcode == InstructionType.STORE)
 								{
-									inst1.i2 = inst1.op2.tempVal;
+									inst1.op2type = OperandType.ADDRESS;
+									inst1.op2 = exprInst;
 								}
+								else
+								{
+									inst1.op2type = callExprBlock.arrayOperands.get(0).type;
+									inst1.op2 = callExprBlock.arrayOperands.get(0);
+									if (inst1.op2type == OperandType.CONST)
+									{
+										inst1.i2 = inst1.op2.tempVal;
+									}
+								}
+								
 								inst1.forceGenerate(scope);
 								
 								PLIRInstruction inst2 = new PLIRInstruction(scope);
@@ -1091,6 +1120,7 @@ public class PLParser
 								load.opcode = InstructionType.LOAD;
 								load.op1type = OperandType.ADDRESS;
 								load.op1 = inst3;
+								load.type = OperandType.INST;
 								load.forceGenerate(scope);
 								result.addInstruction(load);
 								

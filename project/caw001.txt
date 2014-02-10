@@ -16,7 +16,7 @@ var x3;
   let b <- call InputNum();
   let output[0] <- 10;
   
-  call one(a,b);
+  call one(a,output[0]);
 
   call OutputNum(a);
   call OutputNum(output[0])

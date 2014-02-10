@@ -1,5 +1,5 @@
 digraph G {
-bb27[shape = box, label = "BB(27)\n" + "6 := read\n" + "7 := read\n" + "8 := mul #4 #0\n" + "9 := add FP output_baseaddr\n" + "10 := adda (8) (9)\n" + "11 := store (10) #10\n" + "12 := proc one (6) (7)\n" + "13 := write (6)\n" + "14 := (8)\n" + "15 := add FP output_baseaddr\n" + "16 := adda (8) (15)\n" + "17 := load (16)\n" + "18 := write (17)\n" + "19 := end\n"];
+bb27[shape = box, label = "BB(27)\n" + "6 := read\n" + "7 := read\n" + "8 := mul #4 #0\n" + "9 := add FP output_baseaddr\n" + "10 := adda (8) (9)\n" + "11 := store (10) #10\n" + "16 := proc one (6) (15)\n" + "17 := write (6)\n" + "18 := mul #4 (11)\n" + "19 := add FP output_baseaddr\n" + "20 := adda (18) (19)\n" + "21 := load (20)\n" + "22 := write (21)\n" + "23 := end\n"];
 bb17[shape = box, label = "BB(17 [ one ])\n" + "1 := loadparam 0\n" + "2 := loadparam 1\n" + "3 := add (1) (2)\n" + "4 := write (3)\n" + "5 := write #0\n"];
 bb27 -> bb17;
 bb17 -> bb27;
