@@ -10,13 +10,19 @@ import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
 
 public class RegisterAllocator 
 {
-	
+	public static final int NUM_REGISTERS = 8;
 	public InterferenceGraph ig;
 	
 	// Graph coloring algorithm
 	public void Color(InterferenceGraph graph)
 	{
-		// TODO
+		// Retrieve random node with fewer than NUM_REGISTERS neighbors
+		int x = ig.getNeighborCount(NUM_REGISTERS);
+		if (x == -1)
+		{
+			// else take hte node with the lowest count => and spill to memory
+		}
+		
 	}
 	
 	// Global parameters for the liverange calculation and liveset derivation
@@ -25,7 +31,7 @@ public class RegisterAllocator
 	public void ComputeLiveRange(PLIRBasicBlock entryBlock)
 	{
 		stack = new ArrayList<PLIRBasicBlock>();
-		ig = new InterferenceGraph();
+		ig = new InterferenceGraph(PLStaticSingleAssignment.instructions);
 		
 		LRTraverse(entryBlock, 1);
 		ig.displayEdges();
@@ -37,7 +43,7 @@ public class RegisterAllocator
 		int depth0 = stack.size();
 		
 		
-		branch = b.mark == 0 ? 1 : 2;
+//		branch = b.mark == 0 ? 1 : 2;
 		b.mark = depth0;
 		
 		
@@ -49,7 +55,7 @@ public class RegisterAllocator
 			// if |children| == 1, then i == 0 is branch
 			// if |children| == 2, then i == 0 is branch and i == 1 is fail
 			PLIRBasicBlock child = b.children.get(i);
-			if (child.mark == 0 || child.mark == Integer.MAX_VALUE)
+			if (child.mark == 0)
 			{
 				if (i == 0)
 				{
@@ -66,37 +72,12 @@ public class RegisterAllocator
 			}
 		}
 		
-		
-//		if (b.joinNode != null && b.joinNode.mark == 0)
-//		{
-//			live.addAll(LRTraverse(b.joinNode, 2));
-//			b.mark = b.mark < b.joinNode.mark ? b.mark : b.joinNode.mark;
-//		}
-		
-		
-//		
-//		if (b.children.size() > 0)
-//		{
-//			if (branch == 1 && b.children.get(0).mark == 0)
-//			{
-//				PLIRBasicBlock child = b.children.get(0);
-//				live.addAll(LRTraverse(child, 1));
-//				b.mark = b.mark < child.mark ? b.mark : child.mark;
-//			}
-//			else if (branch == 2 && b.children.get(1).mark == 0)
-//			{
-//				PLIRBasicBlock child = b.children.get(1);
-//				live.addAll(LRTraverse(child, 2));
-//				b.mark = b.mark < child.mark ? b.mark : child.mark;
-//			}
-//		}
-		
 		b.liveAtEnd = new HashSet<Integer>();
 		b.liveAtEnd.addAll(live);
 		System.out.println("Live at end of " + b.id + ": " + b.liveAtEnd + ",  mark = " + b.mark);
 		
 		// Traverse regular instructions, bottom-up
-		if (b.mark != Integer.MAX_VALUE)
+//		if (b.mark != Integer.MAX_VALUE)
 		{
 		for (int i = b.instructions.size() - 1; i >= 0; i--)
 		{
@@ -112,7 +93,7 @@ public class RegisterAllocator
 				{
 //					edgeSet.add(new Edge(inst.id, x.id));
 //					System.err.println("Adding edge: " + inst.toString() + " " + x.toString());
-					ig.AddEdge(inst.id, x);
+					ig.addEdge(inst.id, x);
 				}
 				if (inst.op1 != null && PLStaticSingleAssignment.isIncluded(inst.op1.id))
 				{
@@ -159,7 +140,7 @@ public class RegisterAllocator
 				for (Integer x : live)
 				{
 //					edgeSet.add(new Edge(inst.id, x.id));
-					ig.AddEdge(inst.id, x);
+					ig.addEdge(inst.id, x);
 				}
 				if (branch == 1)
 				{
@@ -222,7 +203,7 @@ public class RegisterAllocator
 						for (Integer x : liveprime)
 						{
 //							edgeSet.add(new Edge(inst.id, x.id));
-							ig.AddEdge(inst.id, x);
+							ig.addEdge(inst.id, x);
 						}
 						if (inst.op1 != null  && PLStaticSingleAssignment.isIncluded(inst.op1.id))
 						{
@@ -258,6 +239,10 @@ public class RegisterAllocator
 			// b.mark := infty
 			System.out.println("Setting b " + b.id + " mark = " + b.mark);
 			b.mark = Integer.MAX_VALUE;
+		}
+		else
+		{
+			System.out.println("b.mark != depth0");
 		}
 		
 		return live;

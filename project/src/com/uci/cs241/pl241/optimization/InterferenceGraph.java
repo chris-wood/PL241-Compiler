@@ -1,39 +1,83 @@
 package com.uci.cs241.pl241.optimization;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+
+import com.uci.cs241.pl241.ir.PLIRInstruction;
 
 public class InterferenceGraph 
 {
-	public ArrayList<Edge> edgeSet;
+	public HashMap<Integer, ArrayList<Integer>> adjList;
 	
-	public InterferenceGraph()
+	public InterferenceGraph(ArrayList<PLIRInstruction> instructions)
 	{
-		edgeSet = new ArrayList<Edge>();
+		adjList = new HashMap<Integer, ArrayList<Integer>>();
+		for (PLIRInstruction inst : instructions)
+		{
+			adjList.put(inst.id, new ArrayList<Integer>());
+		}
 	}
 	
-	public void AddEdge(int u, int v)
+	public int getNeighborCount(int v)
+	{
+		return adjList.get(v).size();
+	}
+	
+	public int getVertex(int neighborCount)
+	{
+		for (Integer u : adjList.keySet())
+		{
+			if (adjList.get(u).size() < neighborCount)
+			{
+				return u;
+			}
+		}
+		return -1;
+	}
+	
+	public void removeVertex(int v)
+	{
+		
+	}
+	
+	public void addEdge(int u, int v)
 	{
 		if (u == 0 || v == 0)
 		{
 			System.err.println("here");
 		}
-		for (Edge e : edgeSet)
+		
+		if (adjList.containsKey(u))
 		{
-			if (e.u == u && e.v == v)
+			for (Integer t : adjList.get(u))
 			{
-				return;
+				if (t == v) return; // already adjacenct
 			}
 		}
+		if (adjList.containsKey(v))
+		{
+			for (Integer t : adjList.get(v))
+			{
+				if (t == u) return; // already adjacenct
+			}
+		}
+		
 		System.out.println("Adding: " + u + "," + v);
-		edgeSet.add(new Edge(u, v));
+		adjList.get(u).add(v);
+		adjList.get(v).add(u);
 	}
 	
 	public void displayEdges()
 	{
 		System.out.println("Displaying the edge set: ");
-		for (Edge e : edgeSet)
+		for (Integer u : adjList.keySet())
 		{
-			System.out.println(e.u + "," + e.v);
+			System.out.print(u + ": ");
+			for (Integer v : adjList.get(u))
+			{
+				System.out.println(v + ", ");
+			}
+			System.out.println();
 		}
 	}
 }

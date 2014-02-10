@@ -132,9 +132,17 @@ public class GraphvizRender
 		ArrayList<Integer> seen = new ArrayList<Integer>();
 		builder.append("graph interference_graph {\n");
 		builder.append("    node [shape = circle];\n");
-		for (Edge e : graph.edgeSet)
+//		for (Edge e : graph.edgeSet)
+//		{
+//			builder.append(e.u + " -- " + e.v + ";\n");
+//		}
+		for (Integer u : graph.adjList.keySet())
 		{
-			builder.append(e.u + " -- " + e.v + ";\n");
+			builder.append(u + ";\n");
+			for (Integer v : graph.adjList.get(u))
+			{
+				builder.append(u + " -- " + v + ";\n");
+			}
 		}
 		builder.append("}\n");
 		return builder.toString();
