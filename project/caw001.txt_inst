@@ -9,7 +9,15 @@
 9 := add FP (7)
 10 := adda (4) (9)
 11 := store (10) (3)
-12 := write (11)
-13 := wln
-14 := end
+12 := (4)
+13 := add FP output_baseaddr
+14 := adda (4) (13)
+15 := load (14)
+16 := (4)
+17 := add FP (15)
+18 := adda (4) (17)
+19 := load (18)
+20 := write (19)
+21 := wln
+22 := end
 

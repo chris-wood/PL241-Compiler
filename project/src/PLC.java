@@ -102,6 +102,12 @@ public class PLC
 			}
 		}
 		
+		// Display the instructions
+		root = blocks.get(blocks.size() - 1);
+//		System.out.println("\nBegin Instructions\n");
+//		PLStaticSingleAssignment.displayInstructions();
+//		System.out.println("End Instructions\n");
+		
 		root = blocks.get(blocks.size() - 1);
 		for (PLIRBasicBlock block : blocks)
 		{
