@@ -28,7 +28,6 @@ public class PLIRInstruction
 	// Array information
 	public boolean isArray = false;
 	public ArrayList<PLIRInstruction> callOperands;
-	public ArrayList<PLIRInstruction> dependents = new ArrayList<PLIRInstruction>();
 	public PLIRInstruction storedValue;
 	
 	// Temporary value for combining constants

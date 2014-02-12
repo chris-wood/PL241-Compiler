@@ -1,3 +1,15 @@
+// multidimensional array test
+main 
+var a, b, c, d, e, f, g, x, y, z;
+array[10][2] output;
+{
+  let a <- call InputNum();
+  let b <- call InputNum();
+  let output[0][0] <- a + b;
+  call OutputNum(output[0][0]);
+  call OutputNewLine()
+}.
+
 // function calls with arbitrary parameters
 main 
 var a, b, c, d, e, f, g, x, y, z;
@@ -17,7 +29,6 @@ var x3;
   let output[0] <- 10;
   
   call one(a,output[0]);
-
   call OutputNum(a);
   call OutputNum(output[0])
 }.
