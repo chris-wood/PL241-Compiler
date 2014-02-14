@@ -1,3 +1,22 @@
+// Array test with assignment and then reference
+main 
+var a, b, c, d, e;
+array[5] input;
+{
+  let a <- call InputNum();
+  let b <- call InputNum();
+
+//  let input[0] <- 0;
+  let input[1] <- a + b;
+  let c <- input[1] + 1;
+
+//  call OutputNum(a);
+//  call OutputNum(b);
+//  call OutputNum(input[0]);
+//  call OutputNum(input[1]);
+  call OutputNum(c) // this breaks it
+}.
+
 // multidimensional array test
 main 
 var a, b, c, d, e, f, g, x, y, z;
@@ -7,6 +26,8 @@ array[10][2] output;
   let b <- call InputNum();
   let output[0][0] <- a + b;
   call OutputNum(output[0][0]);
+  let c <- output[0][0];
+  call OutputNum(c);
   call OutputNewLine()
 }.
 
@@ -31,24 +52,6 @@ var x3;
   call one(a,output[0]);
   call OutputNum(a);
   call OutputNum(output[0])
-}.
-
-
-// Simple array test - store x2 and load x2 with writes after
-main 
-var a, b, c, d, e;
-array[5] input;
-{
-  let a <- call InputNum();
-  let b <- call InputNum();
-
-  let input[0] <- 0;
-  let input[1] <- a + b;
-
-  call OutputNum(a);
-  call OutputNum(b);
-  call OutputNum(input[0]);
-  call OutputNum(input[1])
 }.
 
 // Interference graph test from class notes

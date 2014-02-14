@@ -370,12 +370,10 @@ public class PLParser
 			factor = parse_funcCall(in);
 			PLIRInstruction funcInst = factor.getLastInst();
 			
-			
 //			if (factor.hasReturn == false)
 //			{
 //				SyntaxError("Function that was invoked had no return value!");
 //			}
-			
 //			if (callStack.get(callStack.size() - 1).equals("InputNum"))
 //			{
 //				// pass, this is a special case
@@ -438,6 +436,7 @@ public class PLParser
 						inst1.i2 = inst1.op2.tempVal;
 					}
 					inst1.forceGenerate(scope);
+					termNode.addInstruction(inst1);
 					
 					PLIRInstruction inst2 = new PLIRInstruction(scope);
 					inst2.opcode = InstructionType.ADD;
@@ -453,6 +452,7 @@ public class PLParser
 						inst2.op2 = lastAddress;
 					}
 					inst2.forceGenerate(scope);
+					termNode.addInstruction(inst2);
 					
 					PLIRInstruction inst3 = new PLIRInstruction(scope);
 					inst3.opcode = InstructionType.ADDA;
@@ -461,11 +461,12 @@ public class PLParser
 					inst3.op2type = OperandType.INST;
 					inst3.op2 = inst2;
 					inst3.forceGenerate(scope);
+					termNode.addInstruction(inst3);
 					
 					PLIRInstruction load = new PLIRInstruction(scope);
 					load.opcode = InstructionType.LOAD;
 					load.op1type = OperandType.ADDRESS;
-					load.op1 = factor.getLastInst();
+					load.op1 = inst3;
 					load.forceGenerate(scope);
 					termNode.addInstruction(load);
 					
@@ -495,6 +496,7 @@ public class PLParser
 						inst1.i2 = inst1.op2.tempVal;
 					}
 					inst1.forceGenerate(scope);
+					termNode.addInstruction(inst1);
 					
 					PLIRInstruction inst2 = new PLIRInstruction(scope);
 					inst2.opcode = InstructionType.ADD;
@@ -512,6 +514,7 @@ public class PLParser
 						inst2.op2 = lastAddress;
 					}
 					inst2.forceGenerate(scope);
+					termNode.addInstruction(inst2);
 					
 					PLIRInstruction inst3 = new PLIRInstruction(scope);
 					inst3.opcode = InstructionType.ADDA;
@@ -520,12 +523,12 @@ public class PLParser
 					inst3.op2type = OperandType.INST;
 					inst3.op2 = inst2;
 					inst3.forceGenerate(scope);
-					
+					termNode.addInstruction(inst3);
 					
 					PLIRInstruction load = new PLIRInstruction(scope);
 					load.opcode = InstructionType.LOAD;
 					load.op1type = OperandType.ADDRESS;
-					load.op1 = rightNode.getLastInst();
+					load.op1 = inst3;
 					load.forceGenerate(scope);
 					termNode.addInstruction(load);
 					
@@ -609,6 +612,7 @@ public class PLParser
 						inst1.i2 = inst1.op2.tempVal;
 					}
 					inst1.forceGenerate(scope);
+					exprNode.addInstruction(inst1);
 					
 					PLIRInstruction inst2 = new PLIRInstruction(scope);
 					inst2.opcode = InstructionType.ADD;
@@ -626,6 +630,7 @@ public class PLParser
 						inst2.op2 = lastAddress;
 					}
 					inst2.forceGenerate(scope);
+					exprNode.addInstruction(inst2);
 					
 					PLIRInstruction inst3 = new PLIRInstruction(scope);
 					inst3.opcode = InstructionType.ADDA;
@@ -634,12 +639,12 @@ public class PLParser
 					inst3.op2type = OperandType.INST;
 					inst3.op2 = inst2;
 					inst3.forceGenerate(scope);
-					
+					exprNode.addInstruction(inst3);
 					
 					PLIRInstruction load = new PLIRInstruction(scope);
 					load.opcode = InstructionType.LOAD;
 					load.op1type = OperandType.ADDRESS;
-					load.op1 = term.getLastInst();
+					load.op1 = inst3;
 					load.forceGenerate(scope);
 					exprNode.addInstruction(load);
 					
@@ -668,6 +673,7 @@ public class PLParser
 						inst1.i2 = inst1.op2.tempVal;
 					}
 					inst1.forceGenerate(scope);
+					exprNode.addInstruction(inst1);
 					
 					PLIRInstruction inst2 = new PLIRInstruction(scope);
 					inst2.opcode = InstructionType.ADD;
@@ -685,6 +691,7 @@ public class PLParser
 						inst2.op2 = lastAddress;
 					}
 					inst2.forceGenerate(scope);
+					exprNode.addInstruction(inst2);
 					
 					PLIRInstruction inst3 = new PLIRInstruction(scope);
 					inst3.opcode = InstructionType.ADDA;
@@ -693,12 +700,13 @@ public class PLParser
 					inst3.op2type = OperandType.INST;
 					inst3.op2 = inst2;
 					inst3.forceGenerate(scope);
+					exprNode.addInstruction(inst3);
 					
 					
 					PLIRInstruction load = new PLIRInstruction(scope);
 					load.opcode = InstructionType.LOAD;
 					load.op1type = OperandType.ADDRESS;
-					load.op1 = rightNode.getLastInst();
+					load.op1 = inst3;
 					load.forceGenerate(scope);
 					exprNode.addInstruction(load);
 					
@@ -789,6 +797,7 @@ public class PLParser
 					inst1.i2 = inst1.op2.tempVal;
 				}
 				inst1.forceGenerate(scope);
+				relation.addInstruction(inst1);
 				
 				PLIRInstruction inst2 = new PLIRInstruction(scope);
 				inst2.opcode = InstructionType.ADD;
@@ -806,6 +815,7 @@ public class PLParser
 					inst2.op2 = lastAddress;
 				}
 				inst2.forceGenerate(scope);
+				relation.addInstruction(inst2);
 				
 				PLIRInstruction inst3 = new PLIRInstruction(scope);
 				inst3.opcode = InstructionType.ADDA;
@@ -814,12 +824,13 @@ public class PLParser
 				inst3.op2type = OperandType.INST;
 				inst3.op2 = inst2;
 				inst3.forceGenerate(scope);
+				relation.addInstruction(inst3);
 				
 				
 				PLIRInstruction load = new PLIRInstruction(scope);
 				load.opcode = InstructionType.LOAD;
 				load.op1type = OperandType.ADDRESS;
-				load.op1 = left.getLastInst();
+				load.op1 = inst3;
 				load.forceGenerate(scope);
 				relation.addInstruction(load);
 				
@@ -848,6 +859,7 @@ public class PLParser
 					inst1.i2 = inst1.op2.tempVal;
 				}
 				inst1.forceGenerate(scope);
+				relation.addInstruction(inst1);
 				
 				PLIRInstruction inst2 = new PLIRInstruction(scope);
 				inst2.opcode = InstructionType.ADD;
@@ -865,6 +877,7 @@ public class PLParser
 					inst2.op2 = lastAddress;
 				}
 				inst2.forceGenerate(scope);
+				relation.addInstruction(inst2);
 				
 				PLIRInstruction inst3 = new PLIRInstruction(scope);
 				inst3.opcode = InstructionType.ADDA;
@@ -873,12 +886,12 @@ public class PLParser
 				inst3.op2type = OperandType.INST;
 				inst3.op2 = inst2;
 				inst3.forceGenerate(scope);
-				
+				relation.addInstruction(inst3);
 				
 				PLIRInstruction load = new PLIRInstruction(scope);
 				load.opcode = InstructionType.LOAD;
 				load.op1type = OperandType.ADDRESS;
-				load.op1 = right.getLastInst();
+				load.op1 = inst3;
 				load.forceGenerate(scope);
 				relation.addInstruction(load);
 				
@@ -933,35 +946,95 @@ public class PLParser
 					advance(in);
 					result = parse_expression(in);
 					
+					// Check if the result is an array, in which case we need to load it from memory
+					PLIRInstruction storeInst = result.getLastInst();
+					if (storeInst.isArray)
+					{
+						PLIRInstruction lastAddress = null;
+						for (int i = 0; i < result.arrayOperands.size(); i++)
+						{
+							PLIRInstruction operand = result.arrayOperands.get(i);
+							
+							// Need to load from memory - insert the load
+							PLIRInstruction inst1 = new PLIRInstruction(scope);
+							inst1.opcode = InstructionType.MUL;
+							inst1.op1type = OperandType.CONST;
+							inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE!
+							inst1.op2type = operand.type;
+							inst1.op2 = operand;
+							if (inst1.op2type == OperandType.CONST)
+							{
+								inst1.i2 = inst1.op2.tempVal;
+							}
+							inst1.forceGenerate(scope);
+							result.addInstruction(inst1);
+							
+							PLIRInstruction inst2 = new PLIRInstruction(scope);
+							inst2.opcode = InstructionType.ADD;
+							inst2.op1type = OperandType.FP;
+							if (i == 0)
+							{
+								inst2.op2type = OperandType.BASEADDRESS;
+								inst2.op2address = storeInst.origIdent + "_baseaddr";
+							}
+							else
+							{
+								inst2.op2type = OperandType.ADDRESS;
+								inst2.op2 = lastAddress;
+							}
+							inst2.forceGenerate(scope);
+							result.addInstruction(inst2);
+							
+							PLIRInstruction inst3 = new PLIRInstruction(scope);
+							inst3.opcode = InstructionType.ADDA;
+							inst3.op1type = OperandType.INST;
+							inst3.op1 = inst1;
+							inst3.op2type = OperandType.INST;
+							inst3.op2 = inst2;
+							inst3.forceGenerate(scope);
+							result.addInstruction(inst3);
+							
+							PLIRInstruction load = new PLIRInstruction(scope);
+							load.opcode = InstructionType.LOAD;
+							load.op1type = OperandType.ADDRESS;
+							load.op1 = inst3; // CULPRIT!!!
+							load.forceGenerate(scope);
+							result.addInstruction(load);
+							
+							// save the load value (or the last address, if necessary, for continued loads)
+							storeInst = load;
+							lastAddress = load;
+						}
+					}
+					
 					if (desigBlock.arrayOperands == null)
 					{
 						// The last instruction added to the BB is the one that holds the value for this assignment
 //						PLIRInstruction inst = result.instructions.get(result.instructions.size() - 1);
-						PLIRInstruction inst = result.getLastInst();
-						inst.origIdent = varName;
-						inst.tempPosition = PLStaticSingleAssignment.globalSSAIndex;
+						storeInst.origIdent = varName;
+						storeInst.tempPosition = PLStaticSingleAssignment.globalSSAIndex;
 						
 						// If we aren't deferring generation because of a potential PHI usage, just replace with the current value in scope
-						if ((inst.op1 != null && deferredPhiIdents.contains(inst.op1.origIdent)) || 
-								(inst.op2 != null && deferredPhiIdents.contains(inst.op2.origIdent)))
+						if ((storeInst.op1 != null && deferredPhiIdents.contains(storeInst.op1.origIdent)) || 
+								(storeInst.op2 != null && deferredPhiIdents.contains(storeInst.op2.origIdent)))
 						{
-							inst.kind = ResultKind.VAR;
-							inst.overrideGenerate = true;
-							inst.forceGenerate(scope);
+							storeInst.kind = ResultKind.VAR;
+							storeInst.overrideGenerate = true;
+							storeInst.forceGenerate(scope);
 						}
 						else if (deferredPhiIdents.contains(varName)) // else, force the current instruction to be generated so it can be used in a phi later
 						{
-							inst.kind = ResultKind.VAR;
-							inst.overrideGenerate = true;
-							inst.forceGenerate(scope);
+							storeInst.kind = ResultKind.VAR;
+							storeInst.overrideGenerate = true;
+							storeInst.forceGenerate(scope);
 						} 
-						scope.updateSymbol(varName, inst); // (SSA ID) := expr
-						duChain.put(inst, new ArrayList<PLIRInstruction>());
-						result.addModifiedValue(varName, inst);
+						scope.updateSymbol(varName, storeInst); // (SSA ID) := expr
+						duChain.put(storeInst, new ArrayList<PLIRInstruction>());
+						result.addModifiedValue(varName, storeInst);
 					}
 					else // array!
 					{
-						PLIRInstruction storeValue = result.getLastInst();
+						PLIRInstruction storeValue = storeInst;
 						PLIRInstruction inst4 = null;
 						PLIRInstruction lastAddress = null;
 						for (int i = 0; i < desigBlock.arrayOperands.size(); i++)
@@ -1109,13 +1182,16 @@ public class PLParser
 						}
 						
 						result = new PLIRBasicBlock();
-						result.joinNode = null;
+						result.joinNode = null; // just in case
 						
 						// Handle arrays specially, as groups of instructions 4 in a row...
-						// caw caw caw
 						if (exprInst.isArray)
 						{	
 							PLIRInstruction lastAddress = null;
+							
+							// caw caw caw
+							// TODO: if instruction in callBlockExpr is an array, need to load the values into a register first
+							
 							for (int i = 0; i < callExprBlock.arrayOperands.size(); i++)
 							{
 								PLIRInstruction operand = callExprBlock.arrayOperands.get(i);

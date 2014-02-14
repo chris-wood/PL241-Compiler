@@ -48,8 +48,6 @@ public class PLIRBasicBlock
 	
 	// for live range calculation
 	public int visitNumber = 0;
-//	public PLIRBasicBlock fail;
-//	public PLIRBasicBlock branch;
 	public HashSet<PLIRInstruction> liveAtEnd;
 	
 	public PLIRBasicBlock()
