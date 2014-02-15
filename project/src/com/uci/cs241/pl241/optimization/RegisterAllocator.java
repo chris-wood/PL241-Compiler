@@ -41,7 +41,7 @@ public class RegisterAllocator {
 		HashSet<PLIRInstruction> live = CalcLiveRange(entryBlock, 1, 1);
 		live = CalcLiveRange(entryBlock, 1, 2);
 		
-	 	ig.displayEdges();
+//	 	ig.displayEdges();
 	 }
 
 	public HashSet<PLIRInstruction> CalcLiveRange(PLIRBasicBlock b, int branch, int pass) 
@@ -61,12 +61,18 @@ public class RegisterAllocator {
 			}
 			else
 			{
+				// inc(b.visit#)
 				b.visitNumber++;
 
 				// for all enclosing loop headers h in b
-				if (b.visitNumber == 2) 
+				if (b.visitNumber == 2)
 				{
 					// b.live = b.live + h.live
+				}
+				
+				if (branch == 2)
+				{
+					System.err.println("2");
 				}
 
 				// recursively add children to the live set
@@ -77,7 +83,10 @@ public class RegisterAllocator {
 				// for all non-phis
 				for (int i = b.instructions.size() - 1; i >= 0; i--) {
 					PLIRInstruction inst = b.instructions.get(i);
-					if (inst.opcode != InstructionType.PHI) {
+					if (inst.opcode != InstructionType.PHI && inst.isNotLiveInstruction() == false) {
+						
+						while (inst.refInst != null) inst = inst.refInst;
+						
 						// live = live - {i}
 						live.remove(inst);
 

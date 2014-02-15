@@ -1,3 +1,50 @@
+// Interference graph test from class notes
+main 
+var a, b, c, d, e;
+{
+  let a <- call InputNum();
+  let b <- a;
+  let c <- b;
+  let d <- b + c;
+  let e <- a + b;
+
+  if a < 0 then
+    let d <- d + e;
+    let a <- d
+  else
+    let d <- e
+  fi;
+
+  call OutputNum(a)
+}.
+
+// nested while test
+main 
+var a, b, c, d, e, f, g;
+{
+  let a <- call InputNum();
+  let b <- call InputNum();
+  
+  while a > 0 do
+    let a <- a - 1;
+    let a <- a + 100;
+    let a <- a * 1000000;
+    while a != 1 do
+      let a <- a + 1;
+      call OutputNum(1)
+    od;
+    if a == 1 then
+      let a <- a + 1;
+      call OutputNum(1)    
+    else
+      call OutputNum(0)
+    fi;
+    call OutputNum(a)
+  od;
+
+  call OutputNewLine()
+}.
+
 // Array test with assignment and then reference
 main 
 var a, b, c, d, e;
@@ -71,26 +118,6 @@ var x3;
   call one(a,output[0]);
   call OutputNum(a);
   call OutputNum(output[0])
-}.
-
-// Interference graph test from class notes
-main 
-var a, b, c, d, e;
-{
-  let a <- call InputNum();
-  let b <- a;
-  let c <- b;
-  let d <- b + c;
-  let e <- a + b;
-
-  if a < 0 then
-    let d <- d + e;
-    let a <- d
-  else
-    let d <- e
-  fi;
-
-  call OutputNum(a)
 }.
 
 // nested while test
@@ -188,29 +215,6 @@ var i,j;
     let i <- i + 1
   od;
   call OutputNum(i)
-}.
-
-// nested while test
-main 
-var a, b, c, d, e, f, g;
-{
-  let a <- call InputNum();
-  let b <- call InputNum();
-  
-  while a > 0 do
-    let a <- a - 1;
-    let a <- a + 100;
-    let a <- a * 1000000;
-    if a == 1 then
-      let a <- a + 1;
-      call OutputNum(1)
-    else
-      call OutputNum(0)
-    fi;
-    call OutputNum(a)
-  od;
-
-  call OutputNewLine()
 }.
 
 

@@ -51,7 +51,7 @@ public class GraphvizRender
 		ArrayList<Integer> seen = new ArrayList<Integer>(); 
 		
 		// CFG DAG start
-		builder.append("digraph G {");
+		builder.append("digraph cfg {");
 		
 		for (PLIRBasicBlock entry : blocks)
 		{
@@ -91,7 +91,7 @@ public class GraphvizRender
 		ArrayList<Integer> seen = new ArrayList<Integer>();
 		
 		// Tree start
-		builder.append("digraph G {");
+		builder.append("digraph dom {");
 		
 		for (PLIRBasicBlock entry : blocks)
 		{
@@ -136,20 +136,18 @@ public class GraphvizRender
 	{
 		StringBuilder builder = new StringBuilder();
 		ArrayList<Integer> seen = new ArrayList<Integer>();
-		builder.append("graph interference_graph {\n");
+		builder.append("graph ig {\n");
 		builder.append("    node [shape = circle];\n");
-//		for (Edge e : graph.edgeSet)
-//		{
-//			builder.append(e.u + " -- " + e.v + ";\n");
-//		}
+		
 		for (Integer u : graph.adjList.keySet())
 		{
 			builder.append(u + ";\n");
-			for (Integer v : graph.adjList.get(u))
-			{
-				builder.append(u + " -- " + v + ";\n");
-			}
 		}
+		for (Edge e : graph.getEdges())
+		{
+			builder.append(e.u + " -- " + e.v + ";\n");
+		}
+		
 		builder.append("}\n");
 		return builder.toString();
 	}

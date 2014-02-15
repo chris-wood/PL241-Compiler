@@ -18,6 +18,33 @@ public class InterferenceGraph
 		}
 	}
 	
+	public ArrayList<Edge> getEdges()
+	{
+		ArrayList<Edge> edges = new ArrayList<Edge>();
+		
+		for (Integer u : adjList.keySet())
+		{
+			for (Integer v : adjList.get(u))
+			{
+				boolean found = false;
+				for (Edge e : edges)
+				{
+					if ((e.u == u && e.v == v) || (e.v == u && e.u == v))
+					{
+						found = true;
+						break;
+					}
+				}
+				if (!found)
+				{
+					edges.add(new Edge(u, v));
+				}
+			}
+		}
+		
+		return edges;
+	}
+	
 	public int getNeighborCount(int v)
 	{
 		return adjList.get(v).size();
@@ -78,18 +105,18 @@ public class InterferenceGraph
 		{
 			for (Integer t : adjList.get(u))
 			{
-				if (t == v) return; // already adjacenct
+				if (t == v) return; // already adjacent
 			}
 		}
 		if (adjList.containsKey(v))
 		{
 			for (Integer t : adjList.get(v))
 			{
-				if (t == u) return; // already adjacenct
+				if (t == u) return; // already adjacent
 			}
 		}
 		
-		System.out.println("Adding: " + u + "," + v);
+//		System.out.println("Adding: " + u + "," + v);
 		adjList.get(u).add(v);
 		adjList.get(v).add(u);
 	}
