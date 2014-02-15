@@ -61,61 +61,64 @@ public class PLC
 		PLParser parser = new PLParser();
 		ArrayList<PLIRBasicBlock> blocks = parser.parse(scanner);
 		
-		// Recover the main root
-		PLIRBasicBlock root = blocks.get(blocks.size() - 1);
-		
 		// Filter basic blocks...
-		HashSet<Integer> seenInst = new HashSet<Integer>();
-		HashSet<PLIRBasicBlock> seenBlocks = new HashSet<PLIRBasicBlock>();
-		ArrayList<PLIRBasicBlock> stack = new ArrayList<PLIRBasicBlock>();
-		stack.add(root);
-		while (stack.isEmpty() == false)
+		for (PLIRBasicBlock entry : blocks)
 		{
-			PLIRBasicBlock curr = stack.get(0);
-			stack.remove(0);
-			if (seenBlocks.contains(curr) == false)
+			HashSet<Integer> seenInst = new HashSet<Integer>();
+			HashSet<PLIRBasicBlock> seenBlocks = new HashSet<PLIRBasicBlock>();
+			ArrayList<PLIRBasicBlock> stack = new ArrayList<PLIRBasicBlock>();
+			stack.add(entry);
+			while (stack.isEmpty() == false)
 			{
-				seenBlocks.add(curr);
-				HashSet<PLIRInstruction> toRemove = new HashSet<PLIRInstruction>(); 
-				for (int i = 0; i < curr.instructions.size(); i++)
+				PLIRBasicBlock curr = stack.get(0);
+				stack.remove(0);
+				if (seenBlocks.contains(curr) == false)
 				{
-					if (PLStaticSingleAssignment.isIncluded(curr.instructions.get(i).id) == false || 
-							seenInst.contains(curr.instructions.get(i).id))
+					seenBlocks.add(curr);
+					HashSet<PLIRInstruction> toRemove = new HashSet<PLIRInstruction>(); 
+					for (int i = 0; i < curr.instructions.size(); i++)
 					{
-						toRemove.add(curr.instructions.get(i));
+						if (PLStaticSingleAssignment.isIncluded(curr.instructions.get(i).id) == false || 
+								seenInst.contains(curr.instructions.get(i).id))
+						{
+							toRemove.add(curr.instructions.get(i));
+						}
+						else
+						{
+							seenInst.add(curr.instructions.get(i).id);
+						}
 					}
-					else
+					for (PLIRInstruction inst : toRemove)
 					{
-						seenInst.add(curr.instructions.get(i).id);
+						curr.instructions.remove(inst);
 					}
-				}
-				for (PLIRInstruction inst : toRemove)
-				{
-					curr.instructions.remove(inst);
-				}
-				
-				// Push on children
-				for (PLIRBasicBlock child : curr.children)
-				{
-					stack.add(child);
+					
+					// Push on children
+					for (PLIRBasicBlock child : curr.children)
+					{
+						stack.add(child);
+					}
 				}
 			}
 		}
 		
-		// Display the instructions
-		root = blocks.get(blocks.size() - 1);
-//		System.out.println("\nBegin Instructions\n");
-//		PLStaticSingleAssignment.displayInstructions();
-//		System.out.println("End Instructions\n");
+		// Display the instructions BEFORE CSE
+		PLIRBasicBlock root = blocks.get(blocks.size() - 1);
+		System.out.println("\nBegin Instructions\n");
+		PrintWriter instWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + "_inst_preCSE.txt")));
+		PLStaticSingleAssignment.displayInstructions();
+		instWriter.println(PLStaticSingleAssignment.renderInstructions());
+		instWriter.flush();
+		instWriter.close();
+		System.out.println("End Instructions\n");
 		
-		root = blocks.get(blocks.size() - 1);
-		for (PLIRBasicBlock block : blocks)
+		// Perform CSE on each block
+		for (PLIRBasicBlock entry : blocks)
 		{
 			// Find the root by walking up the tree in any direction
-			root = block;
-			while (root.parents.isEmpty() == false)
+			while (entry.parents.isEmpty() == false)
 			{
-				root = root.parents.get(0);
+				entry = entry.parents.get(0);
 			}
 			
 			// Perform CSE, starting at the root
@@ -123,10 +126,10 @@ public class PLC
 			cse.performCSE(root);
 		}
 		
-		// Display the instructions
+		// Display the instructions AFTER CSE
 		root = blocks.get(blocks.size() - 1);
 		System.out.println("\nBegin Instructions\n");
-		PrintWriter instWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + "_inst")));
+		instWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + "_inst_postCSE.txt")));
 		PLStaticSingleAssignment.displayInstructions();
 		instWriter.println(PLStaticSingleAssignment.renderInstructions());
 		instWriter.flush();
@@ -145,31 +148,31 @@ public class PLC
 		}
 		System.out.println("End DU chain\n");
 		
-		// Walk the basic block and print out the contents
-		ArrayList<PLIRBasicBlock> queue = new ArrayList<PLIRBasicBlock>();
-		ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
-		ArrayList<Integer> seen = new ArrayList<Integer>();
-		queue.add(root);
-		while (queue.isEmpty() == false)
-		{
-			PLIRBasicBlock curr = queue.remove(0);
-			if (visited.contains(curr) == false || curr.omit == true)
-			{
-				visited.add(curr);
-				System.out.println("Visiting: " + curr.id);
-				System.out.println(curr.instSequenceString(seen));
-				
-				for (PLIRBasicBlock child : curr.children)
-				{
-					queue.add(child);
-				}
-			}
-		}
+//		// Walk the basic block and print out the contents
+//		ArrayList<PLIRBasicBlock> queue = new ArrayList<PLIRBasicBlock>();
+//		ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
+//		ArrayList<Integer> seen = new ArrayList<Integer>();
+//		queue.add(root);
+//		while (queue.isEmpty() == false)
+//		{
+//			PLIRBasicBlock curr = queue.remove(0);
+//			if (visited.contains(curr) == false || curr.omit == true)
+//			{
+//				visited.add(curr);
+//				System.out.println("Visiting: " + curr.id);
+//				System.out.println(curr.instSequenceString(seen));
+//				
+//				for (PLIRBasicBlock child : curr.children)
+//				{
+//					queue.add(child);
+//				}
+//			}
+//		}
 		
 		// Generate visualization strings
 		GraphvizRender render = new GraphvizRender();
-		String cfgdot = render.renderCFG(root);
-		String domdot = render.renderDominatorTree(root);
+		String cfgdot = render.renderCFG(blocks);
+		String domdot = render.renderDominatorTree(blocks);
 		
 		// Write out the CFG string
 		PrintWriter cfgWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + ".cfg.dot")));

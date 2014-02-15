@@ -2,18 +2,37 @@
 main 
 var a, b, c, d, e;
 array[5] input;
+
+procedure one( x1, x2 );
+var x3;
+{
+  let x3 <- x1 + x2;
+  call OutputNum(x3);
+  call OutputNum(b)
+};
+
+function add( x1, x2 );
+{
+  return x1 + x2
+//  let x1 <- 0;
+//  return 1
+};
+
 {
   let a <- call InputNum();
   let b <- call InputNum();
 
-//  let input[0] <- 0;
+  let input[0] <- 0;
   let input[1] <- a + b;
   let c <- input[1] + 1;
+  let d <- call add(a, b);
+  call OutputNum(d);
+  call one(input[0], input[1]);
 
-//  call OutputNum(a);
-//  call OutputNum(b);
-//  call OutputNum(input[0]);
-//  call OutputNum(input[1]);
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(input[0]);
+  call OutputNum(input[1]);
   call OutputNum(c) // this breaks it
 }.
 

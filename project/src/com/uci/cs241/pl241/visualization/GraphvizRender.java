@@ -45,7 +45,7 @@ public class GraphvizRender
 		return builder.toString();
 	}
 	
-	public String renderCFG(PLIRBasicBlock entry)
+	public String renderCFG(ArrayList<PLIRBasicBlock> blocks)
 	{
 		StringBuilder builder = new StringBuilder();
 		ArrayList<Integer> seen = new ArrayList<Integer>(); 
@@ -53,28 +53,31 @@ public class GraphvizRender
 		// CFG DAG start
 		builder.append("digraph G {");
 		
-		// Walk each basic block in a DFS manner and have each one generate it's textual representation
-		ArrayList<PLIRBasicBlock> queue = new ArrayList<PLIRBasicBlock>();
-		ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
-		queue.add(entry);
-		StringBuilder cfgBuilder = new StringBuilder();
-		while (queue.isEmpty() == false)
+		for (PLIRBasicBlock entry : blocks)
 		{
-			PLIRBasicBlock currBlock = queue.remove(0);
-			if (visited.contains(currBlock) == false)
+			// Walk each basic block in a DFS manner and have each one generate it's textual representation
+			ArrayList<PLIRBasicBlock> queue = new ArrayList<PLIRBasicBlock>();
+			ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
+			queue.add(entry);
+			StringBuilder cfgBuilder = new StringBuilder();
+			while (queue.isEmpty() == false)
 			{
-				visited.add(currBlock);
-				builder.append(renderBasicBlockIR(currBlock, seen));
-				for (PLIRBasicBlock child : currBlock.children)
+				PLIRBasicBlock currBlock = queue.remove(0);
+				if (visited.contains(currBlock) == false)
 				{
-					cfgBuilder.append(prefix + currBlock.id + " -> " + prefix + child.id + ";\n");
-					queue.add(child);
+					visited.add(currBlock);
+					builder.append(renderBasicBlockIR(currBlock, seen));
+					for (PLIRBasicBlock child : currBlock.children)
+					{
+						cfgBuilder.append(prefix + currBlock.id + " -> " + prefix + child.id + ";\n");
+						queue.add(child);
+					}
 				}
 			}
+			
+			// Write down the connections
+			builder.append("\n" + cfgBuilder.toString());
 		}
-		
-		// Write down the connections
-		builder.append("\n" + cfgBuilder.toString());
 		
 		// CFG DAG end
 		builder.append("}");
@@ -82,7 +85,7 @@ public class GraphvizRender
 		return builder.toString();
 	}
 	
-	public String renderDominatorTree(PLIRBasicBlock entry)
+	public String renderDominatorTree(ArrayList<PLIRBasicBlock> blocks)
 	{
 		StringBuilder builder = new StringBuilder();
 		ArrayList<Integer> seen = new ArrayList<Integer>();
@@ -90,34 +93,37 @@ public class GraphvizRender
 		// Tree start
 		builder.append("digraph G {");
 		
-		// Walk each basic block in a DFS manner and have each one generate it's textual representation
-		ArrayList<PLIRBasicBlock> queue = new ArrayList<PLIRBasicBlock>();
-		ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
-		queue.add(entry);
-		ArrayList<String> dotBuilder = new ArrayList<String>();
-		while (queue.isEmpty() == false)
+		for (PLIRBasicBlock entry : blocks)
 		{
-			PLIRBasicBlock currBlock = queue.remove(0);
-			if (visited.contains(currBlock) == false)
+			// Walk each basic block in a DFS manner and have each one generate it's textual representation
+			ArrayList<PLIRBasicBlock> queue = new ArrayList<PLIRBasicBlock>();
+			ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
+			queue.add(entry);
+			ArrayList<String> dotBuilder = new ArrayList<String>();
+			while (queue.isEmpty() == false)
 			{
-				visited.add(currBlock);
-				builder.append(renderBasicBlockIR(currBlock, seen));
-				for (PLIRBasicBlock child : currBlock.dominatorSet)
+				PLIRBasicBlock currBlock = queue.remove(0);
+				if (visited.contains(currBlock) == false)
 				{
-					String toAdd = "\n" + prefix + currBlock.id + " -> " + prefix + child.id + ";";
-					if (dotBuilder.contains(toAdd) == false)
+					visited.add(currBlock);
+					builder.append(renderBasicBlockIR(currBlock, seen));
+					for (PLIRBasicBlock child : currBlock.dominatorSet)
 					{
-						dotBuilder.add(toAdd);
+						String toAdd = "\n" + prefix + currBlock.id + " -> " + prefix + child.id + ";";
+						if (dotBuilder.contains(toAdd) == false)
+						{
+							dotBuilder.add(toAdd);
+						}
+						queue.add(child);
 					}
-					queue.add(child);
 				}
 			}
-		}
-		
-		// Write down the connections
-		for (String s : dotBuilder)
-		{
-			builder.append(s);
+			
+			// Write down the connections
+			for (String s : dotBuilder)
+			{
+				builder.append(s);
+			}
 		}
 		
 		// CFG DAG end
