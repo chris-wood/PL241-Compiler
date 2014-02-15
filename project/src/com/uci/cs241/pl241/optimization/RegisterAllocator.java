@@ -76,9 +76,9 @@ public class RegisterAllocator {
 				}
 
 				// recursively add children to the live set
-				for (int i = 0; i < b.children.size(); i++) {
-					live.addAll(CalcLiveRange(b.children.get(i), i + 1, pass));
-				}
+//				for (int i = 0; i < b.children.size(); i++) {
+//					live.addAll(CalcLiveRange(b.children.get(i), i + 1, pass));
+//				}
 
 				// for all non-phis
 				for (int i = b.instructions.size() - 1; i >= 0; i--) {

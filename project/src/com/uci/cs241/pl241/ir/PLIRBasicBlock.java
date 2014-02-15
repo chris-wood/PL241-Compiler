@@ -12,8 +12,13 @@ public class PLIRBasicBlock
 	public ArrayList<PLIRInstruction> instructions;
 	public ArrayList<PLIRInstruction> dominatedInstructions;
 	public ArrayList<PLIRInstruction> carriedInstructions;
-	public ArrayList<PLIRBasicBlock> children;
+	
+//	public ArrayList<PLIRBasicBlock> children;
+	public PLIRBasicBlock leftChild;
+	public PLIRBasicBlock rightChild;
 	public ArrayList<PLIRBasicBlock> parents;
+//	public PLIRBasicBlock parentBlock;
+	
 	public ArrayList<PLIRBasicBlock> treeVertexSet;
 	public ArrayList<PLIRBasicBlock> dominatorSet;
 	
@@ -53,7 +58,7 @@ public class PLIRBasicBlock
 	public PLIRBasicBlock()
 	{
 		id = bbid++;
-		this.children = new ArrayList<PLIRBasicBlock>();
+//		this.children = new ArrayList<PLIRBasicBlock>();
 		this.parents = new ArrayList<PLIRBasicBlock>();
 		this.treeVertexSet = new ArrayList<PLIRBasicBlock>();
 		this.dominatorSet = new ArrayList<PLIRBasicBlock>();
@@ -99,7 +104,6 @@ public class PLIRBasicBlock
 		// Remove instructions in nextBlock that appear in result 
 		for (PLIRInstruction inst : oldBlock.instructions)
 		{
-//			System.err.println("Removing redundant instruction: " + inst.toString());
 			if (inst.type != OperandType.CONST)
 			{
 				newBlock.instructions.remove(inst);
@@ -112,8 +116,8 @@ public class PLIRBasicBlock
 		{ 
 			for (PLIRInstruction inst : newBlock.instructions)
 			{
-				leftJoin.instructions.add(inst); // CAW RESULT
-				leftJoin.dominatedInstructions.add(inst); // CAW RESULT
+				leftJoin.instructions.add(inst); 
+				leftJoin.dominatedInstructions.add(inst); 
 				toRemove.add(inst);
 			}
 		}
@@ -125,31 +129,72 @@ public class PLIRBasicBlock
 		}
 		
 		// Handle parents
-		if (newBlock.isEntry && newBlock.children.size() > 0)
+//		if (newBlock.isEntry && newBlock.children.size() > 0)
+//		{
+//			for (PLIRBasicBlock block : newBlock.children)
+//			{
+//				// oldBlock children gets the immediate children
+//				leftJoin.children.add(block);
+//				
+//				// the joinNode of the child points back to the oldBlock
+//				if (block.joinNode == null)
+//				{
+//					block.parents.add(leftJoin);
+//					if (block.children.contains(newBlock))
+//					{
+//						block.children.add(leftJoin);
+//						block.children.remove(newBlock);
+//					}
+//				}
+//				else
+//				{
+//					block.joinNode.parents.add(leftJoin);
+//					if (block.joinNode.children.contains(newBlock))
+//					{
+//						block.joinNode.children.add(leftJoin);
+//						block.joinNode.children.remove(newBlock);
+//					}
+//				}
+//			}
+//		}
+		if (newBlock.isEntry)
 		{
-			for (PLIRBasicBlock block : newBlock.children)
+			// Handle left child
+			leftJoin.leftChild = newBlock.leftChild;
+			if (newBlock.leftChild.joinNode == null)
 			{
-				// oldBlock children gets the immediate children
-				leftJoin.children.add(block);
-				
-				// the joinNode of the child points back to the oldBlock
-				if (block.joinNode == null)
+				newBlock.leftChild.parents.add(leftJoin);
+				if (newBlock.leftChild.leftChild != null && newBlock.leftChild.leftChild.equals(newBlock))
 				{
-					block.parents.add(leftJoin);
-					if (block.children.contains(newBlock))
-					{
-						block.children.add(leftJoin);
-						block.children.remove(newBlock);
-					}
+					newBlock.leftChild.leftChild = leftJoin;
 				}
-				else
+			}
+			else
+			{
+				newBlock.leftChild.joinNode.parents.add(leftJoin);
+				if (newBlock.leftChild.joinNode.leftChild != null && newBlock.leftChild.joinNode.leftChild.equals(newBlock))
 				{
-					block.joinNode.parents.add(leftJoin);
-					if (block.joinNode.children.contains(newBlock))
-					{
-						block.joinNode.children.add(leftJoin);
-						block.joinNode.children.remove(newBlock);
-					}
+					newBlock.leftChild.joinNode.leftChild = leftJoin;
+				}
+			}
+			
+			// Handle right child
+			leftJoin.rightChild = newBlock.rightChild;
+			if (newBlock.rightChild.joinNode == null)
+			{
+				newBlock.rightChild.parents.add(leftJoin);
+				if (newBlock.rightChild.leftChild != null && newBlock.rightChild.leftChild.equals(newBlock))
+				{
+					newBlock.rightChild.leftChild = leftJoin;
+				}
+				// same for right child?!?!
+			}
+			else
+			{
+				newBlock.rightChild.joinNode.parents.add(leftJoin);
+				if (newBlock.rightChild.joinNode.leftChild != null && newBlock.rightChild.joinNode.leftChild.equals(newBlock))
+				{
+					newBlock.rightChild.joinNode.leftChild = leftJoin;
 				}
 			}
 		}
@@ -182,7 +227,11 @@ public class PLIRBasicBlock
 		}
 		
 		// The join of the new tree becomes the join of the old tree (see picture - basically the old tree swallows the new tree)
-		if (join.equals(newBlock) == false) leftJoin.joinNode = join;
+		if (join.equals(newBlock) == false) 
+		{
+			leftJoin.joinNode = join;
+			oldBlock.joinNode = join;
+		}
 		
 		return oldBlock;
 	}
@@ -260,14 +309,25 @@ public class PLIRBasicBlock
 		}
 	
 		// Now propagate down the tree
-		for (PLIRBasicBlock child : children)
+		if (leftChild != null && visited.contains(leftChild) == false)
 		{
-			if (visited.contains(child) == false)
-			{
-				visited.add(child);
-				child.propagatePhi(var, scopeMap.get(var), visited, scopeMap);
-			}
+			visited.add(leftChild);
+			leftChild.propagatePhi(var, scopeMap.get(var), visited, scopeMap);
 		}
+		if (rightChild != null && visited.contains(rightChild) == false)
+		{
+			visited.add(rightChild);
+			rightChild.propagatePhi(var, scopeMap.get(var), visited, scopeMap);
+		}
+		
+//		for (PLIRBasicBlock child : children)
+//		{
+//			if (visited.contains(child) == false)
+//			{
+//				visited.add(child);
+//				child.propagatePhi(var, scopeMap.get(var), visited, scopeMap);
+//			}
+//		}
 		
 		
 //		if (this.joinNode != null)

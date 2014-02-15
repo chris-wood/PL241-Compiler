@@ -94,9 +94,17 @@ public class PLC
 					}
 					
 					// Push on children
-					for (PLIRBasicBlock child : curr.children)
+//					for (PLIRBasicBlock child : curr.children)
+//					{
+//						stack.add(child);
+//					}
+					if (curr.leftChild != null)
 					{
-						stack.add(child);
+						stack.add(curr.leftChild);
+					}
+					if (curr.rightChild != null)
+					{
+						stack.add(curr.rightChild);
 					}
 				}
 			}

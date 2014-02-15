@@ -48,10 +48,10 @@ public class PLDominatorTree
 		
 		// Populate successors...
 		succ.put(v, new ArrayList<PLIRBasicBlock>());
-		for (PLIRBasicBlock block : v.children)
-		{
-			succ.get(v).add(block);
-		}
+//		for (PLIRBasicBlock block : v.children)
+//		{
+//			succ.get(v).add(block);
+//		}
 		
 		// Continue onwards
 		for (PLIRBasicBlock w : succ.get(nid))

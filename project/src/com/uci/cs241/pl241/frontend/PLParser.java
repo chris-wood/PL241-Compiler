@@ -1600,45 +1600,45 @@ public class PLParser
 				result.addInstruction(callInst);
 				result.isEntry = true;
 				
-				// Add the function BB connections 
-				if (this.funcBlockMap.containsKey(funcName))
-				{
-					result.children.add(funcBlockMap.get(funcName));
-					
-					// Navigate to join node on the function...
-					if (funcBlockMap.get(funcName).joinNode == null)
-					{
-						funcBlockMap.get(funcName).children.add(result);
-					}
-					else
-					{
-						PLIRBasicBlock join = funcBlockMap.get(funcName).joinNode;
-						while (join.joinNode != null)
-						{
-							join = join.joinNode;
-						}
-						join.children.add(result);
-					}
-				}
-				else if (this.procBlockMap.containsKey(funcName))
-				{
-					result.children.add(procBlockMap.get(funcName));
-					
-					// Navigate to join node on the function...
-					if (procBlockMap.get(funcName).joinNode == null)
-					{
-						procBlockMap.get(funcName).children.add(result);
-					}
-					else
-					{
-						PLIRBasicBlock join = procBlockMap.get(funcName).joinNode;
-						while (join.joinNode != null)
-						{
-							join = join.joinNode;
-						}
-						join.children.add(result);
-					}
-				}
+//				// Add the function BB connections 
+//				if (this.funcBlockMap.containsKey(funcName))
+//				{
+//					result.children.add(funcBlockMap.get(funcName));
+//					
+//					// Navigate to join node on the function...
+//					if (funcBlockMap.get(funcName).joinNode == null)
+//					{
+//						funcBlockMap.get(funcName).children.add(result);
+//					}
+//					else
+//					{
+//						PLIRBasicBlock join = funcBlockMap.get(funcName).joinNode;
+//						while (join.joinNode != null)
+//						{
+//							join = join.joinNode;
+//						}
+//						join.children.add(result);
+//					}
+//				}
+//				else if (this.procBlockMap.containsKey(funcName))
+//				{
+//					result.children.add(procBlockMap.get(funcName));
+//					
+//					// Navigate to join node on the function...
+//					if (procBlockMap.get(funcName).joinNode == null)
+//					{
+//						procBlockMap.get(funcName).children.add(result);
+//					}
+//					else
+//					{
+//						PLIRBasicBlock join = procBlockMap.get(funcName).joinNode;
+//						while (join.joinNode != null)
+//						{
+//							join = join.joinNode;
+//						}
+//						join.children.add(result);
+//					}
+//				}
 			}
 			else
 			{
@@ -1694,7 +1694,8 @@ public class PLParser
 			
 			// Parse the follow-through and add it as the first child of the entry block
 			PLIRBasicBlock thenBlock = parse_statSequence(in);
-			entry.children.add(thenBlock);
+			entry.leftChild = thenBlock;
+//			entry.children.add(thenBlock);
 			thenBlock.parents.add(entry);
 			
 			// Create the artificial join node and make it a child of the follow-through branch,
@@ -1709,12 +1710,15 @@ public class PLParser
 					seen.add(join.id);
 					join = join.joinNode;
 				}
-				join.children.add(joinNode);
+//				join.children.add(joinNode);
+				join.leftChild = joinNode;
 				joinNode.parents.add(join);
+//				joinNode.parentBlock = join;
 			}
 			else
 			{
-				thenBlock.children.add(joinNode);
+//				thenBlock.children.add(joinNode);
+				thenBlock.leftChild = joinNode;
 				joinNode.parents.add(thenBlock);
 			}
 			entry.joinNode = joinNode;
@@ -1740,18 +1744,20 @@ public class PLParser
 						seen.add(join.id);
 						join = join.joinNode;
 					}
-					join.children.add(joinNode);
+//					join.children.add(joinNode);
+					join.rightChild = joinNode;
 					join.fixSpot();
 					joinNode.parents.add(join);
 				}
 				else
 				{
-					elseBlock.children.add(joinNode);
+					elseBlock.rightChild = joinNode;
 					elseBlock.fixSpot();
 					joinNode.parents.add(elseBlock);
 				}
 				
-				entry.children.add(elseBlock);
+//				entry.children.add(elseBlock);
+				entry.rightChild = elseBlock;
 				elseBlock.parents.add(entry);
 				
 				
@@ -1836,9 +1842,10 @@ public class PLParser
 					joinNode.modifiedIdents.put(var, phi);
 				}
 			}
-			else
+			else // there was no else block, so the right child becomes the join node
 			{
-				entry.children.add(joinNode);
+//				entry.children.add(joinNode);
+				entry.rightChild = joinNode;
 				joinNode.parents.add(entry);
 				scope.popScope();
 				blockDepth--;
@@ -1905,6 +1912,8 @@ public class PLParser
 			advance(in);
 			
 			// Save the resulting basic block
+			debug("" + entry.leftChild.id);
+			debug("" + entry.rightChild.id);
 			entry.isEntry = true;
 			return entry;
 		}
@@ -2051,20 +2060,24 @@ public class PLParser
 				{
 					join = join.joinNode;
 				}
-				join.children.add(entry);
+//				join.children.add(entry);
+				join.leftChild = entry;
 				join.fixSpot();
 			}
 			else
 			{
-				body.children.add(entry);
+//				body.children.add(entry);
+				body.leftChild = entry;
 				body.fixSpot();
 			}
-			entry.children.add(body);
+//			entry.children.add(body);
+			entry.leftChild = body;
 			body.parents.add(entry);
 			
 			// Patch up the follow-through branch
-			entry.children.add(joinNode); // CAW
-			joinNode.parents.add(entry); // CAW
+//			entry.children.add(joinNode); 
+			entry.rightChild = joinNode;
+			joinNode.parents.add(entry); 
 			
 			// Insert the unconditional branch at (location - pc)
 			PLIRInstruction beqInst = PLIRInstruction.create_BEQ(scope, loopLocation - PLStaticSingleAssignment.globalSSAIndex);

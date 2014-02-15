@@ -67,10 +67,15 @@ public class GraphvizRender
 				{
 					visited.add(currBlock);
 					builder.append(renderBasicBlockIR(currBlock, seen));
-					for (PLIRBasicBlock child : currBlock.children)
+					if (currBlock.leftChild != null)
 					{
-						cfgBuilder.append(prefix + currBlock.id + " -> " + prefix + child.id + ";\n");
-						queue.add(child);
+						cfgBuilder.append(prefix + currBlock.id + " -> " + prefix + currBlock.leftChild.id + ";\n");
+						queue.add(currBlock.leftChild);
+					}
+					if (currBlock.rightChild != null)
+					{
+						cfgBuilder.append(prefix + currBlock.id + " -> " + prefix + currBlock.rightChild.id + ";\n");
+						queue.add(currBlock.rightChild);
 					}
 				}
 			}
