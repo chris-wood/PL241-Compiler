@@ -1,20 +1,10 @@
 digraph cfg {
-bb10[shape = box, label = "BB(10)\n" + "1 := read\n" + "2 := read\n" + "3 := phi (1) (21)\n" + "4 := cmp (3) #0\n" + "5 := ble (4) #19\n"];
-bb19[shape = box, label = "BB(19)\n" + "6 := sub (3) #1\n" + "7 := add (6) #100\n" + "8 := mul (9) #1000000\n" + "9 := phi (8) (12)\n" + "10 := cmp (9) #1\n" + "11 := beq (10) #4\n"];
-bb57[shape = box, label = "BB(57)\n" + "24 := wln\n" + "25 := end\n"];
-bb34[shape = box, label = "BB(34)\n" + "12 := add (8) #1\n" + "13 := write #1\n" + "14 := beq #0 #-5\n"];
-bb39[shape = box, label = "BB(39)\n" + "15 := (10)\n" + "16 := bne (15) #4\n"];
-bb45[shape = box, label = "BB(45)\n" + "17 := add (9) #1\n" + "18 := write #1\n" + "19 := beq #0 #2\n"];
-bb53[shape = box, label = "BB(53)\n" + "20 := write #0\n"];
-bb50[shape = box, label = "BB(50)\n" + "21 := phi (17) (9)\n" + "22 := write (21)\n" + "23 := beq #0 #-20\n"];
-bb10 -> bb19;
-bb10 -> bb57;
-bb19 -> bb34;
-bb19 -> bb39;
-bb34 -> bb19;
-bb39 -> bb45;
-bb39 -> bb53;
-bb45 -> bb50;
-bb53 -> bb50;
-bb50 -> bb10;
+bb8[shape = box, label = "BB(8)\n" + "1 := read\n" + "2 := add (1) (1)\n" + "3 := (2)\n" + "4 := cmp (1) #0\n" + "5 := bge (4) #2\n"];
+bb26[shape = box, label = "BB(26)\n" + "6 := add (2) (2)\n" + "7 := beq #0 #1\n"];
+bb32[shape = box, label = "BB(32)\n"];
+bb30[shape = box, label = "BB(30)\n" + "8 := phi (6) (2)\n" + "9 := phi (6) (1)\n" + "10 := write (9)\n" + "11 := end\n"];
+bb8 -> bb26;
+bb8 -> bb32;
+bb26 -> bb30;
+bb32 -> bb30;
 }

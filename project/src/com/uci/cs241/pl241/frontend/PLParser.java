@@ -3,6 +3,7 @@ package com.uci.cs241.pl241.frontend;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
@@ -1927,6 +1928,7 @@ public class PLParser
 			
 			// Parse the condition (relation) for the loop
 			PLIRBasicBlock entry = parse_relation(in);
+			entry.isLoopHeader = true;
 			PLIRInstruction entryCmpInst = entry.instructions.get(entry.instructions.size() - 1);
 			PLIRInstruction bgeInst = CondNegBraFwd(entryCmpInst);
 			
@@ -1958,6 +1960,11 @@ public class PLParser
 			
 			scope.popScope();
 			blockDepth--;
+			
+			// Propagate loop header into body blocks as an "enclosing loop header"
+			HashSet<PLIRBasicBlock> enclosedSeen = new HashSet<PLIRBasicBlock>();
+			enclosedSeen.add(entry);
+			body.propogateLoopHeader(enclosedSeen, entry);
 			
 			////////////////////////////////////////////
 			// We've passed through the body and know what variables are updated, now we need to insert phis

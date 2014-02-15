@@ -30,7 +30,7 @@ public class PLIRBasicBlock
 	// By default, they are null, so simple checks to see if they're null will help us determine whether we merge block 
 	// instructions and where to place phi-instructions
 	public PLIRBasicBlock joinNode;
-	public PLIRBasicBlock exitNode;
+//	public PLIRBasicBlock exitNode;
 	
 	// Return instruction
 	public boolean isEntry = false;
@@ -53,7 +53,11 @@ public class PLIRBasicBlock
 	
 	// for live range calculation
 	public int visitNumber = 0;
-	public HashSet<PLIRInstruction> liveAtEnd;
+	public int mark = 0;
+	public HashSet<PLIRInstruction> liveAtEnd = new HashSet<PLIRInstruction>();
+	public boolean isLoopHeader = false;
+	public HashSet<PLIRBasicBlock> wrappedLoopHeaders = new HashSet<PLIRBasicBlock>(); 
+//	public HashSet<Integer> liveAtEnd = new HashSet<Integer>();
 	
 	public PLIRBasicBlock()
 	{
@@ -157,6 +161,12 @@ public class PLIRBasicBlock
 //				}
 //			}
 //		}
+		
+		if (newBlock.isLoopHeader)
+		{
+			leftJoin.isLoopHeader = true;
+		}
+		
 		if (newBlock.isEntry)
 		{
 			// Handle left child
@@ -234,6 +244,31 @@ public class PLIRBasicBlock
 		}
 		
 		return oldBlock;
+	}
+	
+	// Propagate the enclosing loop header to all 
+	public void propogateLoopHeader(HashSet<PLIRBasicBlock> seen, PLIRBasicBlock header)
+	{
+		ArrayList<PLIRBasicBlock> stack = new ArrayList<PLIRBasicBlock>();
+		stack.add(this);
+		while (stack.isEmpty() == false)
+		{
+			PLIRBasicBlock curr = stack.get(stack.size() - 1);
+			stack.remove(stack.size() - 1);
+			if (seen.contains(curr) == false)
+			{
+				seen.add(curr);
+				this.wrappedLoopHeaders.add(header);
+				if (curr.leftChild != null)
+				{
+					stack.add(curr.leftChild);
+				}
+				if (curr.rightChild != null)
+				{
+					stack.add(curr.rightChild);
+				}
+			}
+		}
 	}
 	
 	public void propagatePhi(String var, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited, HashMap<String, PLIRInstruction> scopeMap)
