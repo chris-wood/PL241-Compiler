@@ -1,6 +1,7 @@
 package com.uci.cs241.pl241.visualization;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
@@ -137,7 +138,7 @@ public class GraphvizRender
 		return builder.toString();
 	}
 	
-	public String renderInterferenceGraph(InterferenceGraph graph)
+	public String renderInterferenceGraph(InterferenceGraph graph, HashMap<Integer, Integer> regMap)
 	{
 		StringBuilder builder = new StringBuilder();
 		ArrayList<Integer> seen = new ArrayList<Integer>();
@@ -146,11 +147,11 @@ public class GraphvizRender
 		
 		for (Integer u : graph.adjList.keySet())
 		{
-			builder.append(u + ";\n");
+			builder.append("    " + u + "" + regMap.get(u) + ";\n");
 		}
 		for (Edge e : graph.getEdges())
 		{
-			builder.append(e.u + " -- " + e.v + ";\n");
+			builder.append("    " + e.u + "" + regMap.get(e.u) + " -- " + e.v + "" + regMap.get(e.v) + ";\n");
 		}
 		
 		builder.append("}\n");

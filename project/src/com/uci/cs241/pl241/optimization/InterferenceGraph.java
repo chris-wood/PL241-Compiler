@@ -8,13 +8,18 @@ import com.uci.cs241.pl241.ir.PLIRInstruction;
 public class InterferenceGraph 
 {
 	public HashMap<Integer, ArrayList<Integer>> adjList;
+	public HashMap<Integer, Integer> costMap;
 	
 	public InterferenceGraph(ArrayList<PLIRInstruction> instructions)
 	{
+		costMap = new HashMap<Integer, Integer>();
 		adjList = new HashMap<Integer, ArrayList<Integer>>();
 		for (PLIRInstruction inst : instructions)
 		{
 			adjList.put(inst.id, new ArrayList<Integer>());
+			
+			// TODO: fix this so that the cost is initialized properly
+			costMap.put(inst.id, 1);
 		}
 	}
 	
@@ -45,6 +50,36 @@ public class InterferenceGraph
 		return edges;
 	}
 	
+	public int getCost(int v)
+	{
+		return costMap.get(v);
+	}
+	
+	public int getSmallestCost()
+	{
+		int smallest = Integer.MAX_VALUE;
+		for (Integer v : costMap.keySet())
+		{
+			if (costMap.get(v) < smallest)
+			{
+				smallest = v;
+			}
+		}
+		return smallest;
+	}
+	
+	public int getVertexWithMaxDegree(int maxDegree)
+	{
+		for (Integer v : adjList.keySet())
+		{
+			if (adjList.get(v).size() < maxDegree)
+			{
+				return v;
+			}
+		}
+		return -1;
+	}
+	
 	public int getNeighborCount(int v)
 	{
 		return adjList.get(v).size();
@@ -64,6 +99,7 @@ public class InterferenceGraph
 	
 	public ArrayList<Integer> removeVertex(int v)
 	{
+		System.err.println("Removing vertex: " + v);
 		ArrayList<Integer> neighbors = adjList.get(v);
 		
 		// Drop v from the set
