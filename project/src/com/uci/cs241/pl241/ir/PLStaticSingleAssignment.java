@@ -13,6 +13,16 @@ public class PLStaticSingleAssignment
 	{
 	}
 	
+	public static void finish()
+	{
+		for (PLIRInstruction inst : instructions)
+		{
+			inst.cost = inst.depth * inst.uses;
+		}
+		
+		// put any other finalization logic here 
+	}
+	
 	public static boolean isIncluded(int id)
 	{
 		for (PLIRInstruction inst : instructions)
