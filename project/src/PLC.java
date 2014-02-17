@@ -1,18 +1,21 @@
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+
 import com.uci.cs241.pl241.frontend.PLEndOfFileException;
 import com.uci.cs241.pl241.frontend.PLParser;
 import com.uci.cs241.pl241.frontend.PLScanner;
 import com.uci.cs241.pl241.frontend.PLSyntaxErrorException;
-import com.uci.cs241.pl241.frontend.PLTokenizer;
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
 import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
@@ -24,186 +27,175 @@ import com.uci.cs241.pl241.visualization.GraphvizRender;
 
 public class PLC
 {
-	public static void main(String[] args) throws IOException, PLSyntaxErrorException, PLEndOfFileException
+	public static void main(String[] args) throws IOException, PLSyntaxErrorException, PLEndOfFileException, ParseException
 	{
-		if (args.length != 1)
+		// Setup command line argument parser
+		Options options = new Options();
+		options.addOption("f", true, "input file");
+		options.addOption("all", false, "run all compilation steps");
+		options.addOption("s1", false, "step 1: parsing and SSA generation");
+		options.addOption("s2", false, "step 2: CSE and copy propagation");
+		options.addOption("s3", false, "step 3: register allocation");
+		options.addOption("s4", false, "step 4: code generation");
+		
+		// Parse the command line arguments
+		CommandLineParser cmdParser = new GnuParser();
+		CommandLine cmd = cmdParser.parse( options, args);
+		
+		// Handle parsing
+		if (cmd.hasOption("f")) 
 		{
-			System.err.println("usage: PLC <program.txt>");
+			System.out.println("Running on: " + cmd.getOptionValue("f"));
+		}
+		else
+		{
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp("ant", options );
 			System.exit(-1);
 		}
 		
-		// Scanner test
-		PLScanner scanner = new PLScanner(args[0]);
-		ArrayList<String> tokens = new ArrayList<String>();
-		try
+		// Extract pass flags
+		boolean runAll = cmd.hasOption("all");
+		boolean runStep1 = cmd.hasOption("s1");
+		boolean runStep2 = cmd.hasOption("s2");
+		boolean runStep3 = cmd.hasOption("s3");
+		boolean runStep4 = cmd.hasOption("s4");
+		
+		// Extract source file
+		String sourceFile = cmd.getOptionValue("f");
+		
+		// Maintain order of compilation - steps 1, 2, 3, and 4 must occur in order
+		if (runAll || runStep1 || runStep2 || runStep3 || runStep4)
 		{
-			while (true)
+			PLScanner scanner = new PLScanner(sourceFile);
+			PLParser parser = new PLParser();
+			ArrayList<PLIRBasicBlock> blocks = parser.parse(scanner);
+			
+			// Filter basic blocks...
+			for (PLIRBasicBlock entry : blocks)
 			{
-				scanner.next();
-				tokens.add(scanner.symstring + "(" + scanner.sym + ")");
-			}
-		} 
-		catch (Exception e)
-		{	
-		}
-		
-		// Format and display the tokens
-		StringBuilder builder = new StringBuilder("[");
-		for (String t : tokens)
-		{
-			builder.append("'" + t + "', ");
-		}
-		builder.deleteCharAt(builder.toString().length() - 1).append("]");
-		System.out.println(builder.toString());
-		
-		//// RUN THE PARSER
-		scanner = new PLScanner(args[0]);
-		PLParser parser = new PLParser();
-		ArrayList<PLIRBasicBlock> blocks = parser.parse(scanner);
-		
-		// Filter basic blocks...
-		for (PLIRBasicBlock entry : blocks)
-		{
-			HashSet<Integer> seenInst = new HashSet<Integer>();
-			HashSet<PLIRBasicBlock> seenBlocks = new HashSet<PLIRBasicBlock>();
-			ArrayList<PLIRBasicBlock> stack = new ArrayList<PLIRBasicBlock>();
-			stack.add(entry);
-			while (stack.isEmpty() == false)
-			{
-				PLIRBasicBlock curr = stack.get(0);
-				stack.remove(0);
-				if (seenBlocks.contains(curr) == false)
+				HashSet<Integer> seenInst = new HashSet<Integer>();
+				HashSet<PLIRBasicBlock> seenBlocks = new HashSet<PLIRBasicBlock>();
+				ArrayList<PLIRBasicBlock> stack = new ArrayList<PLIRBasicBlock>();
+				stack.add(entry);
+				while (stack.isEmpty() == false)
 				{
-					seenBlocks.add(curr);
-					HashSet<PLIRInstruction> toRemove = new HashSet<PLIRInstruction>(); 
-					for (int i = 0; i < curr.instructions.size(); i++)
+					PLIRBasicBlock curr = stack.get(0);
+					stack.remove(0);
+					if (seenBlocks.contains(curr) == false)
 					{
-						if (PLStaticSingleAssignment.isIncluded(curr.instructions.get(i).id) == false || 
-								seenInst.contains(curr.instructions.get(i).id))
+						seenBlocks.add(curr);
+						HashSet<PLIRInstruction> toRemove = new HashSet<PLIRInstruction>(); 
+						for (int i = 0; i < curr.instructions.size(); i++)
 						{
-							toRemove.add(curr.instructions.get(i));
+							if (PLStaticSingleAssignment.isIncluded(curr.instructions.get(i).id) == false || 
+									seenInst.contains(curr.instructions.get(i).id))
+							{
+								toRemove.add(curr.instructions.get(i));
+							}
+							else
+							{
+								seenInst.add(curr.instructions.get(i).id);
+							}
 						}
-						else
+						for (PLIRInstruction inst : toRemove)
 						{
-							seenInst.add(curr.instructions.get(i).id);
+							curr.instructions.remove(inst);
 						}
-					}
-					for (PLIRInstruction inst : toRemove)
-					{
-						curr.instructions.remove(inst);
-					}
-					
-					// Push on children
-//					for (PLIRBasicBlock child : curr.children)
-//					{
-//						stack.add(child);
-//					}
-					if (curr.leftChild != null)
-					{
-						stack.add(curr.leftChild);
-					}
-					if (curr.rightChild != null)
-					{
-						stack.add(curr.rightChild);
+						
+						// Push on children
+						if (curr.leftChild != null)
+						{
+							stack.add(curr.leftChild);
+						}
+						if (curr.rightChild != null)
+						{
+							stack.add(curr.rightChild);
+						}
 					}
 				}
 			}
-		}
-		
-		// Display the instructions BEFORE CSE
-		PLIRBasicBlock root = blocks.get(blocks.size() - 1);
-		System.out.println("\nBegin Instructions\n");
-		PrintWriter instWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + "_inst_preCSE.txt")));
-		PLStaticSingleAssignment.displayInstructions();
-		instWriter.println(PLStaticSingleAssignment.renderInstructions());
-		instWriter.flush();
-		instWriter.close();
-		System.out.println("End Instructions\n");
-		
-		// Perform CSE on each block
-		for (PLIRBasicBlock entry : blocks)
-		{
-			// Find the root by walking up the tree in any direction
-			while (entry.parents.isEmpty() == false)
+			
+			// Display the instructions BEFORE CSE
+			PLIRBasicBlock root = blocks.get(blocks.size() - 1);
+			System.out.println("\nBegin Instructions\n");
+			PrintWriter instWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + "_inst_preCSE.txt")));
+			PLStaticSingleAssignment.displayInstructions();
+			instWriter.println(PLStaticSingleAssignment.renderInstructions());
+			instWriter.flush();
+			instWriter.close();
+			System.out.println("End Instructions\n");
+			
+			if (runAll || (runStep1 && runStep2))
 			{
-				entry = entry.parents.get(0);
+				// Perform CSE on each block
+				for (PLIRBasicBlock entry : blocks)
+				{
+					// Find the root by walking up the tree in any direction
+					while (entry.parents.isEmpty() == false)
+					{
+						entry = entry.parents.get(0);
+					}
+					
+					// Perform CSE, starting at the root
+					CSE cse = new CSE();
+					cse.performCSE(root);
+				}
+				
+				// Display the instructions AFTER CSE
+				root = blocks.get(blocks.size() - 1);
+				System.out.println("\nBegin Instructions\n");
+				instWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + "_inst_postCSE.txt")));
+				PLStaticSingleAssignment.displayInstructions();
+				instWriter.println(PLStaticSingleAssignment.renderInstructions());
+				instWriter.flush();
+				instWriter.close();
+				System.out.println("End Instructions\n");
+				
+				// Display the DU chain
+				System.out.println("\nDU chain");
+				for (PLIRInstruction def : parser.duChain.keySet())
+				{
+					System.out.println(def.id + " := " + def.toString());
+					for (PLIRInstruction use : parser.duChain.get(def))
+					{
+						System.out.println("\t" + use.id + " := " + use.toString());
+					}
+				}
+				System.out.println("End DU chain\n");
 			}
 			
-			// Perform CSE, starting at the root
-			CSE cse = new CSE();
-			cse.performCSE(root);
-		}
-		
-		// Display the instructions AFTER CSE
-		root = blocks.get(blocks.size() - 1);
-		System.out.println("\nBegin Instructions\n");
-		instWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + "_inst_postCSE.txt")));
-		PLStaticSingleAssignment.displayInstructions();
-		instWriter.println(PLStaticSingleAssignment.renderInstructions());
-		instWriter.flush();
-		instWriter.close();
-		System.out.println("End Instructions\n");
-		
-		// Display the DU chain
-		System.out.println("\nDU chain");
-		for (PLIRInstruction def : parser.duChain.keySet())
-		{
-			System.out.println(def.id + " := " + def.toString());
-			for (PLIRInstruction use : parser.duChain.get(def))
+			// Generate visualization strings
+			GraphvizRender render = new GraphvizRender();
+			String cfgdot = render.renderCFG(blocks);
+			String domdot = render.renderDominatorTree(blocks);
+			
+			// Write out the CFG string
+			PrintWriter cfgWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + ".cfg.dot")));
+			cfgWriter.println(cfgdot);
+			cfgWriter.flush();
+			cfgWriter.close();
+			
+			// Write out the dominator tree
+			PrintWriter domWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + ".dom.dot")));
+			domWriter.println(domdot);
+			domWriter.flush();
+			domWriter.close();
+			
+			if (runAll || (runStep1 && runStep2 && runStep3))
 			{
-				System.out.println("\t" + use.id + " := " + use.toString());
+				// Register allocation
+				root = blocks.get(blocks.size() - 1);
+				RegisterAllocator ra = new RegisterAllocator();
+				ra.ComputeLiveRange(root);
+				InterferenceGraph ig = ra.ig;
+				ra.Color(ra.ig);
+				String igdot = render.renderInterferenceGraph(ig, ra.regMap);
+				PrintWriter igWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + ".ig.dot")));
+				igWriter.println(igdot);
+				igWriter.flush();
+				igWriter.close();
 			}
 		}
-		System.out.println("End DU chain\n");
-		
-//		// Walk the basic block and print out the contents
-//		ArrayList<PLIRBasicBlock> queue = new ArrayList<PLIRBasicBlock>();
-//		ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
-//		ArrayList<Integer> seen = new ArrayList<Integer>();
-//		queue.add(root);
-//		while (queue.isEmpty() == false)
-//		{
-//			PLIRBasicBlock curr = queue.remove(0);
-//			if (visited.contains(curr) == false || curr.omit == true)
-//			{
-//				visited.add(curr);
-//				System.out.println("Visiting: " + curr.id);
-//				System.out.println(curr.instSequenceString(seen));
-//				
-//				for (PLIRBasicBlock child : curr.children)
-//				{
-//					queue.add(child);
-//				}
-//			}
-//		}
-		
-		// Generate visualization strings
-		GraphvizRender render = new GraphvizRender();
-		String cfgdot = render.renderCFG(blocks);
-		String domdot = render.renderDominatorTree(blocks);
-		
-		// Write out the CFG string
-		PrintWriter cfgWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + ".cfg.dot")));
-		cfgWriter.println(cfgdot);
-		cfgWriter.flush();
-		cfgWriter.close();
-		
-		// Write out the dominator tree
-		PrintWriter domWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + ".dom.dot")));
-		domWriter.println(domdot);
-		domWriter.flush();
-		domWriter.close();
-		
-		// Register allocation
-		root = blocks.get(blocks.size() - 1);
-		RegisterAllocator ra = new RegisterAllocator();
-		ra.ComputeLiveRange(root);
-		InterferenceGraph ig = ra.ig;
-		ra.Color(ra.ig);
-		String igdot = render.renderInterferenceGraph(ig, ra.regMap);
-		PrintWriter igWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + ".ig.dot")));
-		igWriter.println(igdot);
-		igWriter.flush();
-		igWriter.close();
 	}
 }

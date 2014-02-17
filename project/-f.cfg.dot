@@ -1,0 +1,10 @@
+digraph cfg {
+bb8[shape = box, label = "BB(8)\n" + "1 := read\n" + "2 := add (1) (1)\n" + "3 := (2)\n" + "4 := cmp (1) #0\n" + "5 := bge (4) #2\n"];
+bb26[shape = box, label = "BB(26)\n" + "6 := add (2) (2)\n" + "7 := beq #0 #1\n"];
+bb32[shape = box, label = "BB(32)\n"];
+bb30[shape = box, label = "BB(30)\n" + "8 := phi (6) (2)\n" + "9 := phi (6) (1)\n" + "10 := write (9)\n" + "11 := end\n"];
+bb8 -> bb26;
+bb8 -> bb32;
+bb26 -> bb30;
+bb32 -> bb30;
+}
