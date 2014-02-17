@@ -1,9 +1,11 @@
 digraph dom {
-BB8[shape = box, label = "BB(8)\n" + "1 := read\n" + "2 := add (1) (1)\n" + "3 := (2)\n" + "4 := cmp (1) #0\n" + "5 := bge (4) #2\n"];
-BB26[shape = box, label = "BB(26)\n" + "6 := add (2) (2)\n" + "7 := beq #0 #1\n"];
-BB32[shape = box, label = "BB(32)\n"];
-BB30[shape = box, label = "BB(30)\n" + "8 := phi (6) (2)\n" + "9 := phi (6) (1)\n" + "10 := write (9)\n" + "11 := end\n"];
-BB8 -> BB26;
-BB8 -> BB32;
-BB8 -> BB30;
+BB8[shape = box, label = "BB(8)\n" + "1 := read\n" + "2 := phi #0 (5)\n" + "3 := cmp (1) #0\n" + "4 := bge (3) #7\n"];
+BB16[shape = box, label = "BB(16)\n" + "5 := add (1) #1\n" + "6 := (3)\n" + "7 := bge (6) #3\n"];
+BB24[shape = box, label = "BB(24)\n" + "11 := write #0\n" + "12 := end\n"];
+BB22[shape = box, label = "BB(22)\n" + "8 := wln\n" + "9 := beq #0 #-3\n"];
+BB23[shape = box, label = "BB(23)\n" + "10 := beq #0 #-8\n"];
+BB8 -> BB16;
+BB8 -> BB24;
+BB16 -> BB22;
+BB16 -> BB23;
 }

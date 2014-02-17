@@ -5,6 +5,8 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane.SystemMenuBar;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -171,13 +173,13 @@ public class PLC
 			String domdot = render.renderDominatorTree(blocks);
 			
 			// Write out the CFG string
-			PrintWriter cfgWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + ".cfg.dot")));
+			PrintWriter cfgWriter = new PrintWriter(new BufferedWriter(new FileWriter(sourceFile + ".cfg.dot")));
 			cfgWriter.println(cfgdot);
 			cfgWriter.flush();
 			cfgWriter.close();
 			
 			// Write out the dominator tree
-			PrintWriter domWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + ".dom.dot")));
+			PrintWriter domWriter = new PrintWriter(new BufferedWriter(new FileWriter(sourceFile + ".dom.dot")));
 			domWriter.println(domdot);
 			domWriter.flush();
 			domWriter.close();
@@ -191,7 +193,7 @@ public class PLC
 				InterferenceGraph ig = ra.ig;
 				ra.Color(ra.ig);
 				String igdot = render.renderInterferenceGraph(ig, ra.regMap);
-				PrintWriter igWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + ".ig.dot")));
+				PrintWriter igWriter = new PrintWriter(new BufferedWriter(new FileWriter(sourceFile + ".ig.dot")));
 				igWriter.println(igdot);
 				igWriter.flush();
 				igWriter.close();

@@ -1754,11 +1754,6 @@ public class PLParser
 			scope.popScope();
 			blockDepth--;
 			
-			// Propagate loop header into body blocks as an "enclosing loop header"
-			HashSet<PLIRBasicBlock> enclosedSeen = new HashSet<PLIRBasicBlock>();
-			enclosedSeen.add(entry);
-			body.propogateLoopHeader(enclosedSeen, entry);
-			
 			////////////////////////////////////////////
 			// We've passed through the body and know what variables are updated, now we need to insert phis
 			// Phis are inserted when variables in the relation are modified in the loop body
@@ -1907,6 +1902,7 @@ public class PLParser
 			
 			// the result of parsing this basic block is the entry node, which doubles as the join and exit node
 			entry.isEntry = true;
+			entry.isWhileEntry = true;
 			result = entry;
 		}
 		else if (toksym == PLToken.returnToken)
@@ -1954,6 +1950,9 @@ public class PLParser
 			isReturn = toksym == PLToken.returnToken;
 			PLIRBasicBlock nextBlock = parse_statement(in);
 			
+			// Propagate loop header into body blocks as an "enclosing loop header"
+			boolean propogateHeader = nextBlock.isWhileEntry;
+			
 			if (isReturn)
 			{
 				result.returnInst = result.getLastInst();
@@ -1962,6 +1961,14 @@ public class PLParser
 			
 			// Merge the block results 
 			result = PLIRBasicBlock.merge(result, nextBlock);
+			
+			// Propogate enclosing loop headers, if necessary
+			if (propogateHeader)
+			{
+				HashSet<PLIRBasicBlock> enclosedSeen = new HashSet<PLIRBasicBlock>();
+				enclosedSeen.add(result);
+				result.leftChild.propogateLoopHeader(enclosedSeen, result);
+			}
 		}
 		
 		// Fix the spot of the basic block (since we're leaving a statement sequence) and call it a day

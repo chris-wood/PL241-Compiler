@@ -28,6 +28,9 @@ public class PLIRInstruction
 	public String dummyName;
 	public int paramNumber;
 	
+	// Wrapping BB
+	public PLIRBasicBlock block;
+	
 	// Register allocation information
 	public int regNum;
 	public int depth; // depth in CFG where introduced

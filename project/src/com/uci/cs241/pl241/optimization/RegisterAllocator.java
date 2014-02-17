@@ -9,20 +9,20 @@ import com.uci.cs241.pl241.ir.PLIRInstruction;
 import com.uci.cs241.pl241.ir.PLIRInstruction.InstructionType;
 import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
 
-public class RegisterAllocator 
+public class RegisterAllocator
 {
 	public static final int NUM_REGISTERS = 8;
 	public InterferenceGraph ig;
-	
+
 	public HashMap<Integer, Integer> regMap = new HashMap<Integer, Integer>();
 	public HashSet<Integer> regSet = new HashSet<Integer>();
 
 	// Graph coloring algorithm
-	public void Color(InterferenceGraph graph) 
+	public void Color(InterferenceGraph graph)
 	{
 		// Retrieve random node with fewer than NUM_REGISTERS neighbors
 		int x = ig.getVertexWithMaxDegree(NUM_REGISTERS);
-		if (x == -1) 
+		if (x == -1)
 		{
 			x = ig.getSmallestCost();
 		}
@@ -32,13 +32,13 @@ public class RegisterAllocator
 		ArrayList<Integer> neighbors = ig.removeVertex(x);
 
 		// If the graph isn't empty, recursively color
-		if (ig.isEmpty() == false) 
+		if (ig.isEmpty() == false)
 		{
 			Color(ig);
 		}
 
 		// Add x and its edges back to G
-		ig.addVertex(x, neighbors); 
+		ig.addVertex(x, neighbors);
 
 		// choose a color for x that is different from its neighbors
 		HashSet<Integer> neighborColors = new HashSet<Integer>();
@@ -47,7 +47,8 @@ public class RegisterAllocator
 			neighborColors.add(regMap.get(n));
 		}
 		boolean colored = false;
-		int color = 1; // register 0, for DLX, is always reserved to be a constant zero
+		int color = 1; // register 0, for DLX, is always reserved to be a
+						// constant zero
 		while (!colored)
 		{
 			if (neighborColors.contains(color) == false)
@@ -56,22 +57,23 @@ public class RegisterAllocator
 				colored = true;
 				break;
 			}
-			
+
 			// Try the next color
-			color++; 
-			
-//			// We can't use reserved registers... only R1-R27 are general purpose
-//			// See DLX spec for R0, R28, R29, R30, R31 roles
-//			while (color == 28 || color == 29 || color == 30)
-//			{
-//				color++;
-//			}
+			color++;
+
+			// // We can't use reserved registers... only R1-R27 are general
+			// purpose
+			// // See DLX spec for R0, R28, R29, R30, R31 roles
+			// while (color == 28 || color == 29 || color == 30)
+			// {
+			// color++;
+			// }
 		}
 		regMap.put(x, color);
 		PLStaticSingleAssignment.getInstruction(x).regNum = color;
 	}
 
-	public void ComputeLiveRange(PLIRBasicBlock entryBlock) 
+	public void ComputeLiveRange(PLIRBasicBlock entryBlock)
 	{
 		ig = new InterferenceGraph(PLStaticSingleAssignment.instructions);
 		HashSet<PLIRInstruction> live = new HashSet<PLIRInstruction>();
@@ -79,22 +81,29 @@ public class RegisterAllocator
 		live.addAll(CalcLiveRange(entryBlock, 1, 2));
 	}
 
-	public HashSet<PLIRInstruction> CalcLiveRange(PLIRBasicBlock b, int branch, int pass) 
+	public HashSet<PLIRInstruction> CalcLiveRange(PLIRBasicBlock b, int branch,
+			int pass)
 	{
 		HashSet<PLIRInstruction> live = new HashSet<PLIRInstruction>();
 
-		if (b == null) {
+		if (b == null)
+		{
 			return live;
-		} else {
-			if (b.visitNumber >= pass) {
+		}
+		else
+		{
+			if (b.visitNumber >= pass)
+			{
 				live.addAll(b.liveAtEnd);
-			} else {
+			}
+			else
+			{
 				// inc(b.visit#)
 				b.visitNumber++;
 
 				// for all enclosing loop headers h in b
 				// b.live = b.live + h.live
-				if (b.visitNumber == 2) 
+				if (b.visitNumber == 2)
 				{
 					for (PLIRBasicBlock h : b.wrappedLoopHeaders)
 					{
@@ -103,18 +112,22 @@ public class RegisterAllocator
 				}
 
 				// recursively add children to the live set
-				if (b.leftChild != null) {
+				if (b.leftChild != null)
+				{
 					live.addAll(CalcLiveRange(b.leftChild, 1, pass));
 				}
-				if (b.rightChild != null) {
+				if (b.rightChild != null)
+				{
 					live.addAll(CalcLiveRange(b.rightChild, 2, pass));
 				}
 
 				// for all non-phis
-				for (int i = b.instructions.size() - 1; i >= 0; i--) {
+				for (int i = b.instructions.size() - 1; i >= 0; i--)
+				{
 					PLIRInstruction inst = b.instructions.get(i);
 					if (inst.opcode != InstructionType.PHI
-							&& inst.isNotLiveInstruction() == false) {
+							&& inst.isNotLiveInstruction() == false)
+					{
 
 						while (inst.refInst != null)
 							inst = inst.refInst;
@@ -123,7 +136,8 @@ public class RegisterAllocator
 						live.remove(inst);
 
 						// Add edge between new var and all live variables
-						for (PLIRInstruction liveInst : live) {
+						for (PLIRInstruction liveInst : live)
+						{
 							ig.addEdge(inst.id, liveInst.id);
 						}
 
@@ -131,18 +145,22 @@ public class RegisterAllocator
 						// constants
 						if (inst.op1 != null
 								&& PLStaticSingleAssignment
-										.isIncluded(inst.op1.id)) {
+										.isIncluded(inst.op1.id))
+						{
 							PLIRInstruction op = inst.op1;
-							while (op.refInst != null) {
+							while (op.refInst != null)
+							{
 								op = op.refInst;
 							}
 							live.add(op);
 						}
 						if (inst.op2 != null
 								&& PLStaticSingleAssignment
-										.isIncluded(inst.op2.id)) {
+										.isIncluded(inst.op2.id))
+						{
 							PLIRInstruction op = inst.op2;
-							while (op.refInst != null) {
+							while (op.refInst != null)
+							{
 								op = op.refInst;
 							}
 							live.add(op);
@@ -156,14 +174,17 @@ public class RegisterAllocator
 			}
 
 			// for all phis
-			for (int i = b.instructions.size() - 1; i >= 0; i--) {
+			for (int i = b.instructions.size() - 1; i >= 0; i--)
+			{
 				PLIRInstruction inst = b.instructions.get(i);
-				if (inst.opcode == InstructionType.PHI) {
+				if (inst.opcode == InstructionType.PHI)
+				{
 					// live = live - {i}
 					live.remove(inst);
 
 					// Add edge between new var and all live variables
-					for (PLIRInstruction liveInst : live) {
+					for (PLIRInstruction liveInst : live)
+					{
 						ig.addEdge(inst.id, liveInst.id);
 					}
 
@@ -171,17 +192,21 @@ public class RegisterAllocator
 					// constants
 					// but only add the phi operand indexed by the branch number
 					if (branch == 1 && inst.op1 != null
-							&& PLStaticSingleAssignment.isIncluded(inst.op1.id)) {
+							&& PLStaticSingleAssignment.isIncluded(inst.op1.id))
+					{
 						PLIRInstruction op = inst.op1;
-						while (op.refInst != null) {
+						while (op.refInst != null)
+						{
 							op = op.refInst;
 						}
 						live.add(op);
 					}
 					if (branch == 2 && inst.op2 != null
-							&& PLStaticSingleAssignment.isIncluded(inst.op2.id)) {
+							&& PLStaticSingleAssignment.isIncluded(inst.op2.id))
+					{
 						PLIRInstruction op = inst.op2;
-						while (op.refInst != null) {
+						while (op.refInst != null)
+						{
 							op = op.refInst;
 						}
 						live.add(op);

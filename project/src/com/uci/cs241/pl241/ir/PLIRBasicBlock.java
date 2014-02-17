@@ -10,8 +10,8 @@ import com.uci.cs241.pl241.ir.PLIRInstruction.InstructionType;
 public class PLIRBasicBlock
 {
 	public ArrayList<PLIRInstruction> instructions;
-	public ArrayList<PLIRInstruction> dominatedInstructions;
-	public ArrayList<PLIRInstruction> carriedInstructions;
+//	public ArrayList<PLIRInstruction> dominatedInstructions;
+//	public ArrayList<PLIRInstruction> carriedInstructions;
 	
 //	public ArrayList<PLIRBasicBlock> children;
 	public PLIRBasicBlock leftChild;
@@ -34,6 +34,7 @@ public class PLIRBasicBlock
 	
 	// Return instruction
 	public boolean isEntry = false;
+	public boolean isWhileEntry = false;
 	public boolean hasReturn = false;
 	public PLIRInstruction returnInst;
 	
@@ -56,7 +57,7 @@ public class PLIRBasicBlock
 	public int mark = 0;
 	public HashSet<PLIRInstruction> liveAtEnd = new HashSet<PLIRInstruction>();
 	public boolean isLoopHeader = false;
-	public HashSet<PLIRBasicBlock> wrappedLoopHeaders = new HashSet<PLIRBasicBlock>(); 
+	public ArrayList<PLIRBasicBlock> wrappedLoopHeaders = new ArrayList<PLIRBasicBlock>(); 
 //	public HashSet<Integer> liveAtEnd = new HashSet<Integer>();
 	
 	public PLIRBasicBlock()
@@ -67,8 +68,8 @@ public class PLIRBasicBlock
 		this.treeVertexSet = new ArrayList<PLIRBasicBlock>();
 		this.dominatorSet = new ArrayList<PLIRBasicBlock>();
 		this.instructions = new ArrayList<PLIRInstruction>();
-		this.dominatedInstructions = new ArrayList<PLIRInstruction>();
-		this.carriedInstructions = new ArrayList<PLIRInstruction>();
+//		this.dominatedInstructions = new ArrayList<PLIRInstruction>();
+//		this.carriedInstructions = new ArrayList<PLIRInstruction>();
 		this.modifiedIdents = new HashMap<String, PLIRInstruction>();
 		this.usedIdents = new HashMap<String, PLIRInstruction>();
 	}
@@ -121,7 +122,7 @@ public class PLIRBasicBlock
 			for (PLIRInstruction inst : newBlock.instructions)
 			{
 				leftJoin.instructions.add(inst); 
-				leftJoin.dominatedInstructions.add(inst); 
+//				leftJoin.dominatedInstructions.add(inst); 
 				toRemove.add(inst);
 			}
 		}
@@ -167,10 +168,20 @@ public class PLIRBasicBlock
 			leftJoin.isLoopHeader = true;
 		}
 		
+		// Propogate enclosed loop headers into the new block
+		for (PLIRBasicBlock wlh : oldBlock.wrappedLoopHeaders)
+		{
+			HashSet<PLIRBasicBlock> seen = new HashSet<PLIRBasicBlock>();
+			seen.add(newBlock);
+			newBlock.propogateLoopHeader(seen, wlh);
+		}
+		
 		if (newBlock.isEntry)
 		{
 			// Handle left child
 			leftJoin.leftChild = newBlock.leftChild;
+//			newBlock.leftChild.wrappedLoopHeaders.add(leftJoin);
+			
 			if (newBlock.leftChild.joinNode == null)
 			{
 				newBlock.leftChild.parents.add(leftJoin);
@@ -190,6 +201,8 @@ public class PLIRBasicBlock
 			
 			// Handle right child
 			leftJoin.rightChild = newBlock.rightChild;
+//			newBlock.rightChild.wrappedLoopHeaders.add(leftJoin);
+			
 			if (newBlock.rightChild.joinNode == null)
 			{
 				newBlock.rightChild.parents.add(leftJoin);
@@ -258,7 +271,7 @@ public class PLIRBasicBlock
 			if (seen.contains(curr) == false)
 			{
 				seen.add(curr);
-				this.wrappedLoopHeaders.add(header);
+				curr.wrappedLoopHeaders.add(header);
 				if (curr.leftChild != null)
 				{
 					stack.add(curr.leftChild);
@@ -399,8 +412,8 @@ public class PLIRBasicBlock
 	{
 		if (inst != null)
 		{
-			carriedInstructions.add(inst);
-			dominatedInstructions.add(inst);
+//			carriedInstructions.add(inst);
+//			dominatedInstructions.add(inst);
 			return instructions.add(inst);
 		}
 		return false;
@@ -424,7 +437,7 @@ public class PLIRBasicBlock
 	{
 		if (0 <= index && index <= instructions.size())
 		{
-			dominatedInstructions.add(inst);
+//			dominatedInstructions.add(inst);
 			instructions.add(index, inst);
 			return true;
 		}

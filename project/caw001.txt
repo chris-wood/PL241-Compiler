@@ -1,3 +1,19 @@
+// Enclosing loop header test
+main 
+var a, b, c, d, e;
+{
+  let a <- call InputNum();
+  let b <- a;
+  
+  while b < 0 do
+    let c <- a + 1;
+    while a < 0 do
+      call OutputNewLine()
+    od
+  od;
+  call OutputNum(0)
+}.
+
 // Interference graph test from class notes
 main 
 var a, b, c, d, e;
