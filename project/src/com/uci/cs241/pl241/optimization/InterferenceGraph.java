@@ -99,7 +99,7 @@ public class InterferenceGraph
 	
 	public ArrayList<Integer> removeVertex(int v)
 	{
-		System.err.println("Removing vertex: " + v);
+//		System.err.println("Removing vertex: " + v);
 		ArrayList<Integer> neighbors = adjList.get(v);
 		
 		// Drop v from the set
@@ -123,6 +123,10 @@ public class InterferenceGraph
 	public void addVertex(int v, ArrayList<Integer> neighbors)
 	{
 		adjList.put(v, neighbors);
+		for (Integer n : neighbors)
+		{
+			adjList.get(n).add(v);
+		}
 	}
 	
 	public boolean isEmpty()

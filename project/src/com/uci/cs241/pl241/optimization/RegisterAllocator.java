@@ -30,10 +30,11 @@ public class RegisterAllocator
 		// Remove the vertex and recover its neighbors
 		regSet.add(x);
 		ArrayList<Integer> neighbors = ig.removeVertex(x);
-		System.out.println("neighbors.isEmpty == " + neighbors.isEmpty() + " for " + x);
+//		System.out.println("neighbors.isEmpty == " + neighbors.isEmpty() + " for " + x);
 
 		// If the graph isn't empty, recursively color
-		if (ig.isEmpty() == false) {
+		if (ig.isEmpty() == false) 
+		{
 			Color(ig);
 		}
 
@@ -42,10 +43,13 @@ public class RegisterAllocator
 
 		// choose a color for x that is different from its neighbors
 		HashSet<Integer> neighborColors = new HashSet<Integer>();
+//		System.out.println(x + " neighbors:");
 		for (Integer n : neighbors)
 		{
+//			System.out.print(n + ",");
 			neighborColors.add(regMap.get(n));
 		}
+//		System.out.println("\n" + neighborColors);
 		boolean colored = false;
 		int color = 0;
 		while (!colored)
@@ -54,10 +58,11 @@ public class RegisterAllocator
 			{
 				regMap.put(x, color);
 				colored = true;
+				break;
 			}
 			color++; // try the next color
 		}
-		System.out.println("Coloring vertex " + x + " with color " + color);
+//		System.out.println("Coloring vertex " + x + " with color " + color);
 		regMap.put(x, color);
 	}
 

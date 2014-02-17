@@ -147,11 +147,12 @@ public class GraphvizRender
 		
 		for (Integer u : graph.adjList.keySet())
 		{
-			builder.append("    " + u + "" + regMap.get(u) + ";\n");
+			builder.append("    N" + u + "R" + regMap.get(u) + ";\n");
 		}
+		
 		for (Edge e : graph.getEdges())
 		{
-			builder.append("    " + e.u + "" + regMap.get(e.u) + " -- " + e.v + "" + regMap.get(e.v) + ";\n");
+			builder.append("    N" + e.u + "R" + regMap.get(e.u) + " -- N" + e.v + "R" + regMap.get(e.v) + ";\n");
 		}
 		
 		builder.append("}\n");

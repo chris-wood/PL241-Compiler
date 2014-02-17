@@ -729,7 +729,7 @@ public class PLIRInstruction
 							PLIRInstruction op = operand;
 							while (op.isRemoved && op.refInst.id != this.id)
 							{
-								System.err.println("recursing to: " + op.refInst);
+//								System.err.println("recursing to: " + op.refInst);
 								op = op.refInst;
 							}
 							s = s + " (" + op.id + ")";
@@ -756,7 +756,7 @@ public class PLIRInstruction
 						PLIRInstruction op = op1;
 						while (op.isRemoved && op.id != this.id)
 						{
-							System.err.println("recursing from " + this.id + " to: " + op.refInst);
+//							System.err.println("recursing from " + this.id + " to: " + op.refInst);
 							op = op.refInst;
 						}
 						s = s + " (" + op.id + ")";
@@ -780,7 +780,7 @@ public class PLIRInstruction
 						PLIRInstruction op = op1;
 						while (op.isRemoved && op.id != this.id && op.refInst.id != this.id)
 						{
-							System.err.println("recursing from " + this.id + " to: " + op.refInst.id);
+//							System.err.println("recursing from " + this.id + " to: " + op.refInst.id);
 							op = op.refInst;
 						}
 						s = s + " (" + op.id + ")";
@@ -802,7 +802,7 @@ public class PLIRInstruction
 						PLIRInstruction op = op2;
 						while (op.isRemoved && op.id != this.id)
 						{
-							System.err.println("recursing from " + this.id + " to: " + op.refInst);
+//							System.err.println("recursing from " + this.id + " to: " + op.refInst);
 							op = op.refInst;
 						}
 						s = s + " (" + op.id + ")";

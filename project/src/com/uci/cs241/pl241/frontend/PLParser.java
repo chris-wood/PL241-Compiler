@@ -45,7 +45,7 @@ public class PLParser
 	private HashMap<String, Boolean> funcFlagMap = new HashMap<String, Boolean>();
 	
 	// def-use chain data structure
-	public HashMap<PLIRInstruction, ArrayList<PLIRInstruction>> duChain = new HashMap<PLIRInstruction, ArrayList<PLIRInstruction>>(); 
+	public HashMap<PLIRInstruction, HashSet<PLIRInstruction>> duChain = new HashMap<PLIRInstruction, HashSet<PLIRInstruction>>(); 
 	
 	public PLParser()
 	{
@@ -204,6 +204,7 @@ public class PLParser
 			scope.addVarToScope(symName);
 			scope.updateSymbol(symName, inst);
 			scope.addGlobalVariable(inst);
+			duChain.put(inst, new HashSet<PLIRInstruction>());
 //			globalVariables.add(inst);
 			
 			return block;
@@ -1032,7 +1033,7 @@ public class PLParser
 							storeInst.forceGenerate(scope);
 						} 
 						scope.updateSymbol(varName, storeInst); // (SSA ID) := expr
-						duChain.put(storeInst, new ArrayList<PLIRInstruction>());
+						duChain.put(storeInst, new HashSet<PLIRInstruction>());
 						result.addModifiedValue(varName, storeInst);
 					}
 					else // array!
@@ -1119,7 +1120,7 @@ public class PLParser
 						
 						// Tag the variable name with the dependent instructions so we can get unique accesses later on 
 						scope.updateSymbol(varName, inst4); // (SSA ID) := expr
-						duChain.put(inst4, new ArrayList<PLIRInstruction>());
+						duChain.put(inst4, new HashSet<PLIRInstruction>());
 						result.addModifiedValue(varName, inst4);
 						
 						// Add the resulting set of instructions to the BB result
@@ -1264,9 +1265,8 @@ public class PLParser
 						exprInst.forceGenerate(scope);
 					}
 					
+					// Add the first expression instruction to the list of operands
 					operands.add(exprInst);
-					
-//					operands.add(callExprBlock.getLastInst());
 					
 					// Special case for single parameter
 					if (toksym == PLToken.commaToken && funcName.equals("OutputNum"))
@@ -1290,120 +1290,6 @@ public class PLParser
 						{
 							duChain.get(exprInst).add(inst);
 						}
-						
-//						result = new PLIRBasicBlock();
-//						result.joinNode = null; // just in case
-						
-//						// Handle arrays specially, as groups of instructions 4 in a row...
-//						if (exprInst.isArray)
-//						{	
-//							PLIRInstruction lastAddress = null;
-//							
-//							// caw caw caw
-//							// TODO: if instruction in callBlockExpr is an array, need to load the values into a register first
-//							
-//							for (int i = 0; i < callExprBlock.arrayOperands.size(); i++)
-//							{
-//								PLIRInstruction operand = callExprBlock.arrayOperands.get(i);
-//								
-//								// Need to load from memory - insert the load
-//								PLIRInstruction inst1 = new PLIRInstruction(scope);
-//								inst1.opcode = InstructionType.MUL;
-//								inst1.op1type = OperandType.CONST;
-//								inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE! just a byte offset
-//								inst1.op2type = operand.type;
-//								inst1.op2 = operand;
-//								if (inst1.op2type == OperandType.CONST)
-//								{
-//									inst1.i2 = inst1.op2.tempVal;
-//								}
-//								inst1.forceGenerate(scope);
-//								result.addInstruction(inst1);
-//								
-////								// If it's a store, then we need to load it from memory...
-////								if (exprInst.opcode == InstructionType.STORE)
-////								{
-////									inst1.op2type = OperandType.ADDRESS;
-////									inst1.op2 = exprInst;
-////								}
-////								else
-////								{
-////									inst1.op2type = callExprBlock.arrayOperands.get(0).type;
-////									inst1.op2 = callExprBlock.arrayOperands.get(0);
-////									if (inst1.op2type == OperandType.CONST)
-////									{
-////										inst1.i2 = inst1.op2.tempVal;
-////									}
-////								}
-////								inst1.forceGenerate(scope);
-////								result.addInstruction(inst1);
-//								
-//								PLIRInstruction inst2 = new PLIRInstruction(scope);
-//								inst2.opcode = InstructionType.ADD;
-//								inst2.op1type = OperandType.FP;
-////								inst2.op2type = OperandType.BASEADDRESS;
-////								inst2.op2address = exprInst.origIdent + "_baseaddr";
-//								if (i == 0)
-//								{
-//									inst2.op2type = OperandType.BASEADDRESS;
-//									inst2.op2address = exprInst.origIdent + "_baseaddr";
-//								}
-//								else
-//								{
-//									inst2.op2type = OperandType.ADDRESS;
-//									inst2.op2 = lastAddress;
-//								}
-//								inst2.forceGenerate(scope);
-//								result.addInstruction(inst2);
-//								
-//								PLIRInstruction inst3 = new PLIRInstruction(scope);
-//								inst3.opcode = InstructionType.ADDA;
-//								inst3.op1type = OperandType.INST;
-//								inst3.op1 = inst1;
-//								inst3.op2type = OperandType.INST;
-//								inst3.op2 = inst2;
-//								inst3.forceGenerate(scope);
-//								result.addInstruction(inst3);
-//								
-//								PLIRInstruction load = new PLIRInstruction(scope);
-//								load.opcode = InstructionType.LOAD;
-//								load.op1type = OperandType.ADDRESS;
-//								load.op1 = inst3;
-//								load.type = OperandType.INST;
-//								load.forceGenerate(scope);
-//								result.addInstruction(load);
-//								
-//								if (i == callExprBlock.arrayOperands.size() - 1)
-//								{
-//									PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.WRITE, load);
-//									inst.forceGenerate(scope);
-//									result.addInstruction(inst);
-//								}
-//								
-//								lastAddress = load;
-//								exprInst = load;
-//								
-//								// Update DU chain
-//								// TODO: fix
-////								if (duChain.containsKey(exprInst))
-////								{
-////									duChain.get(exprInst).add(inst);
-////								}
-//							}
-//						}
-//						else
-//						{
-//							exprInst.forceGenerate(scope);
-//							PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.WRITE, exprInst);
-//							inst.forceGenerate(scope);
-//							result.addInstruction(inst);
-//							
-//							// Update DU chain
-//							if (duChain.containsKey(exprInst))
-//							{
-//								duChain.get(exprInst).add(inst);
-//							}
-//						}
 					}
 					else
 					{
@@ -1437,29 +1323,9 @@ public class PLParser
 									inst1.forceGenerate(scope);
 									result.addInstruction(inst1);
 									
-									// If it's a store, then we need to load it from memory...
-//									if (exprInst.opcode == InstructionType.STORE)
-//									{
-//										inst1.op2type = OperandType.ADDRESS;
-//										inst1.op2 = exprInst;
-//									}
-//									else
-//									{
-//										inst1.op2type = callExprBlock.arrayOperands.get(0).type;
-//										inst1.op2 = callExprBlock.arrayOperands.get(0);
-//										if (inst1.op2type == OperandType.CONST)
-//										{
-//											inst1.i2 = inst1.op2.tempVal;
-//										}
-//									}
-//									inst1.forceGenerate(scope);
-//									result.addInstruction(inst1);
-									
 									PLIRInstruction inst2 = new PLIRInstruction(scope);
 									inst2.opcode = InstructionType.ADD;
 									inst2.op1type = OperandType.FP;
-//									inst2.op2type = OperandType.BASEADDRESS;
-//									inst2.op2address = exprInst.origIdent + "_baseaddr";
 									if (i == 0)
 									{
 										inst2.op2type = OperandType.BASEADDRESS;
@@ -1521,46 +1387,6 @@ public class PLParser
 						result.addInstruction(callInst);
 						result.isEntry = true;
 						
-						// Add the function BB connections 
-//						if (this.funcBlockMap.containsKey(funcName))
-//						{
-//							result.children.add(funcBlockMap.get(funcName));
-//							
-//							// Navigate to join node on the function...
-//							if (funcBlockMap.get(funcName).joinNode == null)
-//							{
-//								funcBlockMap.get(funcName).children.add(result);
-//							}
-//							else
-//							{
-//								PLIRBasicBlock join = funcBlockMap.get(funcName).joinNode;
-//								while (join.joinNode != null)
-//								{
-//									join = join.joinNode;
-//								}
-//								join.children.add(result);
-//							}
-//						}
-//						else if (this.procBlockMap.containsKey(funcName))
-//						{
-//							result.children.add(procBlockMap.get(funcName));
-//							
-//							// Navigate to join node on the function...
-//							if (procBlockMap.get(funcName).joinNode == null)
-//							{
-//								procBlockMap.get(funcName).children.add(result);
-//							}
-//							else
-//							{
-//								PLIRBasicBlock join = procBlockMap.get(funcName).joinNode;
-//								while (join.joinNode != null)
-//								{
-//									join = join.joinNode;
-//								}
-//								join.children.add(result);
-//							}
-//						}
-						
 						// Update DU chain
 						for (PLIRInstruction operand : operands)
 						{
@@ -1593,53 +1419,12 @@ public class PLParser
 			}
 			else if (paramMap.get(funcName) == 0) // a function with parameters, just write out the call
 			{
-//				advance(in);
 				ArrayList<PLIRInstruction> emptyList = new ArrayList<PLIRInstruction>();
 				PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, funcFlagMap.get(funcName), emptyList);
 				result = new PLIRBasicBlock();
 				result.hasReturn = funcFlagMap.get(funcName); // special case... this is a machine instruction, not a user-defined function
 				result.addInstruction(callInst);
 				result.isEntry = true;
-				
-//				// Add the function BB connections 
-//				if (this.funcBlockMap.containsKey(funcName))
-//				{
-//					result.children.add(funcBlockMap.get(funcName));
-//					
-//					// Navigate to join node on the function...
-//					if (funcBlockMap.get(funcName).joinNode == null)
-//					{
-//						funcBlockMap.get(funcName).children.add(result);
-//					}
-//					else
-//					{
-//						PLIRBasicBlock join = funcBlockMap.get(funcName).joinNode;
-//						while (join.joinNode != null)
-//						{
-//							join = join.joinNode;
-//						}
-//						join.children.add(result);
-//					}
-//				}
-//				else if (this.procBlockMap.containsKey(funcName))
-//				{
-//					result.children.add(procBlockMap.get(funcName));
-//					
-//					// Navigate to join node on the function...
-//					if (procBlockMap.get(funcName).joinNode == null)
-//					{
-//						procBlockMap.get(funcName).children.add(result);
-//					}
-//					else
-//					{
-//						PLIRBasicBlock join = procBlockMap.get(funcName).joinNode;
-//						while (join.joinNode != null)
-//						{
-//							join = join.joinNode;
-//						}
-//						join.children.add(result);
-//					}
-//				}
 			}
 			else
 			{
