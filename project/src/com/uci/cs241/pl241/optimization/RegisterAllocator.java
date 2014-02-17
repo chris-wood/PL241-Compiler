@@ -30,7 +30,6 @@ public class RegisterAllocator
 		// Remove the vertex and recover its neighbors
 		regSet.add(x);
 		ArrayList<Integer> neighbors = ig.removeVertex(x);
-//		System.out.println("neighbors.isEmpty == " + neighbors.isEmpty() + " for " + x);
 
 		// If the graph isn't empty, recursively color
 		if (ig.isEmpty() == false) 
@@ -38,20 +37,17 @@ public class RegisterAllocator
 			Color(ig);
 		}
 
-		// add x and its edges back to G
+		// Add x and its edges back to G
 		ig.addVertex(x, neighbors); 
 
 		// choose a color for x that is different from its neighbors
 		HashSet<Integer> neighborColors = new HashSet<Integer>();
-//		System.out.println(x + " neighbors:");
 		for (Integer n : neighbors)
 		{
-//			System.out.print(n + ",");
 			neighborColors.add(regMap.get(n));
 		}
-//		System.out.println("\n" + neighborColors);
 		boolean colored = false;
-		int color = 0;
+		int color = 1; // register 0, for DLX, is always reserved to be a constant zero
 		while (!colored)
 		{
 			if (neighborColors.contains(color) == false)
@@ -60,10 +56,19 @@ public class RegisterAllocator
 				colored = true;
 				break;
 			}
-			color++; // try the next color
+			
+			// Try the next color
+			color++; 
+			
+//			// We can't use reserved registers... only R1-R27 are general purpose
+//			// See DLX spec for R0, R28, R29, R30, R31 roles
+//			while (color == 28 || color == 29 || color == 30)
+//			{
+//				color++;
+//			}
 		}
-//		System.out.println("Coloring vertex " + x + " with color " + color);
 		regMap.put(x, color);
+		PLStaticSingleAssignment.getInstruction(x).regNum = color;
 	}
 
 	public void ComputeLiveRange(PLIRBasicBlock entryBlock) 

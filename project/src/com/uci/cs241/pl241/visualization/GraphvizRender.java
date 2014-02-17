@@ -4,19 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
-import com.uci.cs241.pl241.ir.PLIRInstruction;
 import com.uci.cs241.pl241.optimization.Edge;
 import com.uci.cs241.pl241.optimization.InterferenceGraph;
 
-// Sample graph
-//digraph G {
-//node_bb_0[shape=box, label = "7 := write #0\n" + "8 := beq #0 #2"]
-//}
-
 public class GraphvizRender 
 {	
-	
-	private String prefix = "bb";
+	private String prefix = "BB";
 	
 	public String renderBasicBlockIR(PLIRBasicBlock block, ArrayList<Integer> seen)
 	{
@@ -141,15 +134,16 @@ public class GraphvizRender
 	public String renderInterferenceGraph(InterferenceGraph graph, HashMap<Integer, Integer> regMap)
 	{
 		StringBuilder builder = new StringBuilder();
-		ArrayList<Integer> seen = new ArrayList<Integer>();
 		builder.append("graph ig {\n");
 		builder.append("    node [shape = circle];\n");
 		
+		// Add the nodes (all SSA instructions in the program)
 		for (Integer u : graph.adjList.keySet())
 		{
 			builder.append("    N" + u + "R" + regMap.get(u) + ";\n");
 		}
 		
+		// Add the edge connections
 		for (Edge e : graph.getEdges())
 		{
 			builder.append("    N" + e.u + "R" + regMap.get(e.u) + " -- N" + e.v + "R" + regMap.get(e.v) + ";\n");

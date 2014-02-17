@@ -568,10 +568,12 @@ public class PLParser
 			if (duChain.containsKey(leftInst))
 			{
 				duChain.get(leftInst).add(termInst);
+				leftInst.uses++;
 			}
 			if (duChain.containsKey(rightInst))
 			{
 				duChain.get(rightInst).add(termInst);
+				rightInst.uses++;
 			}
 			
 			return termNode;
@@ -746,10 +748,12 @@ public class PLParser
 			if (duChain.containsKey(leftInst))
 			{
 				duChain.get(leftInst).add(exprInst);
+				leftInst.uses++;
 			}
 			if (duChain.containsKey(rightInst))
 			{
 				duChain.get(rightInst).add(exprInst);
+				rightInst.uses++;
 			}
 			
 			return exprNode;
@@ -1253,11 +1257,12 @@ public class PLParser
 							lastAddress = load;
 							exprInst = load;
 							
-							// Update DU chain
-							if (duChain.containsKey(exprInst))
-							{
-								duChain.get(exprInst).add(exprInst);
-							}
+//							// Update DU chain
+//							if (duChain.containsKey(exprInst))
+//							{
+//								duChain.get(exprInst).add(exprInst);
+//								exprInst.uses++;
+//							}
 						}
 					}
 					else
@@ -1289,6 +1294,7 @@ public class PLParser
 						if (duChain.containsKey(exprInst))
 						{
 							duChain.get(exprInst).add(inst);
+							exprInst.uses++;
 						}
 					}
 					else
@@ -1360,10 +1366,11 @@ public class PLParser
 									exprInst = load;
 									
 									// Update DU chain
-									if (duChain.containsKey(exprInst))
-									{
-										duChain.get(exprInst).add(exprInst);
-									}
+//									if (duChain.containsKey(exprInst))
+//									{
+//										duChain.get(exprInst).add(exprInst);
+//										exprInst.uses++;
+//									}
 								}
 							}
 							else
@@ -1393,6 +1400,7 @@ public class PLParser
 							if (duChain.containsKey(operand))
 							{
 								duChain.get(operand).add(callInst);
+								operand.uses++;
 							}
 						}
 					}

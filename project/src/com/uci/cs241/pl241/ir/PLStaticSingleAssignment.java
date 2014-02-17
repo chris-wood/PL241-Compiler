@@ -1,13 +1,8 @@
 package com.uci.cs241.pl241.ir;
 
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import com.uci.cs241.pl241.frontend.PLSymbolTable;
-import com.uci.cs241.pl241.ir.PLIRInstruction.EliminationReason;
-import com.uci.cs241.pl241.ir.PLIRInstruction.InstructionType;
 
 public class PLStaticSingleAssignment
 {
@@ -28,6 +23,18 @@ public class PLStaticSingleAssignment
 			}
 		}
 		return false;
+	}
+	
+	public static PLIRInstruction getInstruction(int id)
+	{
+		for (PLIRInstruction inst : instructions)
+		{
+			if (inst.id == id)
+			{
+				return inst;
+			}
+		}
+		return null;
 	}
 	
 	public static int addInstruction(PLSymbolTable table, PLIRInstruction inst)
@@ -61,7 +68,7 @@ public class PLStaticSingleAssignment
 //		{
 //			table.addDominatedInstruction(inst);
 //		}
-		
+		inst.depth = table.scopeDepth();
 		boolean success = instructions.add(inst);
 		if (!success) return -1;
 		globalSSAIndex++;

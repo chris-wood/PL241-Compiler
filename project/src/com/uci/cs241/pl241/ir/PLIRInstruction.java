@@ -12,15 +12,27 @@ public class PLIRInstruction
 	public int id;
 	public InstructionType opcode;
 	public OperandType type;
+	
+	// First operand information
 	public int i1;
 	public PLIRInstruction op1;
 	public OperandType op1type;
+	
+	// Second operand information
 	public int i2;
 	public PLIRInstruction op2;
 	public OperandType op2type;
 	public String op2address;
+	
+	// Helper info
 	public String dummyName;
 	public int paramNumber;
+	
+	// Register allocation information
+	public int regNum;
+	public int depth; // depth in CFG where introduced
+	public int uses;
+	public int cost;
 	
 	// 0 unless otherwise set, obviously
 	public int tempPosition = 0;

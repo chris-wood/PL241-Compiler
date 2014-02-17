@@ -126,7 +126,7 @@ public class PLC
 			instWriter.close();
 			System.out.println("End Instructions\n");
 			
-			if (runAll || (runStep1 && runStep2))
+			if (runAll || runStep1 || runStep2 || runStep3 || runStep4)
 			{
 				// Perform CSE on each block
 				for (PLIRBasicBlock entry : blocks)

@@ -207,6 +207,11 @@ public class PLSymbolTable
 		return currentScope.get(currentScope.size() - 1);
 	}
 	
+	public int scopeDepth()
+	{
+		return currentScope.size();
+	}
+	
 	public PLIRInstruction getCurrentValue(String sym)
 	{
 		if (symTable.get(getCurrentScope()) == null) return null;
