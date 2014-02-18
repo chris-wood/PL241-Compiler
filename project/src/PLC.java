@@ -121,7 +121,7 @@ public class PLC
 			// Display the instructions BEFORE CSE
 			PLIRBasicBlock root = blocks.get(blocks.size() - 1);
 			System.out.println("\nBegin Instructions\n");
-			PrintWriter instWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + "_inst_preCSE.txt")));
+			PrintWriter instWriter = new PrintWriter(new BufferedWriter(new FileWriter(sourceFile + "_inst_preCSE.txt")));
 			PLStaticSingleAssignment.displayInstructions();
 			instWriter.println(PLStaticSingleAssignment.renderInstructions());
 			instWriter.flush();
@@ -147,7 +147,7 @@ public class PLC
 				// Display the instructions AFTER CSE
 				root = blocks.get(blocks.size() - 1);
 				System.out.println("\nBegin Instructions\n");
-				instWriter = new PrintWriter(new BufferedWriter(new FileWriter(args[0] + "_inst_postCSE.txt")));
+				instWriter = new PrintWriter(new BufferedWriter(new FileWriter(sourceFile + "_inst_postCSE.txt")));
 				PLStaticSingleAssignment.displayInstructions();
 				instWriter.println(PLStaticSingleAssignment.renderInstructions());
 				instWriter.flush();

@@ -10,14 +10,10 @@ import com.uci.cs241.pl241.ir.PLIRInstruction.InstructionType;
 public class PLIRBasicBlock
 {
 	public ArrayList<PLIRInstruction> instructions;
-//	public ArrayList<PLIRInstruction> dominatedInstructions;
-//	public ArrayList<PLIRInstruction> carriedInstructions;
 	
-//	public ArrayList<PLIRBasicBlock> children;
 	public PLIRBasicBlock leftChild;
 	public PLIRBasicBlock rightChild;
 	public ArrayList<PLIRBasicBlock> parents;
-//	public PLIRBasicBlock parentBlock;
 	
 	public ArrayList<PLIRBasicBlock> treeVertexSet;
 	public ArrayList<PLIRBasicBlock> dominatorSet;
@@ -30,7 +26,6 @@ public class PLIRBasicBlock
 	// By default, they are null, so simple checks to see if they're null will help us determine whether we merge block 
 	// instructions and where to place phi-instructions
 	public PLIRBasicBlock joinNode;
-//	public PLIRBasicBlock exitNode;
 	
 	// Return instruction
 	public boolean isEntry = false;
@@ -58,7 +53,6 @@ public class PLIRBasicBlock
 	public HashSet<PLIRInstruction> liveAtEnd = new HashSet<PLIRInstruction>();
 	public boolean isLoopHeader = false;
 	public ArrayList<PLIRBasicBlock> wrappedLoopHeaders = new ArrayList<PLIRBasicBlock>(); 
-//	public HashSet<Integer> liveAtEnd = new HashSet<Integer>();
 	
 	public PLIRBasicBlock()
 	{
