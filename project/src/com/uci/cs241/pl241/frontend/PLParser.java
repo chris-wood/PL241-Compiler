@@ -908,7 +908,7 @@ public class PLParser
 			}
 		}
 		
-		// Create the comparision instruction that joins the two together
+		// Create the comparison instruction that joins the two together
 		PLIRInstruction inst = PLIRInstruction.create_cmp(scope, leftInst, rightInst);
 		inst.condcode = condcode;
 		inst.fixupLocation = 0;
@@ -921,7 +921,7 @@ public class PLParser
 		// Save whatever values are used in these expressions
 		for (String sym : left.usedIdents.keySet())
 		{
-			debug("adding " + sym + " with " + left.usedIdents.get(sym).toString());
+//			debug("adding " + sym + " with " + left.usedIdents.get(sym).toString());
 			relation.addUsedValue(sym, left.usedIdents.get(sym));
 		}
 		for (String sym : right.usedIdents.keySet())
@@ -1464,6 +1464,7 @@ public class PLParser
 			advance(in);
 			
 			scope.pushNewScope("if" + (blockDepth++));
+//			scope.pushNewScope("entry" + (blockDepth++));
 			
 			// Parse the condition relation
 			PLIRBasicBlock entry = parse_relation(in);
@@ -1475,8 +1476,10 @@ public class PLParser
 					inst.forceGenerate(scope);
 				}
 			}
+			int startSpot = PLStaticSingleAssignment.globalSSAIndex;
 			PLIRInstruction x = entry.instructions.get(entry.instructions.size() - 1);
 			PLIRInstruction branch = CondNegBraFwd(x);
+			branch.fixupLocation = PLStaticSingleAssignment.globalSSAIndex - 1;
 			entry.addInstruction(branch);
 			
 			// Check for follow through branch
@@ -1504,14 +1507,11 @@ public class PLParser
 					seen.add(join.id);
 					join = join.joinNode;
 				}
-//				join.children.add(joinNode);
 				join.leftChild = joinNode;
 				joinNode.parents.add(join);
-//				joinNode.parentBlock = join;
 			}
 			else
 			{
-//				thenBlock.children.add(joinNode);
 				thenBlock.leftChild = joinNode;
 				joinNode.parents.add(thenBlock);
 			}
@@ -1521,10 +1521,26 @@ public class PLParser
 			int offset = 0;
 			PLIRBasicBlock elseBlock = null;
 			ArrayList<String> sharedModifiers = new ArrayList<String>();
+			PLIRInstruction uncond = null;
 			if (toksym == PLToken.elseToken)
 			{
-				PLIRInstruction uncond = UnCondBraFwd(follow);
-				thenBlock.addInstruction(uncond);
+				// Add the unconditional branch at the end of the then block, which will be fixed up later
+				uncond = UnCondBraFwd(follow);
+				uncond.tempPosition = PLStaticSingleAssignment.globalSSAIndex;
+				uncond.forceGenerate(scope);
+				if (thenBlock.joinNode != null)
+				{
+					PLIRBasicBlock join = thenBlock.joinNode;
+					while (join.joinNode != null)
+					{
+						join = join.joinNode;
+					}
+					join.addInstruction(uncond);
+				}
+				else
+				{
+					thenBlock.addInstruction(uncond);
+				}
 				advance(in);
 				
 				// Parse the else block and then configure the BB connections accordingly
@@ -1538,7 +1554,6 @@ public class PLParser
 						seen.add(join.id);
 						join = join.joinNode;
 					}
-//					join.children.add(joinNode);
 					join.rightChild = joinNode;
 					join.fixSpot();
 					joinNode.parents.add(join);
@@ -1549,11 +1564,8 @@ public class PLParser
 					elseBlock.fixSpot();
 					joinNode.parents.add(elseBlock);
 				}
-				
-//				entry.children.add(elseBlock);
 				entry.rightChild = elseBlock;
 				elseBlock.parents.add(entry);
-				
 				
 				// Check for necessary phis to be inserted in the join block
 				// We need phis for variables that were modified in both branches so we fall through with the right value
@@ -1577,14 +1589,15 @@ public class PLParser
 					offset++;
 					PLIRInstruction thenInst = thenBlock.modifiedIdents.get(var);
 					debug(thenInst.toString());
+					thenInst.forceGenerate(scope, thenInst.tempPosition);
 					PLIRInstruction elseInst = elseBlock.modifiedIdents.get(var);
 					debug(elseInst.toString());
+					elseInst.forceGenerate(scope, elseInst.tempPosition);
 					PLIRInstruction phi = PLIRInstruction.create_phi(scope, thenInst, elseInst, PLStaticSingleAssignment.globalSSAIndex);
 					joinNode.insertInstruction(phi, 0);
 					phisToAdd.add(phi);
 					
 					// The current value in scope needs to be updated now with the result of the phi
-//					scope.updateSymbol(var, phi);
 					entry.modifiedIdents.put(var, phi);
 					joinNode.modifiedIdents.put(var, phi);
 				}
@@ -1622,8 +1635,11 @@ public class PLParser
 					
 					offset++;
 					PLIRInstruction elseInst = elseBlock.modifiedIdents.get(var);
+					elseInst.forceGenerate(scope, elseInst.tempPosition);
 					PLIRInstruction followInst = scope.getCurrentValue(var);
+					followInst.forceGenerate(scope, followInst.tempPosition);
 					PLIRInstruction phi = PLIRInstruction.create_phi(scope, followInst, elseInst, PLStaticSingleAssignment.globalSSAIndex);
+					debug(phi.toString());
 					joinNode.insertInstruction(phi, 0);
 					
 					// The current value in scope needs to be updated now with the result of the phi
@@ -1638,7 +1654,6 @@ public class PLParser
 			}
 			else // there was no else block, so the right child becomes the join node
 			{
-//				entry.children.add(joinNode);
 				entry.rightChild = joinNode;
 				joinNode.parents.add(entry);
 				scope.popScope();
@@ -1666,9 +1681,11 @@ public class PLParser
 				
 				offset++;
 				PLIRInstruction leftInst = thenBlock.modifiedIdents.get(var);
+				leftInst.forceGenerate(scope, leftInst.tempPosition);
 				PLIRInstruction followInst = scope.getCurrentValue(var);
-				debug(followInst.toString());
+				followInst.forceGenerate(scope, followInst.tempPosition);
 				PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
+				debug(phi.toString());
 				joinNode.insertInstruction(phi, 0);
 				
 				// The current value in scope needs to be updated now with the result of the phi
@@ -1682,7 +1699,15 @@ public class PLParser
 			}
 			
 			// After the phis have been inserted at the appropriate positions, fixup the entry instructions
-			Fixup(x.fixupLocation, -offset - 1);
+			if (elseBlock != null)
+			{
+				FixupExact(x.fixupLocation, uncond.tempPosition - x.fixupLocation);
+				FixupExact(uncond.tempPosition - 1, PLStaticSingleAssignment.globalSSAIndex - uncond.tempPosition - offset + 1);
+			}
+			else
+			{
+				Fixup(x.fixupLocation, -offset);
+			}
 			
 			// Fix the join BB index
 			joinNode.fixSpot();
@@ -1695,9 +1720,6 @@ public class PLParser
 			}
 			entry.dominatorSet.add(joinNode);
 			
-			// Fixup the follow-through branch
-			Fixup(follow.fixupLocation, -offset);
-			
 			// Check for fi token and then eat it
 			if (toksym != PLToken.fiToken)
 			{
@@ -1706,8 +1728,6 @@ public class PLParser
 			advance(in);
 			
 			// Save the resulting basic block
-			debug("" + entry.leftChild.id);
-			debug("" + entry.rightChild.id);
 			entry.isEntry = true;
 			return entry;
 		}
@@ -1740,10 +1760,8 @@ public class PLParser
 			advance(in);
 			
 			// Build the BB of the statement sequence
-//			insideWhile = true; // TODO: how will this handle nested while loops?...
 			PLIRBasicBlock body = parse_statSequence(in);
 			deferredPhiIdents.clear();
-//			insideWhile = false;
 			PLIRBasicBlock joinNode = new PLIRBasicBlock();
 			entry.joinNode = joinNode;
 			
@@ -1770,24 +1788,18 @@ public class PLParser
 			for (String var : modded)
 			{
 				PLIRInstruction bodyInst = body.modifiedIdents.get(var);
-//				bodyInst.forceGenerate(scope);
+				bodyInst.forceGenerate(scope, bodyInst.tempPosition);
 				PLIRInstruction preInst = scope.getCurrentValue(var);
-//				bodyInst.forceGenerate(scope);
+				preInst.forceGenerate(scope, preInst.tempPosition);
 				
 				// Inject the phi at the appropriate spot in the join node...
 				PLIRInstruction phi = PLIRInstruction.create_phi(scope, preInst, bodyInst, loopLocation + offset);
 				phisGenerated.add(phi);
-//				phi.forceGenerate(scope);
 				debug("new phi: " + phi.id + " := " + phi.toString());
 				phi.origIdent = var; // needed for propagation
 				offset++;
 				entry.insertInstruction(phi, 0);
-				
-				if (phi.id == 31)
-				{
-					debug("here");
-				}
-				
+
 				// The current value in scope needs to be updated now with the result of the phi
 				scope.updateSymbol(var, phi);
 				
@@ -1798,28 +1810,20 @@ public class PLParser
 				
 				// Now loop through the entry and fix instructions as needed
 				// Those fixed are replaced with the result of this phi if they have used or modified the sym...
-				// TODO: this can possibly be recursive...? 
-				// no, phis at lower layer will replace themselves automatically...
-				debug("patching up phis: " + cmpInst.toString());
-				debug(phi.toString());
-				debug("checking left operand");
-				debug(cmpInst.op1.toString());
 				if (cmpInst.op1 != null && cmpInst.op1.origIdent.equals(var))
 				{
 					cmpInst.replaceLeftOperand(phi);
 				}
-				debug("checking right operand");
-				debug(cmpInst.op2.toString());
 				if (cmpInst.op2 != null && cmpInst.op2.origIdent.equals(var))
 				{
 					cmpInst.replaceRightOperand(phi);
 				}
 				
-				debug("propagating phi throughout the body via recursive descent of the BB graph: " + phi.toString());
 				ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
 				visited.add(entry);
 				HashMap<String, PLIRInstruction> scopeMap = new HashMap<String, PLIRInstruction>(); 
 				scopeMap.put(var, phi);
+				
 				body.propagatePhi(var, phi, visited, scopeMap);
 			}
 			
@@ -1878,7 +1882,12 @@ public class PLParser
 			PLIRInstruction beqInst = PLIRInstruction.create_BEQ(scope, loopLocation - PLStaticSingleAssignment.globalSSAIndex);
 			if (body.joinNode != null)
 			{
-				body.joinNode.addInstruction(beqInst);
+				PLIRBasicBlock join = body.joinNode;
+				while (join.joinNode != null)
+				{
+					join = join.joinNode;
+				}
+				join.addInstruction(beqInst);
 			}
 			else
 			{
@@ -2252,6 +2261,17 @@ public class PLParser
 	private void Fixup(int loc, int offset)
 	{
 		debug("Fixing: " + loc + ", " + (PLStaticSingleAssignment.globalSSAIndex - loc + offset) + ", " + offset);
+		if (PLStaticSingleAssignment.instructions.get(loc).opcode == InstructionType.CMP)
+		{
+			System.exit(-1);
+		}
+		
 		PLStaticSingleAssignment.instructions.get(loc).i2 = (PLStaticSingleAssignment.globalSSAIndex - loc + offset);
+		debug("Setting: " + PLStaticSingleAssignment.instructions.get(loc)+ " to " + (PLStaticSingleAssignment.globalSSAIndex - loc + offset));
+	}
+	
+	private void FixupExact(int loc, int newVal)
+	{
+		PLStaticSingleAssignment.instructions.get(loc).i2 = newVal;
 	}
 }

@@ -6,6 +6,7 @@ import java.util.HashSet;
 
 import com.uci.cs241.pl241.ir.PLIRInstruction.OperandType;
 import com.uci.cs241.pl241.ir.PLIRInstruction.InstructionType;
+import com.uci.cs241.pl241.ir.PLIRInstruction.ResultKind;
 
 public class PLIRBasicBlock
 {
@@ -68,6 +69,32 @@ public class PLIRBasicBlock
 		this.usedIdents = new HashMap<String, PLIRInstruction>();
 	}
 	
+//	public static PLIRBasicBlock buildBlock(int pc)
+//	{
+//		PLIRBasicBlock block = new PLIRBasicBlock();
+//		
+//		while (true)
+//		{
+//			PLIRInstruction inst = PLStaticSingleAssignment.instructions.get(pc++); 
+//			if (PLIRInstruction.isBranch(inst))
+//			{
+//				block.leftChild.
+//			}
+//		}
+//		
+//		return block;
+//	}
+//	
+//	public static ArrayList<PLIRBasicBlock> buildCFG()
+//	{
+//		ArrayList<PLIRBasicBlock> blocks = new ArrayList<PLIRBasicBlock>();
+//		int pc = 0;
+//		
+//		
+//		
+//		return blocks;
+//	}
+	
 	public static PLIRBasicBlock merge(PLIRBasicBlock oldBlock, PLIRBasicBlock newBlock)
 	{	
 		// Merge the blocks intermediate results here
@@ -115,9 +142,12 @@ public class PLIRBasicBlock
 		{ 
 			for (PLIRInstruction inst : newBlock.instructions)
 			{
-				leftJoin.instructions.add(inst); 
-//				leftJoin.dominatedInstructions.add(inst); 
-				toRemove.add(inst);
+//				if (inst.opcode != InstructionType.BEQ)
+				{
+					leftJoin.instructions.add(inst); 
+//					leftJoin.dominatedInstructions.add(inst); 
+					toRemove.add(inst);
+				}
 			}
 		}
 		
@@ -162,7 +192,7 @@ public class PLIRBasicBlock
 			leftJoin.isLoopHeader = true;
 		}
 		
-		// Propogate enclosed loop headers into the new block
+		// Propagate enclosed loop headers into the new block
 		for (PLIRBasicBlock wlh : oldBlock.wrappedLoopHeaders)
 		{
 			HashSet<PLIRBasicBlock> seen = new HashSet<PLIRBasicBlock>();
@@ -197,7 +227,7 @@ public class PLIRBasicBlock
 			leftJoin.rightChild = newBlock.rightChild;
 //			newBlock.rightChild.wrappedLoopHeaders.add(leftJoin);
 			
-			if (newBlock.rightChild.joinNode == null)
+			if (newBlock.rightChild != null && newBlock.rightChild.joinNode == null)
 			{
 				newBlock.rightChild.parents.add(leftJoin);
 				if (newBlock.rightChild.leftChild != null && newBlock.rightChild.leftChild.equals(newBlock))
@@ -206,7 +236,7 @@ public class PLIRBasicBlock
 				}
 				// same for right child?!?!
 			}
-			else
+			else if (newBlock.rightChild != null)
 			{
 				newBlock.rightChild.joinNode.parents.add(leftJoin);
 				if (newBlock.rightChild.joinNode.leftChild != null && newBlock.rightChild.joinNode.leftChild.equals(newBlock))
@@ -286,20 +316,8 @@ public class PLIRBasicBlock
 		// Propagate through the main instructions in this block's body
 		for (PLIRInstruction bInst : instructions)
 		{
-//			System.err.println(bInst.toString());
-//			System.err.println(bInst.origIdent);
-//			if (bInst.opcode == PLIRInstructionType.WRITE)
-//			{
-//				System.err.println("here");
-//			}
 			boolean replaced = false;
 			
-//			if (bInst.op1 != null && (bInst.op1.equals(findPhi.op1) || bInst.op1.equals(findPhi.op1)))
-//			{
-////				bInst.replaceLeftOperand(replacePhi);
-//				bInst.replaceLeftOperand(scopeMap.get(var));
-//				replaced = true;
-//			}
 			if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
 			{
 				bInst.replaceLeftOperand(scopeMap.get(var));
@@ -307,16 +325,10 @@ public class PLIRBasicBlock
 			}
 			if (bInst.op1 != null && bInst.op1.equals(findPhi))
 			{
-//				bInst.replaceLeftOperand(replacePhi);
 				bInst.replaceLeftOperand(scopeMap.get(var));
 				replaced = true;
 			}
 			
-//			if (bInst.op2 != null && (bInst.op2.equals(findPhi.op1) || bInst.op2.equals(findPhi.op2)))
-//			{
-//				bInst.replaceRightOperand(scopeMap.get(var));
-//				replaced = true;
-//			}
 			if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
 			{
 				if (!(replaced && bInst.opcode == InstructionType.PHI))
@@ -343,7 +355,7 @@ public class PLIRBasicBlock
 			
 			// If the phi value was used to replace some operand, and this same expression was used to save a result, replace
 			// with the newly generated result
-			else if (replaced && bInst.origIdent.equals(phi.origIdent))
+			else if (replaced && bInst.origIdent.equals(phi.origIdent) && bInst.kind != ResultKind.CONST)
 			{
 				System.out.println("now replacing " + phi.origIdent + " with : " + bInst.toString());
 				scopeMap.put(var, bInst);

@@ -24,6 +24,9 @@ public class PLIRInstruction
 	public OperandType op2type;
 	public String op2address;
 	
+	// used to indicate if this instruction is part of a designator
+//	public boolean isDesig = false;
+	
 	// Helper info
 	public String dummyName;
 	public int paramNumber;
@@ -614,9 +617,20 @@ public class PLIRInstruction
 		return newInst;
 	}
 	
-	public static ArrayList<PLIRInstruction> create_array(PLSymbolTable table, String varName)
+	public static boolean isBranch(PLIRInstruction inst)
 	{
-		return null;
+		switch (inst.opcode)
+		{
+			case BNE:
+			case BEQ:
+			case BGE:
+			case BLT:
+			case BGT:
+			case BLE:
+				return true;
+			default:
+				return false;
+		}
 	}
 	
 	@Override

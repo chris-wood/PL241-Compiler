@@ -14,6 +14,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import com.uci.cs241.pl241.backend.DLXGenerator;
 import com.uci.cs241.pl241.frontend.PLEndOfFileException;
 import com.uci.cs241.pl241.frontend.PLParser;
 import com.uci.cs241.pl241.frontend.PLScanner;
@@ -197,6 +198,12 @@ public class PLC
 				igWriter.println(igdot);
 				igWriter.flush();
 				igWriter.close();
+			}
+			
+			if (runAll || (runStep1 && runStep2 && runStep3 && runStep4))
+			{
+				DLXGenerator dlxGen = new DLXGenerator();
+				dlxGen.convertFromColoredSSA(PLStaticSingleAssignment.instructions);
 			}
 		}
 	}
