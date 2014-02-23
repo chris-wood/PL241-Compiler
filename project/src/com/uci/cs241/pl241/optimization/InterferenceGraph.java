@@ -154,7 +154,7 @@ public class InterferenceGraph
 			}
 		}
 		
-//		System.out.println("Adding: " + u + "," + v);
+		System.out.println("Adding: " + u + "," + v);
 		adjList.get(u).add(v);
 		adjList.get(v).add(u);
 	}
