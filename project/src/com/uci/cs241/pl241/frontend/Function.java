@@ -8,6 +8,7 @@ public class Function
 {
 	public boolean hasReturn;
 	public ArrayList<PLIRInstruction> params;
+	public ArrayList<PLIRInstruction> vars;
 	public String name;
 	
 	public Function(String name, ArrayList<PLIRInstruction> parameters, boolean hasReturn)
@@ -15,10 +16,41 @@ public class Function
 		this.name = name;
 		this.hasReturn = hasReturn;
 		this.params = new ArrayList<PLIRInstruction>();
+		this.vars = new ArrayList<PLIRInstruction>();
 		for (PLIRInstruction s : parameters)
 		{
 			this.params.add(s);
 		}
+	}
+	
+	public Function(String name, ArrayList<PLIRInstruction> parameters, ArrayList<PLIRInstruction> variables, boolean hasReturn)
+	{
+		this.name = name;
+		this.hasReturn = hasReturn;
+		this.params = new ArrayList<PLIRInstruction>();
+		this.vars = new ArrayList<PLIRInstruction>();
+		for (PLIRInstruction s : parameters)
+		{
+			this.params.add(s);
+		}
+		for (PLIRInstruction s : variables)
+		{
+			this.vars.add(s);
+		}
+	}
+	
+	public void addLocalVariable(PLIRInstruction inst)
+	{
+		vars.add(inst);
+	}
+	
+	public boolean isLocalVariable(String v)
+	{
+		for (PLIRInstruction s : vars)
+		{
+			if (s.origIdent.equals(v)) return true;
+		}
+		return false;
 	}
 	
 	public boolean isParameter(String p)
@@ -37,6 +69,15 @@ public class Function
 		{
 			if (inst.origIdent.equals(name)) return inst;
 			if (inst.dummyName.equals(name)) return inst;
+		}
+		return null;
+	}
+	
+	public PLIRInstruction getLocalVariableByName(String name)
+	{
+		for (PLIRInstruction inst : vars)
+		{
+			if (inst.origIdent.equals(name)) return inst;
 		}
 		return null;
 	}

@@ -33,6 +33,8 @@ public class PLParser
 	private HashMap<String, IdentType> identTypeMap = new HashMap<String, IdentType>();
 	private HashMap<String, ArrayList<Integer>> arrayDimensionMap = new HashMap<String, ArrayList<Integer>>();
 	
+	public HashMap<String, PLIRInstruction> globalVariables = new HashMap<String, PLIRInstruction>();
+	
 	// TODO!!!
 	private ArrayList<String> deferredPhiIdents = new ArrayList<String>();
 	
@@ -104,6 +106,12 @@ public class PLParser
 				result = PLIRBasicBlock.merge(result, parse_varDecl(in)); 
 			}
 			globalVariableParsing = false;
+			
+			System.out.println("Global variables");
+			for (String v : globalVariables.keySet())
+			{
+				System.out.println("\t" + v);
+			}
 			
 			// Parse global functions and procedures
 			globalFunctionParsing = true;
@@ -178,6 +186,70 @@ public class PLParser
 		String symName = sym;
 		PLIRBasicBlock block = null;
 		
+		if (parsingFunctionBody)
+		{	
+			PLIRInstruction inst = null;
+			// Ensure this parameter is specified in the body of the function, else syntax error
+			Function func = scope.functions.get(funcName);
+			
+			if (this.parseVariableDeclaration)
+			{
+				// Initialize the variable to 0
+				inst = new PLIRInstruction(scope);
+				inst.opcode = InstructionType.ADD;
+				inst.i1 = 0;
+				inst.op1type = OperandType.CONST;
+				inst.i2 = 0;
+				inst.op2type = OperandType.CONST;
+				inst.kind = ResultKind.CONST;
+				inst.type = OperandType.CONST;
+				inst.overrideGenerate = true;
+				inst.forceGenerate(scope);
+				inst.origIdent = symName;
+				
+				func.addLocalVariable(inst);
+				
+				// Eat the symbol, create the block with the single instruction, add the ident to the list
+				// of used identifiers, and return
+				advance(in);
+				
+				block = new PLIRBasicBlock();
+				block.addInstruction(inst);
+				block.addUsedValue(symName, inst);
+				
+				// Add the sheet to scope
+				scope.addVarToScope(symName);
+				scope.updateSymbol(symName, inst);
+				duChain.put(inst, new HashSet<PLIRInstruction>());
+				return block;
+			}
+//			else if (func.isParameter(sym) == false && func.isLocalVariable(sym) == false)
+//			{	
+//				debug("Undeclared identifier.");
+//			} 
+			else if (scope.isGlobalVariable(sym))
+			{
+				inst = scope.getCurrentValue(sym);
+			}
+			else if (func.isLocalVariable(symName))
+			{
+				inst = scope.getCurrentValue(symName);
+//				inst = func.getLocalVariableByName(symName);
+			}
+			else
+			{
+				inst = func.getOperandByName(sym);
+			}
+			
+			advance(in);
+			
+			block = new PLIRBasicBlock();
+			block.addInstruction(inst);
+			block.addUsedValue(symName, inst);
+			
+			return block;
+		}
+		
 		if (globalVariableParsing) // initialize each variable to the constant 0
 		{
 			// Initialize the variable to 0
@@ -189,8 +261,9 @@ public class PLParser
 			inst.op2type = OperandType.CONST;
 			inst.kind = ResultKind.CONST;
 			inst.type = OperandType.CONST;
-//			inst.overrideGenerate = true;
-//			inst.forceGenerate(scope);
+			inst.overrideGenerate = true;
+			inst.forceGenerate(scope);
+			inst.origIdent = symName;
 			
 			// Eat the symbol, create the block with the single instruction, add the ident to the list
 			// of used identifiers, and return
@@ -205,7 +278,7 @@ public class PLParser
 			scope.updateSymbol(symName, inst);
 			scope.addGlobalVariable(inst);
 			duChain.put(inst, new HashSet<PLIRInstruction>());
-//			globalVariables.add(inst);
+			globalVariables.put(symName, inst);
 			
 			return block;
 		}
@@ -253,32 +326,6 @@ public class PLParser
 				
 				return block;
 			}
-		}
-		else if (parsingFunctionBody)
-		{	
-			PLIRInstruction inst = null;
-			// Ensure this parameter is specified in the body of the function, else syntax error
-			Function func = scope.functions.get(funcName);
-			if (func.isParameter(sym) == false)
-			{	
-				SyntaxError("Undeclared identifier.");
-			} 
-			else if (scope.isGlobalVariable(sym))
-			{
-				inst = scope.getCurrentValue(sym);
-			}
-			else
-			{
-				inst = func.getOperandByName(sym);
-			}
-			
-			advance(in);
-			
-			block = new PLIRBasicBlock();
-			block.addInstruction(inst);
-			block.addUsedValue(symName, inst);
-			
-			return block;
 		}
 		else
 		{
@@ -1035,7 +1082,14 @@ public class PLParser
 							storeInst.kind = ResultKind.VAR;
 							storeInst.overrideGenerate = true;
 							storeInst.forceGenerate(scope);
-						} 
+						}
+						//cawcaw
+						else if (globalFunctionParsing && globalVariables.containsKey(varName))
+						{
+							storeInst.kind = ResultKind.VAR;
+							storeInst.overrideGenerate = true;
+							storeInst.forceGenerate(scope);
+						}
 						scope.updateSymbol(varName, storeInst); // (SSA ID) := expr
 						duChain.put(storeInst, new HashSet<PLIRInstruction>());
 						result.addModifiedValue(varName, storeInst);
@@ -1392,7 +1446,7 @@ public class PLParser
 						result = new PLIRBasicBlock();
 						result.hasReturn = funcFlagMap.get(funcName); // special case... this is a machine instruction, not a user-defined function
 						result.addInstruction(callInst);
-						result.isEntry = true;
+						result.isEntry = false;
 						
 						// Update DU chain
 						for (PLIRInstruction operand : operands)
@@ -1420,6 +1474,13 @@ public class PLParser
 					inst.forceGenerate(scope);
 					result = new PLIRBasicBlock();
 					result.addInstruction(inst);
+				}
+				else
+				{
+					PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, funcBlockMap.containsKey(funcName), operands);
+					callInst.forceGenerate(scope);
+					result = new PLIRBasicBlock();
+					result.addInstruction(callInst);
 				}
 				
 				// Eat the last token and proceed
@@ -1454,6 +1515,7 @@ public class PLParser
 		else if (toksym == PLToken.callToken)
 		{
 			result = parse_funcCall(in);
+			result.isEntry = false;// caw
 			callStack.remove(callStack.size() - 1);
 		}
 		else if (toksym == PLToken.ifToken)
@@ -2100,6 +2162,7 @@ public class PLParser
 		return null;
 	}
 
+	public boolean parseVariableDeclaration = false;
 	private PLIRBasicBlock parse_varDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{	
 		IdentType type = IdentType.VAR;
@@ -2112,6 +2175,8 @@ public class PLParser
 			type = IdentType.ARRAY;
 		}
 		
+		parseVariableDeclaration = true;
+		
 		PLIRBasicBlock result = parse_typeDecl(in);
 		result = parse_ident(in);
 		
@@ -2120,13 +2185,15 @@ public class PLParser
 			advance(in);
 			scope.addVarToScope(sym);
 			identTypeMap.put(sym, type);
-			result = parse_ident(in); 
+			result = parse_ident(in);
 		}
 		if (toksym != PLToken.semiToken)
 		{
 			SyntaxError("';' missing from varDecl");
 		}
 		advance(in);
+		
+		parseVariableDeclaration = false;
 		
 		return result;
 	}
@@ -2141,6 +2208,10 @@ public class PLParser
 			advance(in);
 			scope.addVarToScope(sym);
 			scope.pushNewScope(sym);
+			
+			System.out.println("Function: " + sym);
+			scope.displayCurrentScopeSymbols();
+			
 			funcName = sym; // save for recovery later on
 			result = parse_ident(in);
 			
@@ -2157,6 +2228,11 @@ public class PLParser
 			// Eat the semicolon and then parse the body
 			advance(in);  
 			result = parse_funcBody(in);
+			
+//			for (int i = result.instructions.size() - 1; i>= 0; i--)
+//			{
+//				result.instructions.get(i).forceGenerate(scope);
+//			}
 			
 			// Eat the semicolon terminating the body
 			if (toksym != PLToken.semiToken)
@@ -2179,11 +2255,12 @@ public class PLParser
 	}
 
 	public boolean isFunction = false;
+	public ArrayList<PLIRInstruction> params;
 	private PLIRBasicBlock parse_formalParam(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRBasicBlock result = null;
+		params = new ArrayList<PLIRInstruction>();
 		
-		ArrayList<PLIRInstruction> params = new ArrayList<PLIRInstruction>();
 		if (toksym == PLToken.openParenToken)
 		{
 			advance(in);
@@ -2254,6 +2331,7 @@ public class PLParser
 	}
 
 	public boolean parsingFunctionBody = false;
+	public ArrayList<PLIRInstruction> variables = new ArrayList<PLIRInstruction>();
 	private PLIRBasicBlock parse_funcBody(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRBasicBlock result = null;
@@ -2261,10 +2339,22 @@ public class PLParser
 		
 		parsingFunctionBody = true;
 		
+		variables = new ArrayList<PLIRInstruction>();
 		while (toksym == PLToken.varToken || toksym == PLToken.arrToken)
 		{
 			result = parse_varDecl(in); // TODO: not sure what we really want to do here...
 		}
+		
+//		// Actually make the function now..
+//		paramMap.put(funcName, params.size());
+//		if (isFunction)
+//		{
+//			scope.addFunction(funcName, params, variables);
+//		}
+//		else
+//		{
+//			scope.addProcedure(funcName, params, variables);
+//		}
 		
 		if (toksym != PLToken.openBraceToken)
 		{
