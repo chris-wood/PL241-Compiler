@@ -1460,11 +1460,9 @@ public class PLParser
 		{
 			PLIRInstruction follow = new PLIRInstruction(scope);
 			follow.fixupLocation = 0;
-			
 			advance(in);
 			
 			scope.pushNewScope("if" + (blockDepth++));
-//			scope.pushNewScope("entry" + (blockDepth++));
 			
 			// Parse the condition relation
 			PLIRBasicBlock entry = parse_relation(in);
@@ -1476,7 +1474,6 @@ public class PLParser
 					inst.forceGenerate(scope);
 				}
 			}
-			int startSpot = PLStaticSingleAssignment.globalSSAIndex;
 			PLIRInstruction x = entry.instructions.get(entry.instructions.size() - 1);
 			PLIRInstruction branch = CondNegBraFwd(x);
 			branch.fixupLocation = PLStaticSingleAssignment.globalSSAIndex - 1;
@@ -1492,7 +1489,6 @@ public class PLParser
 			// Parse the follow-through and add it as the first child of the entry block
 			PLIRBasicBlock thenBlock = parse_statSequence(in);
 			entry.leftChild = thenBlock;
-//			entry.children.add(thenBlock);
 			thenBlock.parents.add(entry);
 			
 			// Create the artificial join node and make it a child of the follow-through branch,
@@ -1542,6 +1538,10 @@ public class PLParser
 					thenBlock.addInstruction(uncond);
 				}
 				advance(in);
+				
+				// DEBUG
+				debug("parsing the else block");
+				scope.displayCurrentScopeSymbols();
 				
 				// Parse the else block and then configure the BB connections accordingly
 				elseBlock = parse_statSequence(in);
@@ -1604,7 +1604,7 @@ public class PLParser
 				
 				// Jump back from the if statement scope so we can update the variables with the appropriate phi result
 				scope.popScope();
-				blockDepth--;
+//				blockDepth--;
 				for (int i = 0; i < phisToAdd.size(); i++)
 				{
 					scope.updateSymbol(sharedModifiers.get(i), phisToAdd.get(i));
@@ -1614,6 +1614,9 @@ public class PLParser
 					// 	so the latest value in the current scope needs to be modified
 					entry.modifiedIdents.put(sharedModifiers.get(i), phisToAdd.get(i));
 				}
+				
+				debug("after else block");
+				scope.displayCurrentScopeSymbols();
 				
 				// Check for modifications in the else block (but not in the if)
 				ArrayList<String> modifiers = new ArrayList<String>();
@@ -1656,47 +1659,95 @@ public class PLParser
 			{
 				entry.rightChild = joinNode;
 				joinNode.parents.add(entry);
+//				scope.popScope();
+				
+				// Check for necessary phis to be inserted in the join block
+				// We need phis for variables that were modified in both branches so we fall through with the right value
+				ArrayList<String> modifiers = new ArrayList<String>();
+				for (String modded : thenBlock.modifiedIdents.keySet())
+				{
+					if (sharedModifiers.contains(modded) == false) // don't double-add
+					{
+						modifiers.add(modded);
+					}
+				}
+				debug("(if statement without else) Inserting " + modifiers.size() + " phis");
+				for (String var : modifiers)
+				{
+					// Check to make sure this thing was actually in scope!
+					if (scope.getCurrentValue(var) == null)
+					{
+						debug("Uninitialized identifier in path: " + var);
+					}
+					
+					offset++;
+					PLIRInstruction leftInst = thenBlock.modifiedIdents.get(var);
+					leftInst.forceGenerate(scope, leftInst.tempPosition);
+					
+//					PLIRInstruction followInst = scope.getCurrentValue(var);
+					PLIRInstruction followInst = scope.getLastValue(var);
+					
+					followInst.forceGenerate(scope, followInst.tempPosition);
+					PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
+					debug(phi.toString());
+					joinNode.insertInstruction(phi, 0);
+					
+					// The current value in scope needs to be updated now with the result of the phi
+					System.out.println(scope.getCurrentScope());
+					scope.updateSymbol(var, phi);
+					
+					// Add to this block's list of modified identifiers
+					// Rationale: since we added a phi, the value potentially changes (is modified), 
+					// 	so the latest value in the current scope needs to be modified
+					entry.modifiedIdents.put(var, phi);
+					joinNode.modifiedIdents.put(var, phi);
+				}
 				scope.popScope();
-				blockDepth--;
+//				blockDepth--;
 			}
 			
-			// Check for necessary phis to be inserted in the join block
-			// We need phis for variables that were modified in both branches so we fall through with the right value
-			ArrayList<String> modifiers = new ArrayList<String>();
-			for (String modded : thenBlock.modifiedIdents.keySet())
-			{
-				if (sharedModifiers.contains(modded) == false) // don't double-add
-				{
-					modifiers.add(modded);
-				}
-			}
-			debug("(if statement without else) Inserting " + modifiers.size() + " phis");
-			for (String var : modifiers)
-			{
-				// Check to make sure this thing was actually in scope!
-				if (scope.getCurrentValue(var) == null)
-				{
-					debug("Uninitialized identifier in path: " + var);
-				}
-				
-				offset++;
-				PLIRInstruction leftInst = thenBlock.modifiedIdents.get(var);
-				leftInst.forceGenerate(scope, leftInst.tempPosition);
-				PLIRInstruction followInst = scope.getCurrentValue(var);
-				followInst.forceGenerate(scope, followInst.tempPosition);
-				PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
-				debug(phi.toString());
-				joinNode.insertInstruction(phi, 0);
-				
-				// The current value in scope needs to be updated now with the result of the phi
-				scope.updateSymbol(var, phi);
-				
-				// Add to this block's list of modified identifiers
-				// Rationale: since we added a phi, the value potentially changes (is modified), 
-				// 	so the latest value in the current scope needs to be modified
-				entry.modifiedIdents.put(var, phi);
-				joinNode.modifiedIdents.put(var, phi);
-			}
+//			// Check for necessary phis to be inserted in the join block
+//			// We need phis for variables that were modified in both branches so we fall through with the right value
+//			ArrayList<String> modifiers = new ArrayList<String>();
+//			for (String modded : thenBlock.modifiedIdents.keySet())
+//			{
+//				if (sharedModifiers.contains(modded) == false) // don't double-add
+//				{
+//					modifiers.add(modded);
+//				}
+//			}
+//			debug("(if statement without else) Inserting " + modifiers.size() + " phis");
+//			for (String var : modifiers)
+//			{
+//				// Check to make sure this thing was actually in scope!
+//				if (scope.getCurrentValue(var) == null)
+//				{
+//					debug("Uninitialized identifier in path: " + var);
+//				}
+//				
+//				offset++;
+//				PLIRInstruction leftInst = thenBlock.modifiedIdents.get(var);
+//				leftInst.forceGenerate(scope, leftInst.tempPosition);
+//				PLIRInstruction followInst = scope.getCurrentValue(var);
+//				followInst.forceGenerate(scope, followInst.tempPosition);
+//				PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
+//				debug(phi.toString());
+//				joinNode.insertInstruction(phi, 0);
+//				
+//				// The current value in scope needs to be updated now with the result of the phi
+//				scope.updateSymbol(var, phi);
+//				
+//				// Add to this block's list of modified identifiers
+//				// Rationale: since we added a phi, the value potentially changes (is modified), 
+//				// 	so the latest value in the current scope needs to be modified
+//				entry.modifiedIdents.put(var, phi);
+//				joinNode.modifiedIdents.put(var, phi);
+//			}
+			
+//			if (elseBlock != null)
+//			{
+//				scope.popScope();
+//			}
 			
 			// After the phis have been inserted at the appropriate positions, fixup the entry instructions
 			if (elseBlock != null)
@@ -1770,7 +1821,7 @@ public class PLParser
 			entry.addInstruction(bgeInst);
 			
 			scope.popScope();
-			blockDepth--;
+//			blockDepth--;
 			
 			////////////////////////////////////////////
 			// We've passed through the body and know what variables are updated, now we need to insert phis
@@ -2116,7 +2167,7 @@ public class PLParser
 			
 			// Leave the scope of this new function
 			String leavingScope = scope.popScope();
-			blockDepth--;
+//			blockDepth--;
 			debug("Leaving scope: " + leavingScope);
 		}
 		else

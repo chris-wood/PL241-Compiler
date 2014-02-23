@@ -1,17 +1,17 @@
 digraph dom {
 BB11[shape = box, label = "BB(11 [ foo ])\n" + "1 := cmp #1 #2\n" + "2 := bge (1) #12\n"];
 BB31[shape = box, label = "BB(31)\n" + "3 := cmp #2 #3\n" + "4 := bge (3) #6\n"];
-BB61[shape = box, label = "BB(61)\n" + "10 := phi #9 #3\n" + "14 := cmp #1 (10)\n" + "15 := bge (14) #11\n"];
-BB58[shape = box, label = "BB(58)\n" + "30 := phi (10) (27)\n" + "31 := phi #6 #7\n" + "32 := phi #4 (28)\n" + "33 := phi #2 (29)\n" + "34 := phi #8 #425\n" + "35 := phi #9 #7\n" + "36 := phi #6 #5\n" + "37 := phi (11) #1\n" + "38 := write (37)\n" + "39 := write (33)\n" + "40 := write (30)\n" + "41 := write (32)\n" + "42 := write (36)\n" + "43 := write (31)\n" + "44 := write (34)\n"];
+BB61[shape = box, label = "BB(61)\n" + "14 := cmp #1 #3\n" + "15 := bge (14) #10\n"];
+BB58[shape = box, label = "BB(58)\n" + "28 := phi (10) (26)\n" + "29 := phi #6 #7\n" + "30 := phi #4 (27)\n" + "31 := phi #2 #1\n" + "32 := phi #8 #425\n" + "33 := write #1\n" + "34 := write (31)\n" + "35 := write (28)\n" + "36 := write (30)\n" + "37 := write #5\n" + "38 := write (29)\n" + "39 := write (32)\n"];
 BB42[shape = box, label = "BB(42)\n" + "5 := phi #2 (8)\n" + "6 := cmp (5) #9\n" + "7 := bge (6) #3\n"];
-BB52[shape = box, label = "BB(52)\n" + "11 := phi (5) #2\n" + "12 := write #1\n" + "13 := beq #0 #17\n"];
-BB72[shape = box, label = "BB(72)\n" + "16 := phi #1 (21)\n" + "17 := phi (18) (22)\n" + "18 := mul (17) #3\n" + "19 := cmp (16) (17)\n" + "20 := bge (19) #4\n"];
-BB92[shape = box, label = "BB(92)\n" + "26 := mul (17) #4\n"];
-BB89[shape = box, label = "BB(89)\n" + "27 := phi (17) (26)\n" + "28 := phi #4 #5\n" + "29 := phi (16) #1\n"];
+BB52[shape = box, label = "BB(52)\n" + "10 := phi #9 #3\n" + "11 := phi (5) (8)\n" + "12 := write #1\n" + "13 := beq #0 #15\n"];
+BB72[shape = box, label = "BB(72)\n" + "16 := phi #1 (20)\n" + "17 := phi #9 (21)\n" + "18 := cmp (16) (17)\n" + "19 := bge (18) #4\n"];
+BB92[shape = box, label = "BB(92)\n" + "25 := mul (17) #4\n"];
+BB89[shape = box, label = "BB(89)\n" + "26 := phi (17) (25)\n" + "27 := phi #4 #5\n"];
 BB49[shape = box, label = "BB(49)\n" + "8 := add (5) #1\n" + "9 := beq #0 #-4\n"];
 BB51[shape = box, label = "BB(51)\n"];
-BB79[shape = box, label = "BB(79)\n" + "21 := add (16) #1\n" + "22 := sub (18) #1\n" + "23 := beq #0 #-7\n"];
-BB85[shape = box, label = "BB(85)\n" + "24 := write #10\n" + "25 := beq #0 #2\n"];
+BB79[shape = box, label = "BB(79)\n" + "20 := add (16) #1\n" + "21 := sub (17) #1\n" + "22 := beq #0 #-6\n"];
+BB85[shape = box, label = "BB(85)\n" + "23 := write #10\n" + "24 := beq #0 #2\n"];
 BB11 -> BB31;
 BB11 -> BB61;
 BB11 -> BB58;
@@ -24,5 +24,5 @@ BB42 -> BB49;
 BB42 -> BB51;
 BB72 -> BB79;
 BB72 -> BB85;
-BB122[shape = box, label = "BB(122)\n" + "45 := func foo\n" + "46 := end\n"];
+BB122[shape = box, label = "BB(122)\n" + "40 := func foo\n" + "41 := end\n"];
 }

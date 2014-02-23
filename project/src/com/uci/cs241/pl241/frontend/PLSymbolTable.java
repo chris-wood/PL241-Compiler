@@ -212,6 +212,18 @@ public class PLSymbolTable
 		return currentScope.size();
 	}
 	
+	public PLIRInstruction getLastValue(String sym)
+	{
+		if (symTable.get(getCurrentScope()) == null) 
+		{
+			return null;
+		}
+		else
+		{
+			return prevSymTable.get(sym).get(prevSymTable.get(sym).size() - 2);
+		}
+	}
+	
 	public PLIRInstruction getCurrentValue(String sym)
 	{
 		if (symTable.get(getCurrentScope()) == null) 
