@@ -1,6 +1,8 @@
 package com.uci.cs241.pl241.frontend;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import com.uci.cs241.pl241.ir.PLIRInstruction;
 
@@ -9,6 +11,7 @@ public class Function
 	public boolean hasReturn;
 	public ArrayList<PLIRInstruction> params;
 	public ArrayList<PLIRInstruction> vars;
+	public HashMap<PLIRInstruction, PLIRInstruction> modifiedGlobals;
 	public String name;
 	
 	public Function(String name, ArrayList<PLIRInstruction> parameters, boolean hasReturn)
@@ -17,6 +20,7 @@ public class Function
 		this.hasReturn = hasReturn;
 		this.params = new ArrayList<PLIRInstruction>();
 		this.vars = new ArrayList<PLIRInstruction>();
+		this.modifiedGlobals = new HashMap<PLIRInstruction, PLIRInstruction>();
 		for (PLIRInstruction s : parameters)
 		{
 			this.params.add(s);
@@ -29,6 +33,7 @@ public class Function
 		this.hasReturn = hasReturn;
 		this.params = new ArrayList<PLIRInstruction>();
 		this.vars = new ArrayList<PLIRInstruction>();
+		this.modifiedGlobals = new HashMap<PLIRInstruction, PLIRInstruction>();
 		for (PLIRInstruction s : parameters)
 		{
 			this.params.add(s);
@@ -37,6 +42,11 @@ public class Function
 		{
 			this.vars.add(s);
 		}
+	}
+	
+	public void addModifiedGlobal(PLIRInstruction glob, PLIRInstruction inst)
+	{
+		modifiedGlobals.put(glob, inst);
 	}
 	
 	public void addLocalVariable(PLIRInstruction inst)

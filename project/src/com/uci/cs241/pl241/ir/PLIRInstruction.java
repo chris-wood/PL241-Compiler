@@ -34,6 +34,8 @@ public class PLIRInstruction
 	// Wrapping BB
 	public PLIRBasicBlock block;
 	
+	public boolean globalMark = false; 
+	
 	// Register allocation information
 	public int regNum;
 	public int depth; // depth in CFG where introduced
@@ -105,6 +107,7 @@ public class PLIRInstruction
 		PROC,
 		FUNC,
 		LOADPARAM,
+		SAVEGLOBAL,
 		
 		END,
 		
@@ -731,6 +734,9 @@ public class PLIRInstruction
 					break;
 				case LOADPARAM:
 					s = "loadparam " + paramNumber;
+					break;
+				case SAVEGLOBAL:
+					s = "saveglobal";
 					break;
 				case LOAD:
 					s = "load";

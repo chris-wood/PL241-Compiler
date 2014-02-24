@@ -53,6 +53,15 @@ public class PLSymbolTable
 		}
 	}
 	
+	public PLIRInstruction getGlobalVariable(String v)
+	{
+		for (PLIRInstruction glob : globalVariables)
+		{
+			if (glob.origIdent.equals(v)) return glob;
+		}
+		return null;
+	}
+	
 	public boolean isGlobalVariable(String v)
 	{
 		for (PLIRInstruction glob : globalVariables)

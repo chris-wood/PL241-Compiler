@@ -133,6 +133,28 @@ public class PLParser
 					funcFlagMap.put(funcName, false);
 					break;
 				}
+				
+				PLIRBasicBlock endBlock = funcEntry;
+				while (endBlock.joinNode != null)
+				{
+					endBlock = endBlock.joinNode;
+				}
+				
+				// Insert global variable save functions at the end of the function, if necessary
+				Function func = scope.functions.get(funcName);
+				for (PLIRInstruction inst : func.modifiedGlobals.keySet())
+				{
+					PLIRInstruction saveInst = new PLIRInstruction(scope);
+					saveInst.opcode = InstructionType.STORE;
+					saveInst.op1 = func.modifiedGlobals.get(inst);
+					saveInst.op1type = OperandType.ADDRESS;
+					saveInst.op2 = inst;
+					saveInst.op2type = OperandType.ADDRESS;
+					
+					saveInst.forceGenerate(scope);
+					
+					endBlock.instructions.add(saveInst);
+				}
 			}
 			globalFunctionParsing = false;
 			
@@ -156,6 +178,11 @@ public class PLParser
 						PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.END);
 						result.addInstruction(inst);
 						blocks.add(root);
+						
+						for (PLIRInstruction glob : globalVariables.values())
+						{
+							root.insertInstruction(glob, 0);
+						}
 					}
 					else
 					{
@@ -230,6 +257,35 @@ public class PLParser
 			else if (scope.isGlobalVariable(sym))
 			{
 				inst = scope.getCurrentValue(sym);
+				
+				PLIRInstruction locInst = new PLIRInstruction(scope);
+				locInst.kind = ResultKind.VAR;
+				locInst.type = OperandType.ADDRESS;
+				locInst.opcode = inst.opcode;
+				locInst.op1 = inst.op1;
+				locInst.op1type = inst.op1type;
+				locInst.op2 = inst.op2;
+				locInst.op2type = inst.op2type;
+				locInst.globalMark = true;
+				
+				// Eat the symbol, create the block with the single instruction, add the ident to the list
+				// of used identifiers, and return
+				advance(in);
+				
+				block = new PLIRBasicBlock();
+				block.addInstruction(inst);
+				block.addUsedValue(symName, inst);
+				
+				// Add the sheet to scope
+				scope.addVarToScope(symName);
+				scope.updateSymbol(symName, inst);
+				
+				// The original global variable is used
+				if (duChain.containsKey(inst) == false)
+				{
+					duChain.put(inst, new HashSet<PLIRInstruction>());
+				}
+				return block;
 			}
 			else if (func.isLocalVariable(symName))
 			{
@@ -367,7 +423,9 @@ public class PLParser
 	private PLIRBasicBlock parse_designator(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		String name = sym;
+		
 		PLIRBasicBlock result = parse_ident(in);
+		
 		boolean isArray = false;
 		while (toksym == PLToken.openBracketToken)
 		{
@@ -432,6 +490,13 @@ public class PLParser
 			else if (factor.hasReturn == false || funcFlagMap.get(funcName) == false)
 			{
 				SyntaxError("Function that was invoked had no return value!");
+			}
+			
+			// Handle replacement of global variables 
+			for (PLIRInstruction glob : scope.functions.get(funcName).modifiedGlobals.keySet())
+			{
+				glob.overrideGenerate = true;
+				glob.forceGenerate(scope);
 			}
 			
 			// Remove the function from the callstack (we've returned from the call)
@@ -996,6 +1061,14 @@ public class PLParser
 			if (scope.isVarInScope(varName))
 			{
 				PLIRBasicBlock desigBlock = parse_designator(in);
+				
+				// Check to see if this assignment needs to be saved at the end of the function
+				boolean markToSave = false;
+				if (parsingFunctionBody && globalVariables.containsKey(desigBlock.getLastInst().origIdent))
+				{
+					markToSave = true;
+				}
+				
 				if (toksym == PLToken.becomesToken)
 				{
 					advance(in);
@@ -1090,9 +1163,15 @@ public class PLParser
 							storeInst.overrideGenerate = true;
 							storeInst.forceGenerate(scope);
 						}
+						
 						scope.updateSymbol(varName, storeInst); // (SSA ID) := expr
 						duChain.put(storeInst, new HashSet<PLIRInstruction>());
 						result.addModifiedValue(varName, storeInst);
+						
+						if (markToSave)
+						{
+							scope.functions.get(funcName).addModifiedGlobal(globalVariables.get(desigBlock.getLastInst().origIdent), storeInst);
+						}
 					}
 					else // array!
 					{
@@ -1183,6 +1262,11 @@ public class PLParser
 						
 						// Add the resulting set of instructions to the BB result
 						result.addModifiedValue(varName, inst4);
+						
+						if (markToSave)
+						{
+							scope.functions.get(funcName).addModifiedGlobal(globalVariables.get(inst4.origIdent), inst4);
+						}
 					}
 				}
 				else
@@ -1516,6 +1600,21 @@ public class PLParser
 		{
 			result = parse_funcCall(in);
 			result.isEntry = false;// caw
+			
+			String funcName = callStack.get(callStack.size() - 1);
+			debug("returning from: " + funcName);
+			
+			// Handle replacement of global variables 
+			for (PLIRInstruction glob : scope.functions.get(funcName).modifiedGlobals.keySet())
+			{
+				glob.type = OperandType.ADDRESS;
+				glob.kind = ResultKind.VAR;
+				glob.overrideGenerate = true;
+				glob.forceGenerate(scope);
+				debug(glob.toString());
+				debug(scope.getCurrentValue("x").toString());
+			}
+			
 			callStack.remove(callStack.size() - 1);
 		}
 		else if (toksym == PLToken.ifToken)
@@ -2035,11 +2134,20 @@ public class PLParser
 			{
 				result = parse_expression(in);
 				
+				if (result == null)
+				{
+					result = new PLIRBasicBlock();
+				}
+				
 				// Since the return statement was followed by an expression, force the expression to be generated...
 				result.instructions.get(result.instructions.size() - 1).overrideGenerate = true;
 				result.instructions.get(result.instructions.size() - 1).forceGenerate(scope);
 				result.returnInst = result.getLastInst();
 				debug("Forcing generation of return statement");
+			}
+			else
+			{
+				result = new PLIRBasicBlock();
 			}
 		}
 		else 

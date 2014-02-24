@@ -19,14 +19,16 @@ var b, c;
 procedure baz( a, b );
 var c, d;
 {
-  let c <- 1
+  let c <- 1;
+  let y <- c
 };
 function boo( a, b );
 var i;
 {
   let i <- 0;
   while i < y do
-    let x <- x * x
+    let x <- x * x;
+    return
   od;
   return x + 4
   
@@ -35,7 +37,7 @@ var i;
   call foo( );
   call bar( 1 );
   //let x <- 3 + 7 - 2;
-  //let y <- ( 895 * 2 * 2 ) / 2;
+  let y <- ( 895 * 2 * 2 ) / 2;
   call baz( x, y );
   let y <- y + call boo( 2, 4 )
 }

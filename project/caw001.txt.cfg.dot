@@ -1,16 +1,16 @@
 digraph cfg {
-BB7[shape = box, label = "BB(7 [ foo ])\n" + "5 := add #0 #1\n" + "6 := add #0 #2\n"];
+BB7[shape = box, label = "BB(7 [ foo ])\n" + "5 := add #0 #1\n" + "6 := add #0 #2\n" + "7 := store (6) (2)\n" + "8 := store (5) (1)\n"];
 
-BB18[shape = box, label = "BB(18 [ bar ])\n" + "10 := add #0 #1\n"];
+BB18[shape = box, label = "BB(18 [ bar ])\n" + "12 := add #0 #1\n" + "13 := store (12) (2)\n"];
 
-BB27[shape = box, label = "BB(27 [ baz ])\n"];
+BB27[shape = box, label = "BB(27 [ baz ])\n" + "18 := add #0 #1\n" + "19 := store (18) (2)\n"];
 
-BB31[shape = box, label = "BB(31 [ boo ])\n" + "18 := phi (1) (21)\n" + "19 := cmp #0 (2)\n" + "20 := bge (19) #3\n"];
-BB37[shape = box, label = "BB(37)\n" + "1 := add #0 #0\n" + "21 := mul (18) (18)\n" + "22 := beq #0 #-4\n"];
-BB39[shape = box, label = "BB(39)\n" + "23 := add (18) #4\n"];
-BB31 -> BB37;
-BB31 -> BB39;
-BB37 -> BB31;
+BB33[shape = box, label = "BB(33 [ boo ])\n" + "23 := phi (1) (26)\n" + "24 := cmp #0 (1)\n" + "25 := bge (24) #3\n"];
+BB39[shape = box, label = "BB(39)\n" + "1 := add #0 #0\n" + "26 := mul (23) (23)\n" + "27 := beq #0 #-4\n"];
+BB42[shape = box, label = "BB(42)\n" + "28 := add (23) #4\n" + "29 := store (26) (1)\n"];
+BB33 -> BB39;
+BB33 -> BB42;
+BB39 -> BB33;
 
-BB44[shape = box, label = "BB(44)\n" + "2 := add #0 #0\n" + "24 := proc foo\n" + "25 := proc bar #1\n" + "26 := proc baz #0 #0\n" + "27 := func boo #2 #4\n" + "28 := add (2) (27)\n" + "29 := end\n"];
+BB47[shape = box, label = "BB(47)\n" + "0 := div #3580 #2\n" + "2 := (1)\n" + "30 := proc foo\n" + "31 := proc bar #1\n" + "32 := proc baz (1) #1790\n" + "33 := func boo #2 #4\n" + "34 := add #1790 (33)\n" + "35 := end\n"];
 }
