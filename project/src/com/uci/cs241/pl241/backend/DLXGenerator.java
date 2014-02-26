@@ -18,6 +18,8 @@ public class DLXGenerator
 	public static final int FP = 28;
 	public static final int R0 = 0;
 	
+	public int branchOffset = 0;
+	
 	public ArrayList<DLXInstruction> instructions = new ArrayList<DLXInstruction>();
 	
 	// Global variable address table
@@ -370,6 +372,7 @@ public class DLXGenerator
 							
 //							edb.instructions.add(0, newInst);
 //							edb.instructions.add(0, preInst);
+							branchOffset++;
 							prependInstructionToBlock(edb, newInst);
 							prependInstructionToBlock(edb, preInst);
 						}
@@ -429,6 +432,7 @@ public class DLXGenerator
 							
 //							edb.instructions.add(0, newInst);
 //							edb.instructions.add(0, preInst);
+							branchOffset++;
 							prependInstructionToBlock(edb, newInst);
 							prependInstructionToBlock(edb, preInst);
 						}
@@ -488,6 +492,7 @@ public class DLXGenerator
 							
 //							edb.instructions.add(0, newInst);
 //							edb.instructions.add(0, preInst);
+							branchOffset++;
 							prependInstructionToBlock(edb, newInst);
 							prependInstructionToBlock(edb, preInst);
 						}
@@ -547,6 +552,7 @@ public class DLXGenerator
 							
 //							edb.instructions.add(0, newInst);
 //							edb.instructions.add(0, preInst);
+							branchOffset++;
 							prependInstructionToBlock(edb, newInst);
 							prependInstructionToBlock(edb, preInst);
 						}
@@ -635,6 +641,7 @@ public class DLXGenerator
 //							edb.instructions.add(0, newInst);
 //							edb.instructions.add(0, preInst);
 							
+							branchOffset += 3;
 							prependInstructionToBlock(edb, popInst);
 							prependInstructionToBlock(edb, newInst);
 							prependInstructionToBlock(edb, loadInst);
@@ -693,6 +700,7 @@ public class DLXGenerator
 							
 //							edb.instructions.add(0, newInst);
 //							edb.instructions.add(0, preInst);
+							branchOffset++;
 							prependInstructionToBlock(edb, newInst);
 							prependInstructionToBlock(edb, preInst);
 						}
@@ -743,9 +751,9 @@ public class DLXGenerator
 						{
 							newInst.ra = ssaInst.op1.regNum; // e.g. BEQ (0) #4
 						}
+						
 						newInst.rc = ssaInst.i2;
-//						newInst.encodedForm = encodeInstruction(newInst);
-//						edb.instructions.add(0, newInst);
+						
 						prependInstructionToBlock(edb, newInst);
 						break;
 						
@@ -754,8 +762,7 @@ public class DLXGenerator
 						newInst.format = formatMap.get(InstructionType.BNE);
 						newInst.ra = ssaInst.op1.regNum; // BNE (0) #4
 						newInst.rc = ssaInst.i2;
-//						newInst.encodedForm = encodeInstruction(newInst);
-//						edb.instructions.add(0, newInst);
+						
 						prependInstructionToBlock(edb, newInst);
 						break;
 						
@@ -764,8 +771,7 @@ public class DLXGenerator
 						newInst.format = formatMap.get(InstructionType.BLT);
 						newInst.ra = ssaInst.op1.regNum; // BLT (0) #4
 						newInst.rc = ssaInst.i2;
-//						newInst.encodedForm = encodeInstruction(newInst);
-//						edb.instructions.add(0, newInst);
+						
 						prependInstructionToBlock(edb, newInst);
 						break;
 						
@@ -774,8 +780,7 @@ public class DLXGenerator
 						newInst.format = formatMap.get(InstructionType.BGE);
 						newInst.ra = ssaInst.op1.regNum; // BGE (0) #4
 						newInst.rc = ssaInst.i2;
-//						newInst.encodedForm = encodeInstruction(newInst);
-//						edb.instructions.add(0, newInst);
+						
 						prependInstructionToBlock(edb, newInst);
 						break;
 						
@@ -784,8 +789,7 @@ public class DLXGenerator
 						newInst.format = formatMap.get(InstructionType.BLE);
 						newInst.ra = ssaInst.op1.regNum; // BLE (0) #4
 						newInst.rc = ssaInst.i2;
-//						newInst.encodedForm = encodeInstruction(newInst);
-//						edb.instructions.add(0, newInst);
+						
 						prependInstructionToBlock(edb, newInst);
 						break;
 						
@@ -794,8 +798,7 @@ public class DLXGenerator
 						newInst.format = formatMap.get(InstructionType.BGT);
 						newInst.ra = ssaInst.op1.regNum; // BGT (0) #4
 						newInst.rc = ssaInst.i2;
-//						newInst.encodedForm = encodeInstruction(newInst);
-//						edb.instructions.add(0, newInst);
+						
 						prependInstructionToBlock(edb, newInst);
 						break;
 						
@@ -845,6 +848,7 @@ public class DLXGenerator
 									leftInst.ra = ssaInst.regNum; // BGT (0) #4
 									leftInst.rb = 0;
 									leftInst.rc = ssaInst.op1.regNum;
+									branchOffset++;
 									prependInstructionToBlock(edb, leftInst);
 								}
 								if (ssaInst.regNum != ssaInst.op2.regNum) // move ssaInst.op1.regNum to ssaInst.regNum
@@ -855,6 +859,7 @@ public class DLXGenerator
 									rightInst.ra = ssaInst.regNum; // BGT (0) #4
 									rightInst.rb = 0;
 									rightInst.rc = ssaInst.op2.regNum;
+									branchOffset++;
 									appendInstructionToBlockFromOffset(insertBlock, rightInst, -1);
 								}
 							}
@@ -872,6 +877,7 @@ public class DLXGenerator
 									leftInst.rb = 0;
 									leftInst.rc = ssaInst.op1.regNum;
 									insertBlock = edb.parents.get(branch);
+									branchOffset++;
 									prependInstructionToBlock(insertBlock, leftInst);
 								}
 								if (ssaInst.regNum != ssaInst.op2.regNum) // move ssaInst.op1.regNum to ssaInst.regNum
@@ -883,6 +889,7 @@ public class DLXGenerator
 									rightInst.rb = 0;
 									rightInst.rc = ssaInst.op2.regNum;
 									insertBlock = edb.parents.get(branch);
+									branchOffset++;
 									prependInstructionToBlock(insertBlock, rightInst);
 								}
 							}
