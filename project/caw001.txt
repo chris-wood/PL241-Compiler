@@ -1,8 +1,14 @@
 main
-var a;
+var a, b;
 {
   let a <- call InputNum();
-  let a <- a * 100 + 1;
+  let b <- call InputNum();
+  let a <- a * 5 + 1;
+  if a < 100 then
+    let a <- call InputNum();
+    let a <- a + 1;
+    call OutputNum(b)
+  fi;
   call OutputNum(a);
   call OutputNewLine()
 }.

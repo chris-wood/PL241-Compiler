@@ -1,8 +1,16 @@
 1 := add #0 #0
-2 := read
-3 := mul (2) #100
-4 := add (3) #1
-5 := write (4)
-6 := wln
-7 := end
+2 := add #0 #0
+3 := read
+4 := read
+5 := mul (3) #5
+6 := add (5) #1
+7 := cmp (6) #100
+8 := bge (7) #4
+9 := read
+10 := add (9) #1
+11 := write (4)
+12 := phi (10) (9)
+13 := write (12)
+14 := wln
+15 := end
 

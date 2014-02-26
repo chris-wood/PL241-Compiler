@@ -205,16 +205,18 @@ public class PLC
 			if (runAll || (runStep1 && runStep2 && runStep3 && runStep4))
 			{
 				DLXGenerator dlxGen = new DLXGenerator();
-				ArrayList<DLXBasicBlock> dlxBlocks = dlxGen.convertFromColoredSSA(blocks);
-				
-				for (DLXBasicBlock db : dlxBlocks)
+				for (PLIRBasicBlock block : blocks)
 				{
-					for (DLXInstruction inst : db.instructions)
+					DLXBasicBlock db = dlxGen.generateBlockTree(null, block, 1);
+					dlxGen.generateBlockTreeInstructons(db, block);
+					ArrayList<DLXInstruction> dlxInstructions = dlxGen.convertToStraightLineCode(db);
+					for (DLXInstruction inst : dlxInstructions)
 					{
 //						System.out.println(Long.toHexString(inst.encodedForm));
 						System.out.println(inst.encodedForm);
 					}
 				}
+				
 				System.out.println("done");
 			}
 		}

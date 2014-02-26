@@ -1739,7 +1739,7 @@ public class PLParser
 						}
 					}
 				}
-				debug("(if statement) Inserting " + sharedModifiers.size() + " phis");
+				debug("(shared if) Inserting " + sharedModifiers.size() + " phis");
 				ArrayList<PLIRInstruction> phisToAdd = new ArrayList<PLIRInstruction>(); 
 				for (int i = 0; i < sharedModifiers.size(); i++)
 				{
@@ -1785,7 +1785,7 @@ public class PLParser
 						modifiers.add(modded);
 					}
 				}
-				debug("(if statement not checking then) Inserting " + modifiers.size() + " phis");
+				debug("(only the else) Inserting " + modifiers.size() + " phis");
 				for (String var : modifiers)
 				{
 					// Check to make sure this thing was actually in scope!
@@ -1821,7 +1821,7 @@ public class PLParser
 						modifiers.add(modded);
 					}
 				}
-				debug("(if statement without else) Inserting " + modifiers.size() + " phis");
+				debug("(only the if) Inserting " + modifiers.size() + " phis");
 				for (String var : modifiers)
 				{
 					// Check to make sure this thing was actually in scope!
@@ -1857,7 +1857,7 @@ public class PLParser
 			{
 				entry.rightChild = joinNode;
 				joinNode.parents.add(entry);
-//				scope.popScope();
+				scope.popScope();
 //			}
 				
 				// Check for necessary phis to be inserted in the join block
@@ -1901,7 +1901,7 @@ public class PLParser
 					entry.modifiedIdents.put(var, phi);
 					joinNode.modifiedIdents.put(var, phi);
 				}
-				scope.popScope();
+//				scope.popScope();
 //				blockDepth--;
 			}
 			
