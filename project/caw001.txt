@@ -7,6 +7,29 @@ var a, b;
   let b <- call InputNum();
   let a <- a * 5 + 1;
   if a < 100 then
+    call OutputNum(b)
+  else
+    call OutputNum(a)
+  fi;
+
+  while b < 5 do
+    let b <- 10
+  od;
+
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNewLine()
+}.
+
+main
+var a, b;
+{
+  call OutputNum(a);
+  call OutputNewLine();
+  let a <- call InputNum();
+  let b <- call InputNum();
+  let a <- a * 5 + 1;
+  if a < 100 then
     //let a <- call InputNum();
     //let a <- a + 1;
     call OutputNum(b)

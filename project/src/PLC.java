@@ -208,7 +208,7 @@ public class PLC
 				dlxGen.populateGlobalAddressTable(parser.globalVariables);
 				for (PLIRBasicBlock block : blocks)
 				{
-					DLXBasicBlock db = dlxGen.generateBlockTree(null, block, 1, new HashSet<Integer>());
+					DLXBasicBlock db = dlxGen.generateBlockTree(null, block, new HashSet<Integer>());
 					dlxGen.generateBlockTreeInstructons(db, block, 0, new HashSet<Integer>());
 					ArrayList<DLXInstruction> dlxInstructions = dlxGen.convertToStraightLineCode(db, -1, new HashSet<Integer>());
 					for (DLXInstruction inst : dlxInstructions)
@@ -217,10 +217,10 @@ public class PLC
 						System.out.println(inst);
 					}
 					
+					// Write the DLX machine code
 					PrintWriter dlxWriter = new PrintWriter(new BufferedWriter(new FileWriter(sourceFile + ".dlx")));
 					for (DLXInstruction inst : dlxInstructions)
 					{
-//						System.out.println(Long.toHexString(inst.encodedForm));
 						dlxWriter.println(inst.encodedForm);
 					}
 					dlxWriter.flush();

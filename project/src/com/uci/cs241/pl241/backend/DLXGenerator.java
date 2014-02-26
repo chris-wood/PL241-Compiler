@@ -20,6 +20,8 @@ public class DLXGenerator
 	
 	public int branchOffset = 0;
 	
+	public HashMap<PLIRInstruction, Integer> offsetMap = new HashMap<PLIRInstruction, Integer>(); 
+	
 	public ArrayList<DLXInstruction> instructions = new ArrayList<DLXInstruction>();
 	
 	// Global variable address table
@@ -29,6 +31,8 @@ public class DLXGenerator
 	public HashMap<InstructionType, Integer> opcodeMap = new HashMap<InstructionType, Integer>();
 	public HashMap<InstructionType, InstructionFormat> formatMap = new HashMap<InstructionType, InstructionFormat>();
 	public HashMap<Integer, DLXBasicBlock> allBlocks = new HashMap<Integer, DLXBasicBlock>();
+	
+	int pc = 0;
 	
 	public DLXGenerator()
 	{
@@ -183,18 +187,21 @@ public class DLXGenerator
 	{
 		inst.encodedForm = encodeInstruction(inst);
 		block.instructions.add(0, inst);
+		pc++;
 	}
 	
 	public void appendInstructionToBlock(DLXBasicBlock block, DLXInstruction inst)
 	{
 		inst.encodedForm = encodeInstruction(inst);
 		block.instructions.add(inst);
+		pc++;
 	}
 	
 	public void appendInstructionToBlockFromOffset(DLXBasicBlock block, DLXInstruction inst, int offset)
 	{
 		inst.encodedForm = encodeInstruction(inst);
 		block.instructions.add(block.instructions.size() + offset, inst);
+		pc++;
 	}
 	
 	public ArrayList<DLXInstruction> convertToStraightLineCode(DLXBasicBlock entry, int stopBlock, HashSet<Integer> visited)
@@ -320,7 +327,7 @@ public class DLXGenerator
 				generateBlockTreeInstructons(edb.right, b.rightChild, 1, visited);
 			}
 			
-			for (int i = b.instructions.size() - 1; i >= 0; i--)
+			for (int i = 0; i < b.instructions.size(); i++)
 			{
 				PLIRInstruction ssaInst = b.instructions.get(i);
 				
@@ -360,7 +367,6 @@ public class DLXGenerator
 							preInst.ra = ssaInst.regNum;
 							preInst.rb = 0;
 							preInst.rc = ssaInst.i1;
-//							preInst.encodedForm = encodeInstruction(preInst);
 							
 							// ra = ra, i2 --> ra = i1 + i2
 							newInst.opcode = InstructionType.ADDI;
@@ -368,13 +374,11 @@ public class DLXGenerator
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.regNum;
 							newInst.rc = ssaInst.i2;
-//							newInst.encodedForm = encodeInstruction(newInst);
 							
-//							edb.instructions.add(0, newInst);
-//							edb.instructions.add(0, preInst);
 							branchOffset++;
-							prependInstructionToBlock(edb, newInst);
-							prependInstructionToBlock(edb, preInst);
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, preInst);
+							appendInstructionToBlock(edb, newInst);
 						}
 						else if (leftConst)
 						{
@@ -383,9 +387,9 @@ public class DLXGenerator
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.op2.regNum;
 							newInst.rc = ssaInst.i1;
-//							newInst.encodedForm = encodeInstruction(newInst);
-//							edb.instructions.add(0, newInst);
-							prependInstructionToBlock(edb, newInst);
+							
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, newInst);
 						}
 						else if (rightConst)
 						{
@@ -394,9 +398,9 @@ public class DLXGenerator
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.i2;
-//							newInst.encodedForm = encodeInstruction(newInst);
-//							edb.instructions.add(0, newInst);
-							prependInstructionToBlock(edb, newInst);
+							
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, newInst);
 						}
 						else
 						{
@@ -404,9 +408,9 @@ public class DLXGenerator
 							newInst.format = formatMap.get(InstructionType.ADD);
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.op2.regNum;
-//							newInst.encodedForm = encodeInstruction(newInst);
-//							edb.instructions.add(0, newInst);
-							prependInstructionToBlock(edb, newInst);
+							
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, newInst);
 						}
 						
 						break;
@@ -420,7 +424,6 @@ public class DLXGenerator
 							preInst.ra = ssaInst.regNum;
 							preInst.rb = 0;
 							preInst.rc = ssaInst.i1;
-//							preInst.encodedForm = encodeInstruction(preInst);
 							
 							// ra = ra - i2 --> ra = i1 - i2
 							newInst.opcode = InstructionType.SUBI;
@@ -428,23 +431,16 @@ public class DLXGenerator
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.regNum;
 							newInst.rc = ssaInst.i2;
-//							newInst.encodedForm = encodeInstruction(newInst);
 							
-//							edb.instructions.add(0, newInst);
-//							edb.instructions.add(0, preInst);
 							branchOffset++;
-							prependInstructionToBlock(edb, newInst);
-							prependInstructionToBlock(edb, preInst);
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, preInst);
+							appendInstructionToBlock(edb, newInst);
 						}
 						else if (leftConst)
 						{
-							// TODO: ensure order of operations here
+							System.err.println("Invalid sub order");
 							System.exit(-1);
-//							newInst.opcode = InstructionType.SUBI;
-//							newInst.ra = ssaInst.regNum;
-//							newInst.rb = ssaInst.op2.regNum;
-//							newInst.rc = ssaInst.i1;
-//							dlxBlock.instructions.add(0, newInst);
 						}
 						else if (rightConst)
 						{
@@ -453,9 +449,9 @@ public class DLXGenerator
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.i2;
-//							newInst.encodedForm = encodeInstruction(newInst);
-//							edb.instructions.add(0, newInst);
-							prependInstructionToBlock(edb, newInst);
+							
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, newInst);
 						}
 						else
 						{
@@ -464,9 +460,9 @@ public class DLXGenerator
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.op2.regNum;
-//							newInst.encodedForm = encodeInstruction(newInst);
-//							edb.instructions.add(0, newInst);
-							prependInstructionToBlock(edb, newInst);
+							
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, newInst);
 						}
 						break;
 						
@@ -480,7 +476,6 @@ public class DLXGenerator
 							preInst.ra = ssaInst.regNum;
 							preInst.rb = 0;
 							preInst.rc = ssaInst.i1;
-//							preInst.encodedForm = encodeInstruction(preInst);
 							
 							// ra = ra, i2 --> ra = i1 + i2
 							newInst.opcode = InstructionType.MULI;
@@ -488,13 +483,11 @@ public class DLXGenerator
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.regNum;
 							newInst.rc = ssaInst.i2;
-//							newInst.encodedForm = encodeInstruction(newInst);
 							
-//							edb.instructions.add(0, newInst);
-//							edb.instructions.add(0, preInst);
 							branchOffset++;
-							prependInstructionToBlock(edb, newInst);
-							prependInstructionToBlock(edb, preInst);
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, preInst);
+							appendInstructionToBlock(edb, newInst);
 						}
 						else if (leftConst)
 						{
@@ -503,9 +496,9 @@ public class DLXGenerator
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.op2.regNum;
 							newInst.rc = ssaInst.i1;
-//							newInst.encodedForm = encodeInstruction(newInst);
-//							edb.instructions.add(0, newInst);
-							prependInstructionToBlock(edb, newInst);
+							
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, newInst);
 						}
 						else if (rightConst)
 						{
@@ -514,9 +507,9 @@ public class DLXGenerator
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.i2;
-//							newInst.encodedForm = encodeInstruction(newInst);
-//							edb.instructions.add(0, newInst);
-							prependInstructionToBlock(edb, newInst);
+							
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, newInst);
 						}
 						else
 						{
@@ -524,9 +517,9 @@ public class DLXGenerator
 							newInst.format = formatMap.get(InstructionType.MUL);
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.op2.regNum;
-//							newInst.encodedForm = encodeInstruction(newInst);
-//							edb.instructions.add(0, newInst);
-							prependInstructionToBlock(edb, newInst);
+							
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, newInst);
 						}
 						break;
 						
@@ -540,7 +533,6 @@ public class DLXGenerator
 							preInst.ra = ssaInst.regNum;
 							preInst.rb = 0;
 							preInst.rc = ssaInst.i1;
-//							preInst.encodedForm = encodeInstruction(preInst);
 							
 							// ra = ra - i2 --> ra = i1 - i2
 							newInst.opcode = InstructionType.DIVI;
@@ -548,23 +540,16 @@ public class DLXGenerator
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.regNum;
 							newInst.rc = ssaInst.i2;
-//							newInst.encodedForm = encodeInstruction(newInst);
 							
-//							edb.instructions.add(0, newInst);
-//							edb.instructions.add(0, preInst);
 							branchOffset++;
-							prependInstructionToBlock(edb, newInst);
-							prependInstructionToBlock(edb, preInst);
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, preInst);
+							appendInstructionToBlock(edb, newInst);
 						}
 						else if (leftConst)
 						{
-							// TODO: ensure order of operations here
+							System.err.println("Invalid div order");
 							System.exit(-1);
-//							newInst.opcode = InstructionType.SUBI;
-//							newInst.ra = ssaInst.regNum;
-//							newInst.rb = ssaInst.op2.regNum;
-//							newInst.rc = ssaInst.i1;
-//							dlxBlock.instructions.add(0, newInst);
 						}
 						else if (rightConst)
 						{
@@ -574,8 +559,8 @@ public class DLXGenerator
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.i2;
 							
-//							edb.instructions.add(0, newInst);
-							prependInstructionToBlock(edb, newInst);
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, newInst);
 						}
 						else
 						{
@@ -585,8 +570,8 @@ public class DLXGenerator
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.op2.regNum;
 							
-//							edb.instructions.add(0, newInst);
-							prependInstructionToBlock(edb, newInst);
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, newInst);
 						}
 						break;
 						
@@ -603,9 +588,8 @@ public class DLXGenerator
 						if (ssaInst.op1type == OperandType.ADDRESS || ssaInst.op1type == OperandType.INST)
 						{
 							newInst.rb = ssaInst.op1.regNum;
-//							newInst.encodedForm = encodeInstruction(newInst);
-//							edb.instructions.add(0, newInst);
-							prependInstructionToBlock(edb, newInst);
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, newInst);
 						}
 						else // constant, push regNum onto stack, load constant into rb, pop off of stack
 						{
@@ -635,17 +619,12 @@ public class DLXGenerator
 							popInst.rc = -4; // word size
 							popInst.encodedForm = encodeInstruction(popInst);
 							
-//							preInst.encodedForm = encodeInstruction(newInst);
-//							newInst.encodedForm = encodeInstruction(newInst);
-							
-//							edb.instructions.add(0, newInst);
-//							edb.instructions.add(0, preInst);
-							
 							branchOffset += 3;
-							prependInstructionToBlock(edb, popInst);
-							prependInstructionToBlock(edb, newInst);
-							prependInstructionToBlock(edb, loadInst);
-							prependInstructionToBlock(edb, pushInst);
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, pushInst);
+							appendInstructionToBlock(edb, loadInst);
+							appendInstructionToBlock(edb, newInst);
+							appendInstructionToBlock(edb, popInst);
 						}
 						break;
 					case READ:
@@ -654,9 +633,9 @@ public class DLXGenerator
 						newInst.ra = ssaInst.regNum;
 						newInst.rb = 0;
 						newInst.rc = 0;
-//						newInst.encodedForm = encodeInstruction(newInst);
-//						edb.instructions.add(0, newInst);
-						prependInstructionToBlock(edb, newInst);
+						
+						offsetMap.put(ssaInst, pc);
+						appendInstructionToBlock(edb, newInst);
 						break;
 					case WLN:
 						newInst.opcode = InstructionType.WRL;
@@ -664,9 +643,9 @@ public class DLXGenerator
 						newInst.ra = 0;
 						newInst.rb = 0;
 						newInst.rc = 0;
-//						newInst.encodedForm = encodeInstruction(newInst);
-//						edb.instructions.add(0, newInst);
-						prependInstructionToBlock(edb, newInst);
+						
+						offsetMap.put(ssaInst, pc);
+						appendInstructionToBlock(edb, newInst);
 						break;
 					case END:
 						newInst.opcode = InstructionType.RET;
@@ -674,9 +653,9 @@ public class DLXGenerator
 						newInst.ra = 0;
 						newInst.rb = 0;
 						newInst.rc = 0;
-//						newInst.encodedForm = encodeInstruction(newInst);
-//						edb.instructions.add(0, newInst);
-						prependInstructionToBlock(edb, newInst);
+						
+						offsetMap.put(ssaInst, pc);
+						appendInstructionToBlock(edb, newInst);
 						break;
 					case CMP:
 						if (leftConst && rightConst)
@@ -688,7 +667,6 @@ public class DLXGenerator
 							preInst.ra = ssaInst.regNum;
 							preInst.rb = 0;
 							preInst.rc = ssaInst.i1;
-//							preInst.encodedForm = encodeInstruction(preInst);
 							
 							// ra = ra - i2 --> ra = i1 - i2
 							newInst.opcode = InstructionType.CMPI;
@@ -696,24 +674,16 @@ public class DLXGenerator
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.regNum;
 							newInst.rc = ssaInst.i2;
-//							newInst.encodedForm = encodeInstruction(newInst);
 							
-//							edb.instructions.add(0, newInst);
-//							edb.instructions.add(0, preInst);
 							branchOffset++;
-							prependInstructionToBlock(edb, newInst);
-							prependInstructionToBlock(edb, preInst);
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, preInst);
+							appendInstructionToBlock(edb, newInst);
 						}
 						else if (leftConst)
 						{
-							// TODO: ensure order of operations here
-							System.out.println("left const");
+							System.err.println("left const in comparison");
 							System.exit(-1);
-//							newInst.opcode = InstructionType.SUBI;
-//							newInst.ra = ssaInst.regNum;
-//							newInst.rb = ssaInst.op2.regNum;
-//							newInst.rc = ssaInst.i1;
-//							dlxBlock.instructions.add(0, newInst);
 						}
 						else if (rightConst)
 						{
@@ -722,9 +692,9 @@ public class DLXGenerator
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.i2;
-//							newInst.encodedForm = encodeInstruction(newInst);
-//							edb.instructions.add(branch, newInst);
-							prependInstructionToBlock(edb, newInst);
+							
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, newInst);
 						}
 						else
 						{
@@ -733,9 +703,9 @@ public class DLXGenerator
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.op2.regNum;
-//							newInst.encodedForm = encodeInstruction(newInst);
-//							edb.instructions.add(branch, newInst);
-							prependInstructionToBlock(edb, newInst);
+							
+							offsetMap.put(ssaInst, pc);
+							appendInstructionToBlock(edb, newInst);
 						}
 						break;
 						
@@ -754,16 +724,20 @@ public class DLXGenerator
 						
 						newInst.rc = ssaInst.i2;
 						
-						prependInstructionToBlock(edb, newInst);
+						offsetMap.put(ssaInst, pc);
+						appendInstructionToBlock(edb, newInst);
 						break;
 						
 					case BNE:
 						newInst.opcode = InstructionType.BNE;
 						newInst.format = formatMap.get(InstructionType.BNE);
 						newInst.ra = ssaInst.op1.regNum; // BNE (0) #4
+						
+//						int index = ssaInst.i2 + ssaInst.id;
 						newInst.rc = ssaInst.i2;
 						
-						prependInstructionToBlock(edb, newInst);
+						offsetMap.put(ssaInst, pc);
+						appendInstructionToBlock(edb, newInst);
 						break;
 						
 					case BLT:
@@ -772,7 +746,8 @@ public class DLXGenerator
 						newInst.ra = ssaInst.op1.regNum; // BLT (0) #4
 						newInst.rc = ssaInst.i2;
 						
-						prependInstructionToBlock(edb, newInst);
+						offsetMap.put(ssaInst, pc);
+						appendInstructionToBlock(edb, newInst);
 						break;
 						
 					case BGE:
@@ -781,7 +756,8 @@ public class DLXGenerator
 						newInst.ra = ssaInst.op1.regNum; // BGE (0) #4
 						newInst.rc = ssaInst.i2;
 						
-						prependInstructionToBlock(edb, newInst);
+						offsetMap.put(ssaInst, pc);
+						appendInstructionToBlock(edb, newInst);
 						break;
 						
 					case BLE:
@@ -790,7 +766,8 @@ public class DLXGenerator
 						newInst.ra = ssaInst.op1.regNum; // BLE (0) #4
 						newInst.rc = ssaInst.i2;
 						
-						prependInstructionToBlock(edb, newInst);
+						offsetMap.put(ssaInst, pc);
+						appendInstructionToBlock(edb, newInst);
 						break;
 						
 					case BGT:
@@ -799,7 +776,8 @@ public class DLXGenerator
 						newInst.ra = ssaInst.op1.regNum; // BGT (0) #4
 						newInst.rc = ssaInst.i2;
 						
-						prependInstructionToBlock(edb, newInst);
+						offsetMap.put(ssaInst, pc);
+						appendInstructionToBlock(edb, newInst);
 						break;
 						
 					case FUNC:
@@ -848,8 +826,10 @@ public class DLXGenerator
 									leftInst.ra = ssaInst.regNum; // BGT (0) #4
 									leftInst.rb = 0;
 									leftInst.rc = ssaInst.op1.regNum;
+									
 									branchOffset++;
-									prependInstructionToBlock(edb, leftInst);
+									offsetMap.put(ssaInst, pc);
+									appendInstructionToBlock(edb, leftInst);
 								}
 								if (ssaInst.regNum != ssaInst.op2.regNum) // move ssaInst.op1.regNum to ssaInst.regNum
 								{
@@ -859,7 +839,9 @@ public class DLXGenerator
 									rightInst.ra = ssaInst.regNum; // BGT (0) #4
 									rightInst.rb = 0;
 									rightInst.rc = ssaInst.op2.regNum;
+									
 									branchOffset++;
+									offsetMap.put(ssaInst, pc);
 									appendInstructionToBlockFromOffset(insertBlock, rightInst, -1);
 								}
 							}
@@ -877,8 +859,11 @@ public class DLXGenerator
 									leftInst.rb = 0;
 									leftInst.rc = ssaInst.op1.regNum;
 									insertBlock = edb.parents.get(branch);
+									
 									branchOffset++;
-									prependInstructionToBlock(insertBlock, leftInst);
+									offsetMap.put(ssaInst, pc);
+//									prependInstructionToBlock(insertBlock, leftInst);
+									appendInstructionToBlock(insertBlock, leftInst);
 								}
 								if (ssaInst.regNum != ssaInst.op2.regNum) // move ssaInst.op1.regNum to ssaInst.regNum
 								{
@@ -889,8 +874,11 @@ public class DLXGenerator
 									rightInst.rb = 0;
 									rightInst.rc = ssaInst.op2.regNum;
 									insertBlock = edb.parents.get(branch);
+									
 									branchOffset++;
-									prependInstructionToBlock(insertBlock, rightInst);
+									offsetMap.put(ssaInst, pc);
+//									prependInstructionToBlock(insertBlock, rightInst);
+									appendInstructionToBlock(insertBlock, rightInst);
 								}
 							}
 						}
@@ -900,484 +888,38 @@ public class DLXGenerator
 		}
 	}
 	
-	public DLXBasicBlock generateBlockTree(DLXBasicBlock parent, PLIRBasicBlock b, int branch, HashSet<Integer> visited)
+	public DLXBasicBlock generateBlockTree(DLXBasicBlock parent, PLIRBasicBlock b, HashSet<Integer> visited)
 	{
 		DLXBasicBlock block = null;
+		
+		if (allBlocks.containsKey(b.id))
+		{
+			block = allBlocks.get(b.id);
+		}
+		else
+		{
+			block = new DLXBasicBlock(b.id);
+			allBlocks.put(b.id, block);
+		}
+		block.parents.add(parent);
 		
 		if (visited.contains(b.id) == false)
 		{
 			visited.add(b.id);
 			
-			if (allBlocks.containsKey(b.id))
-			{
-				block = allBlocks.get(b.id);
-			}
-			else
-			{
-				block = new DLXBasicBlock(b.id);
-				allBlocks.put(b.id, block);
-			}
-			block.parents.add(parent);
-			
 			// Recurse to children
 			if (b.leftChild != null)
 			{
-				block.left = generateBlockTree(block, b.leftChild, 1, visited);
+				block.left = generateBlockTree(block, b.leftChild, visited);
 			}
 			if (b.rightChild != null)
 			{
-				block.right = generateBlockTree(block, b.rightChild, 2, visited);
+				block.right = generateBlockTree(block, b.rightChild, visited);
 			}
 		}
 		
 		
 		return block;
 	}
-
-//	public ArrayList<DLXBasicBlock> convertFromColoredSSA(ArrayList<PLIRBasicBlock> blocks)
-//	{
-//		ArrayList<DLXBasicBlock> dlxBlocks = new ArrayList<DLXBasicBlock>();
-//		for (PLIRBasicBlock entry : blocks)
-//		{
-//			ArrayList<DLXBasicBlock> dlxStack = new ArrayList<DLXBasicBlock>();
-//			ArrayList<PLIRBasicBlock> stack = new ArrayList<PLIRBasicBlock>();
-//			stack.add(entry);
-//			
-//			DLXBasicBlock exit = new DLXBasicBlock();
-//			dlxStack.add(exit);
-//			DLXBasicBlock dlxBlock = null;
-//			
-//			while (!stack.isEmpty())
-//			{	
-//				dlxBlock = dlxStack.get(dlxStack.size() - 1);
-//				PLIRBasicBlock currBlock = stack.get(stack.size() - 1);
-//				
-//				dlxStack.remove(dlxStack.size() - 1);
-//				stack.remove(stack.size() - 1);
-//				
-//				for (int i = currBlock.instructions.size() - 1; i >= 0; i--)
-//				{
-//					PLIRInstruction ssaInst = currBlock.instructions.get(i);
-//					
-//					// Dummy instruction to generate
-//					DLXInstruction newInst = new DLXInstruction();
-//					newInst.ra = ssaInst.regNum;
-//					
-//					// Determine if the instruction contains an immediate value
-//					boolean isImmediate = false;
-//					boolean leftConst = false;
-//					boolean rightConst = false;
-//					if (ssaInst.kind == ResultKind.CONST)
-//					{
-//						isImmediate = true;
-//					}
-//					if (ssaInst.op1type == OperandType.CONST)
-//					{
-//						isImmediate = true;
-//						leftConst = true;
-//					}
-//					if (ssaInst.op2type == OperandType.CONST)
-//					{
-//						isImmediate = true;
-//						rightConst = true;
-//					}
-//					
-//					// Create the instruction accordingly
-//					switch (ssaInst.opcode)
-//					{
-//						case ADD:
-//							if (leftConst && rightConst)
-//							{
-//								// ra = 0, i1
-//								DLXInstruction preInst = new DLXInstruction();
-//								preInst.opcode = InstructionType.ADDI;
-//								preInst.format = formatMap.get(InstructionType.ADDI);
-//								preInst.ra = ssaInst.regNum;
-//								preInst.rb = 0;
-//								preInst.rc = ssaInst.i1;
-//								preInst.encodedForm = encodeInstruction(preInst);
-//								
-//								// ra = ra, i2 --> ra = i1 + i2
-//								newInst.opcode = InstructionType.ADDI;
-//								newInst.format = formatMap.get(InstructionType.ADDI);
-//								newInst.ra = ssaInst.regNum;
-//								newInst.rb = ssaInst.regNum;
-//								newInst.rc = ssaInst.i2;
-//								newInst.encodedForm = encodeInstruction(newInst);
-//								
-//								dlxBlock.instructions.add(0, newInst);
-//								dlxBlock.instructions.add(0, preInst);
-//							}
-//							else if (leftConst)
-//							{
-//								newInst.opcode = InstructionType.ADDI;
-//								newInst.format = formatMap.get(InstructionType.ADDI);
-//								newInst.ra = ssaInst.regNum;
-//								newInst.rb = ssaInst.op2.regNum;
-//								newInst.rc = ssaInst.i1;
-//								newInst.encodedForm = encodeInstruction(newInst);
-//								dlxBlock.instructions.add(0, newInst);
-//							}
-//							else if (rightConst)
-//							{
-//								newInst.opcode = InstructionType.ADDI;
-//								newInst.format = formatMap.get(InstructionType.ADDI);
-//								newInst.ra = ssaInst.regNum;
-//								newInst.rb = ssaInst.op1.regNum;
-//								newInst.rc = ssaInst.i2;
-//								newInst.encodedForm = encodeInstruction(newInst);
-//								dlxBlock.instructions.add(0, newInst);
-//							}
-//							else
-//							{
-//								newInst.opcode = InstructionType.ADD;
-//								newInst.format = formatMap.get(InstructionType.ADD);
-//								newInst.rb = ssaInst.op1.regNum;
-//								newInst.rc = ssaInst.op2.regNum;
-//								newInst.encodedForm = encodeInstruction(newInst);
-//								dlxBlock.instructions.add(0, newInst);
-//							}
-//							
-//							break;
-//						case SUB:
-//							if (leftConst && rightConst)
-//							{
-//								// ra = 0, i1
-//								DLXInstruction preInst = new DLXInstruction();
-//								preInst.opcode = InstructionType.ADDI;
-//								preInst.format = formatMap.get(InstructionType.ADDI);
-//								preInst.ra = ssaInst.regNum;
-//								preInst.rb = 0;
-//								preInst.rc = ssaInst.i1;
-//								
-//								// ra = ra - i2 --> ra = i1 - i2
-//								newInst.opcode = InstructionType.SUBI;
-//								newInst.format = formatMap.get(InstructionType.SUBI);
-//								newInst.ra = ssaInst.regNum;
-//								newInst.rb = ssaInst.regNum;
-//								newInst.rc = ssaInst.i2;
-//								
-//								dlxBlock.instructions.add(0, newInst);
-//								dlxBlock.instructions.add(0, preInst);
-//							}
-//							else if (leftConst)
-//							{
-//								// TODO: ensure order of operations here
-//								System.exit(-1);
-////								newInst.opcode = InstructionType.SUBI;
-////								newInst.ra = ssaInst.regNum;
-////								newInst.rb = ssaInst.op2.regNum;
-////								newInst.rc = ssaInst.i1;
-////								dlxBlock.instructions.add(0, newInst);
-//							}
-//							else if (rightConst)
-//							{
-//								newInst.opcode = InstructionType.SUBI;
-//								newInst.format = formatMap.get(InstructionType.SUBI);
-//								newInst.ra = ssaInst.regNum;
-//								newInst.rb = ssaInst.op1.regNum;
-//								newInst.rc = ssaInst.i2;
-//								dlxBlock.instructions.add(0, newInst);
-//							}
-//							else
-//							{
-//								newInst.opcode = InstructionType.SUB;
-//								newInst.format = formatMap.get(InstructionType.SUB);
-//								newInst.ra = ssaInst.regNum;
-//								newInst.rb = ssaInst.op1.regNum;
-//								newInst.rc = ssaInst.op2.regNum;
-//								dlxBlock.instructions.add(0, newInst);
-//							}
-//							break;
-//							
-//						case MUL:
-//							if (leftConst && rightConst)
-//							{
-//								// ra = 0, i1
-//								DLXInstruction preInst = new DLXInstruction();
-//								preInst.opcode = InstructionType.MULI;
-//								preInst.format = formatMap.get(InstructionType.MULI);
-//								preInst.ra = ssaInst.regNum;
-//								preInst.rb = 0;
-//								preInst.rc = ssaInst.i1;
-//								preInst.encodedForm = encodeInstruction(preInst);
-//								
-//								// ra = ra, i2 --> ra = i1 + i2
-//								newInst.opcode = InstructionType.MULI;
-//								newInst.format = formatMap.get(InstructionType.MULI);
-//								newInst.ra = ssaInst.regNum;
-//								newInst.rb = ssaInst.regNum;
-//								newInst.rc = ssaInst.i2;
-//								newInst.encodedForm = encodeInstruction(newInst);
-//								
-//								dlxBlock.instructions.add(0, newInst);
-//								dlxBlock.instructions.add(0, preInst);
-//							}
-//							else if (leftConst)
-//							{
-//								newInst.opcode = InstructionType.MULI;
-//								newInst.format = formatMap.get(InstructionType.MULI);
-//								newInst.ra = ssaInst.regNum;
-//								newInst.rb = ssaInst.op2.regNum;
-//								newInst.rc = ssaInst.i1;
-//								newInst.encodedForm = encodeInstruction(newInst);
-//								dlxBlock.instructions.add(0, newInst);
-//							}
-//							else if (rightConst)
-//							{
-//								newInst.opcode = InstructionType.MULI;
-//								newInst.format = formatMap.get(InstructionType.MULI);
-//								newInst.ra = ssaInst.regNum;
-//								newInst.rb = ssaInst.op1.regNum;
-//								newInst.rc = ssaInst.i2;
-//								newInst.encodedForm = encodeInstruction(newInst);
-//								dlxBlock.instructions.add(0, newInst);
-//							}
-//							else
-//							{
-//								newInst.opcode = InstructionType.MUL;
-//								newInst.format = formatMap.get(InstructionType.MUL);
-//								newInst.rb = ssaInst.op1.regNum;
-//								newInst.rc = ssaInst.op2.regNum;
-//								newInst.encodedForm = encodeInstruction(newInst);
-//								dlxBlock.instructions.add(0, newInst);
-//							}
-//							break;
-//							
-//						case DIV:
-//							if (leftConst && rightConst)
-//							{
-//								// ra = 0, i1
-//								DLXInstruction preInst = new DLXInstruction();
-//								preInst.opcode = InstructionType.ADDI;
-//								preInst.format = formatMap.get(InstructionType.ADDI);
-//								preInst.ra = ssaInst.regNum;
-//								preInst.rb = 0;
-//								preInst.rc = ssaInst.i1;
-//								
-//								// ra = ra - i2 --> ra = i1 - i2
-//								newInst.opcode = InstructionType.DIVI;
-//								newInst.format = formatMap.get(InstructionType.DIVI);
-//								newInst.ra = ssaInst.regNum;
-//								newInst.rb = ssaInst.regNum;
-//								newInst.rc = ssaInst.i2;
-//								
-//								dlxBlock.instructions.add(0, newInst);
-//								dlxBlock.instructions.add(0, preInst);
-//							}
-//							else if (leftConst)
-//							{
-//								// TODO: ensure order of operations here
-//								System.exit(-1);
-////								newInst.opcode = InstructionType.SUBI;
-////								newInst.ra = ssaInst.regNum;
-////								newInst.rb = ssaInst.op2.regNum;
-////								newInst.rc = ssaInst.i1;
-////								dlxBlock.instructions.add(0, newInst);
-//							}
-//							else if (rightConst)
-//							{
-//								newInst.opcode = InstructionType.DIVI;
-//								newInst.format = formatMap.get(InstructionType.DIVI);
-//								newInst.ra = ssaInst.regNum;
-//								newInst.rb = ssaInst.op1.regNum;
-//								newInst.rc = ssaInst.i2;
-//								dlxBlock.instructions.add(0, newInst);
-//							}
-//							else
-//							{
-//								newInst.opcode = InstructionType.DIV;
-//								newInst.format = formatMap.get(InstructionType.DIV);
-//								newInst.ra = ssaInst.regNum;
-//								newInst.rb = ssaInst.op1.regNum;
-//								newInst.rc = ssaInst.op2.regNum;
-//								dlxBlock.instructions.add(0, newInst);
-//							}
-//							break;
-//							
-//						case ADDA:
-//							// TODO
-//							break;
-//							
-//						case WRITE:
-//							newInst.opcode = InstructionType.WRD;
-//							newInst.format = formatMap.get(InstructionType.WRD);
-//							newInst.ra = 0;
-//							
-//							if (ssaInst.op1type == OperandType.ADDRESS || ssaInst.op1type == OperandType.INST)
-//							{
-//								newInst.rb = ssaInst.op1.regNum;
-//							}
-//							else
-//							{
-//								System.err.print("need to load ra contents");
-//								System.exit(-1);
-//							}
-//							
-//							newInst.rc = 0;
-//							newInst.encodedForm = encodeInstruction(newInst);
-//							dlxBlock.instructions.add(0, newInst);
-//							break;
-//						case READ:
-//							newInst.opcode = InstructionType.RDD;
-//							newInst.format = formatMap.get(InstructionType.RDD);
-//							newInst.ra = ssaInst.regNum;
-//							newInst.rb = 0;
-//							newInst.rc = 0;
-//							newInst.encodedForm = encodeInstruction(newInst);
-//							dlxBlock.instructions.add(0, newInst);
-//							break;
-//						case WLN:
-//							newInst.opcode = InstructionType.WRL;
-//							newInst.format = formatMap.get(InstructionType.WRL);
-//							newInst.ra = 0;
-//							newInst.rb = 0;
-//							newInst.rc = 0;
-//							newInst.encodedForm = encodeInstruction(newInst);
-//							dlxBlock.instructions.add(0, newInst);
-//							break;
-//						case END:
-//							newInst.opcode = InstructionType.RET;
-//							newInst.format = formatMap.get(InstructionType.RET);
-//							newInst.ra = 0;
-//							newInst.rb = 0;
-//							newInst.rc = 0;
-//							newInst.encodedForm = encodeInstruction(newInst);
-//							dlxBlock.instructions.add(0, newInst);
-//							break;
-//						case CMP:
-//							if (leftConst && rightConst)
-//							{
-//								// ra = 0, i1
-//								DLXInstruction preInst = new DLXInstruction();
-//								preInst.opcode = InstructionType.ADDI;
-//								preInst.format = formatMap.get(InstructionType.ADDI);
-//								preInst.ra = ssaInst.regNum;
-//								preInst.rb = 0;
-//								preInst.rc = ssaInst.i1;
-//								
-//								// ra = ra - i2 --> ra = i1 - i2
-//								newInst.opcode = InstructionType.CMPI;
-//								newInst.format = formatMap.get(InstructionType.CMPI);
-//								newInst.ra = ssaInst.regNum;
-//								newInst.rb = ssaInst.regNum;
-//								newInst.rc = ssaInst.i2;
-//								
-//								dlxBlock.instructions.add(0, newInst);
-//								dlxBlock.instructions.add(0, preInst);
-//							}
-//							else if (leftConst)
-//							{
-//								// TODO: ensure order of operations here
-//								System.out.println("left const");
-//								System.exit(-1);
-////								newInst.opcode = InstructionType.SUBI;
-////								newInst.ra = ssaInst.regNum;
-////								newInst.rb = ssaInst.op2.regNum;
-////								newInst.rc = ssaInst.i1;
-////								dlxBlock.instructions.add(0, newInst);
-//							}
-//							else if (rightConst)
-//							{
-//								newInst.opcode = InstructionType.CMPI;
-//								newInst.format = formatMap.get(InstructionType.CMPI);
-//								newInst.ra = ssaInst.regNum;
-//								newInst.rb = ssaInst.op1.regNum;
-//								newInst.rc = ssaInst.i2;
-//								dlxBlock.instructions.add(0, newInst);
-//							}
-//							else
-//							{
-//								newInst.opcode = InstructionType.CMP;
-//								newInst.format = formatMap.get(InstructionType.CMP);
-//								newInst.ra = ssaInst.regNum;
-//								newInst.rb = ssaInst.op1.regNum;
-//								newInst.rc = ssaInst.op2.regNum;
-//								dlxBlock.instructions.add(0, newInst);
-//							}
-//							break;
-//							
-//							
-//						case BEQ:
-//							newInst.opcode = InstructionType.BEQ;
-//							newInst.format = formatMap.get(InstructionType.BEQ);
-//							newInst.ra = ssaInst.op1.regNum; // BEQ (0) #4
-//							newInst.rc = ssaInst.i2;
-//							dlxBlock.instructions.add(0, newInst);
-//							break;
-//							
-//						case BNE:
-//							newInst.opcode = InstructionType.BNE;
-//							newInst.format = formatMap.get(InstructionType.BNE);
-//							newInst.ra = ssaInst.op1.regNum; // BNE (0) #4
-//							newInst.rc = ssaInst.i2;
-//							dlxBlock.instructions.add(0, newInst);
-//							break;
-//							
-//						case BLT:
-//							newInst.opcode = InstructionType.BLT;
-//							newInst.format = formatMap.get(InstructionType.BLT);
-//							newInst.ra = ssaInst.op1.regNum; // BLT (0) #4
-//							newInst.rc = ssaInst.i2;
-//							dlxBlock.instructions.add(0, newInst);
-//							break;
-//							
-//						case BGE:
-//							newInst.opcode = InstructionType.BGE;
-//							newInst.format = formatMap.get(InstructionType.BGE);
-//							newInst.ra = ssaInst.op1.regNum; // BGE (0) #4
-//							newInst.rc = ssaInst.i2;
-//							dlxBlock.instructions.add(0, newInst);
-//							break;
-//							
-//						case BLE:
-//							newInst.opcode = InstructionType.BLE;
-//							newInst.format = formatMap.get(InstructionType.BLE);
-//							newInst.ra = ssaInst.op1.regNum; // BLE (0) #4
-//							newInst.rc = ssaInst.i2;
-//							dlxBlock.instructions.add(0, newInst);
-//							break;
-//							
-//						case BGT:
-//							newInst.opcode = InstructionType.BGT;
-//							newInst.format = formatMap.get(InstructionType.BGT);
-//							newInst.ra = ssaInst.op1.regNum; // BGT (0) #4
-//							newInst.rc = ssaInst.i2;
-//							dlxBlock.instructions.add(0, newInst);
-//							break;
-//							
-//						case FUNC:
-//							break;
-//						case PROC:
-//							break;
-//						case LOADPARAM:
-//							break;
-//							
-//						case LOAD:
-//							break;
-//						case STORE:
-//							break;
-//							
-//						case PHI:
-//							break;
-//					}
-//				}
-//				
-//				// Handle the parents
-//				if (currBlock.parents != null && currBlock.parents.size() > 0)
-//				{
-//					for (PLIRBasicBlock parent : currBlock.parents)
-//					{
-//						dlxStack.add(new DLXBasicBlock());
-//						stack.add(parent);
-//					}
-//				}
-//			}
-//			
-//			dlxBlocks.add(dlxBlock);
-//		}
-//		
-//		return dlxBlocks;
-//	}
 
 }
