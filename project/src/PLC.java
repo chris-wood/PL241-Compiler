@@ -205,16 +205,26 @@ public class PLC
 			if (runAll || (runStep1 && runStep2 && runStep3 && runStep4))
 			{
 				DLXGenerator dlxGen = new DLXGenerator();
+				dlxGen.populateGlobalAddressTable(parser.globalVariables);
 				for (PLIRBasicBlock block : blocks)
 				{
-					DLXBasicBlock db = dlxGen.generateBlockTree(null, block, 1);
-					dlxGen.generateBlockTreeInstructons(db, block);
-					ArrayList<DLXInstruction> dlxInstructions = dlxGen.convertToStraightLineCode(db);
+					DLXBasicBlock db = dlxGen.generateBlockTree(null, block, 1, new HashSet<Integer>());
+					dlxGen.generateBlockTreeInstructons(db, block, 0, new HashSet<Integer>());
+					ArrayList<DLXInstruction> dlxInstructions = dlxGen.convertToStraightLineCode(db, -1, new HashSet<Integer>());
 					for (DLXInstruction inst : dlxInstructions)
 					{
 //						System.out.println(Long.toHexString(inst.encodedForm));
-						System.out.println(inst.encodedForm);
+						System.out.println(inst);
 					}
+					
+					PrintWriter dlxWriter = new PrintWriter(new BufferedWriter(new FileWriter(sourceFile + ".dlx")));
+					for (DLXInstruction inst : dlxInstructions)
+					{
+//						System.out.println(Long.toHexString(inst.encodedForm));
+						dlxWriter.println(inst.encodedForm);
+					}
+					dlxWriter.flush();
+					dlxWriter.close();
 				}
 				
 				System.out.println("done");

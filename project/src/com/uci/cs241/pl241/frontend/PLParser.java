@@ -318,7 +318,7 @@ public class PLParser
 		{
 			// Initialize the variable to 0
 			PLIRInstruction inst = new PLIRInstruction(scope);
-			inst.opcode = InstructionType.ADD;
+			inst.opcode = InstructionType.GLOBAL;
 			inst.i1 = 0;
 			inst.op1type = OperandType.CONST;
 			inst.i2 = 0;
@@ -1744,7 +1744,7 @@ public class PLParser
 				for (int i = 0; i < sharedModifiers.size(); i++)
 				{
 					String var = sharedModifiers.get(i);
-					offset++;
+					offset++; 
 					PLIRInstruction thenInst = thenBlock.modifiedIdents.get(var);
 					debug(thenInst.toString());
 					thenInst.forceGenerate(scope, thenInst.tempPosition);
@@ -1775,6 +1775,8 @@ public class PLParser
 				
 				debug("after else block");
 				scope.displayCurrentScopeSymbols();
+				
+//				scope.popScope();
 				
 				// Check for modifications in the else block (but not in the if)
 				ArrayList<String> modifiers = new ArrayList<String>();
@@ -2044,6 +2046,7 @@ public class PLParser
 				
 				// Inject the phi at the appropriate spot in the join node...
 				PLIRInstruction phi = PLIRInstruction.create_phi(scope, preInst, bodyInst, loopLocation + offset);
+				phi.whilePhi = true;
 				phisGenerated.add(phi);
 				debug("new phi: " + phi.id + " := " + phi.toString());
 				phi.origIdent = var; // needed for propagation

@@ -27,6 +27,9 @@ public class PLIRInstruction
 	// used to indicate if this instruction is part of a designator
 //	public boolean isDesig = false;
 	
+	// boolean to flag if phi instruction is for IF or while
+	public boolean whilePhi = false;
+	
 	// Helper info
 	public String dummyName;
 	public int paramNumber;
@@ -108,6 +111,7 @@ public class PLIRInstruction
 		FUNC,
 		LOADPARAM,
 		SAVEGLOBAL,
+		GLOBAL,
 		
 		END,
 		
@@ -743,6 +747,9 @@ public class PLIRInstruction
 					break;
 				case STORE:
 					s = "store";
+					break;
+				case GLOBAL:
+					s = "global";
 					break;
 			}
 			

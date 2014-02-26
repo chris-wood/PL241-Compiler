@@ -15,6 +15,12 @@ public class DLXInstruction
 	// Possible immediate value
 	public int ic; 
 	
+	@Override
+	public String toString()
+	{
+		return opcode.toString() + " " + ra + " " + rb + " " + rc;
+	}
+	
 	public enum InstructionFormat
 	{
 		F1, F2, F3
