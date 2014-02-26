@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import com.uci.cs241.pl241.frontend.PLEndOfFileException;
 import com.uci.cs241.pl241.frontend.PLSyntaxErrorException;
-import com.uci.cs241.pl241.frontend.PLTokenizer;
+//import com.uci.cs241.pl241.frontend.PLTokenizer;
 
 public class PLInterpreter
 {
@@ -17,25 +17,25 @@ public class PLInterpreter
 		}
 
 		BufferedReader reader = new BufferedReader(new FileReader(args[0]));
-		PLTokenizer tokenizer = new PLTokenizer(reader);
-		
-		try
-		{
-			while (true)
-			{
-				String token = tokenizer.next();
-				System.out.print(token);
-			}
-		}
-		catch (PLEndOfFileException e)
-		{
-			System.err.println(e);
-		} 
-		catch (PLSyntaxErrorException e)
-		{
-			System.err.println(e);
-			e.printStackTrace();
-		}
+//		PLScanner tokenizer = new PLScanner(reader);
+//		
+//		try
+//		{
+//			while (true)
+//			{
+//				String token = tokenizer.next();
+//				System.out.print(token);
+//			}
+//		}
+//		catch (PLEndOfFileException e)
+//		{
+//			System.err.println(e);
+//		} 
+//		catch (PLSyntaxErrorException e)
+//		{
+//			System.err.println(e);
+//			e.printStackTrace();
+//		}
 	}
 
 }

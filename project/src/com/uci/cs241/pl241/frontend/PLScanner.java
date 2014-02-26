@@ -71,14 +71,14 @@ public class PLScanner
 		
 		// Create the file handle and pull the first token into the sym variable
 		reader = new PLFileReader(fname);
-		try
-		{
-			nextToken();
-		}
-		catch (PLSyntaxErrorException e)
-		{
-			System.err.println("Token error: " + e.getMessage());
-		}
+//		try
+//		{
+//			nextToken();
+//		}
+//		catch (PLSyntaxErrorException e)
+//		{
+//			System.err.println("Token error: " + e.getMessage());
+//		}
 	}
 	
 	public void next() throws PLSyntaxErrorException

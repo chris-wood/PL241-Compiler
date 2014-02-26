@@ -5,6 +5,7 @@ public class DLXInstruction
 	// Instruction information
 	public InstructionType opcode;
 	public InstructionFormat format;
+	public long encodedForm;
 	
 	// Register operands
 	public int ra;
@@ -33,7 +34,7 @@ public class DLXInstruction
 		MOD,
 		MODI,
 		CMP,
-		DMPI,
+		CMPI,
 		OR,
 		ORI,
 		AND,

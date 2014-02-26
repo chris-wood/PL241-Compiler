@@ -126,11 +126,11 @@ public class PLParser
 				{
 				case PLToken.funcToken:
 					funcBlockMap.put(funcName, funcEntry); // save this so that others may use it
-					funcFlagMap.put(funcName, true);
+//					funcFlagMap.put(funcName, true);
 					break;
 				case PLToken.procToken:
 					procBlockMap.put(funcName, funcEntry); // save this so that others may use it
-					funcFlagMap.put(funcName, false);
+//					funcFlagMap.put(funcName, false);
 					break;
 				}
 				
@@ -142,18 +142,26 @@ public class PLParser
 				
 				// Insert global variable save functions at the end of the function, if necessary
 				Function func = scope.functions.get(funcName);
-				for (PLIRInstruction inst : func.modifiedGlobals.keySet())
+				if (funcName.equals("OutputNum") == false && funcName.equals("OutputNewLine") == false && funcName.equals("InputNum") == false)
 				{
-					PLIRInstruction saveInst = new PLIRInstruction(scope);
-					saveInst.opcode = InstructionType.STORE;
-					saveInst.op1 = func.modifiedGlobals.get(inst);
-					saveInst.op1type = OperandType.ADDRESS;
-					saveInst.op2 = inst;
-					saveInst.op2type = OperandType.ADDRESS;
-					
-					saveInst.forceGenerate(scope);
-					
-					endBlock.instructions.add(saveInst);
+					for (PLIRInstruction inst : func.modifiedGlobals.keySet())
+					{
+						PLIRInstruction saveInst = new PLIRInstruction(scope);
+						saveInst.opcode = InstructionType.STORE;
+						saveInst.op1 = func.modifiedGlobals.get(inst);
+						saveInst.op1type = OperandType.ADDRESS;
+						saveInst.op2 = inst;
+						saveInst.op2type = OperandType.ADDRESS;
+						
+						saveInst.forceGenerate(scope);
+						
+						endBlock.instructions.add(saveInst);
+					}
+				}
+				
+				for (PLIRInstruction inst : func.vars)
+				{
+					funcEntry.insertInstruction(inst, 0);
 				}
 			}
 			globalFunctionParsing = false;
@@ -228,8 +236,8 @@ public class PLParser
 				inst.op1type = OperandType.CONST;
 				inst.i2 = 0;
 				inst.op2type = OperandType.CONST;
-				inst.kind = ResultKind.CONST;
-				inst.type = OperandType.CONST;
+				inst.kind = ResultKind.VAR;
+				inst.type = OperandType.ADDRESS;
 				inst.overrideGenerate = true;
 				inst.forceGenerate(scope);
 				inst.origIdent = symName;
@@ -315,8 +323,8 @@ public class PLParser
 			inst.op1type = OperandType.CONST;
 			inst.i2 = 0;
 			inst.op2type = OperandType.CONST;
-			inst.kind = ResultKind.CONST;
-			inst.type = OperandType.CONST;
+			inst.kind = ResultKind.VAR;
+			inst.type = OperandType.ADDRESS;
 			inst.overrideGenerate = true;
 			inst.forceGenerate(scope);
 			inst.origIdent = symName;
@@ -493,10 +501,13 @@ public class PLParser
 			}
 			
 			// Handle replacement of global variables 
-			for (PLIRInstruction glob : scope.functions.get(funcName).modifiedGlobals.keySet())
+			if (funcName.equals("OutputNum") == false && funcName.equals("OutputNewLine") == false && funcName.equals("InputNum") == false)
 			{
-				glob.overrideGenerate = true;
-				glob.forceGenerate(scope);
+				for (PLIRInstruction glob : scope.functions.get(funcName).modifiedGlobals.keySet())
+				{
+					glob.overrideGenerate = true;
+					glob.forceGenerate(scope);
+				}
 			}
 			
 			// Remove the function from the callstack (we've returned from the call)
@@ -1339,29 +1350,9 @@ public class PLParser
 							inst1.forceGenerate(scope);
 							result.addInstruction(inst1);
 							
-							// If it's a store, then we need to load it from memory...
-//							if (exprInst.opcode == InstructionType.STORE)
-//							{
-//								inst1.op2type = OperandType.ADDRESS;
-//								inst1.op2 = exprInst;
-//							}
-//							else
-//							{
-//								inst1.op2type = callExprBlock.arrayOperands.get(0).type;
-//								inst1.op2 = callExprBlock.arrayOperands.get(0);
-//								if (inst1.op2type == OperandType.CONST)
-//								{
-//									inst1.i2 = inst1.op2.tempVal;
-//								}
-//							}
-//							inst1.forceGenerate(scope);
-//							result.addInstruction(inst1);
-							
 							PLIRInstruction inst2 = new PLIRInstruction(scope);
 							inst2.opcode = InstructionType.ADD;
 							inst2.op1type = OperandType.FP;
-//							inst2.op2type = OperandType.BASEADDRESS;
-//							inst2.op2address = exprInst.origIdent + "_baseaddr";
 							if (i == 0)
 							{
 								inst2.op2type = OperandType.BASEADDRESS;
@@ -1406,6 +1397,7 @@ public class PLParser
 					else
 					{
 						exprInst.forceGenerate(scope);
+						result.addInstruction(exprInst);
 					}
 					
 					// Add the first expression instruction to the list of operands
@@ -1424,6 +1416,7 @@ public class PLParser
 							SyntaxError("Invalid parameter to OutputNum");
 						}
 						
+						exprInst.forceGenerate(scope);
 						PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.WRITE, exprInst);
 						inst.forceGenerate(scope);
 						result.addInstruction(inst);
@@ -1443,7 +1436,7 @@ public class PLParser
 							advance(in);
 							
 							// TODO: should we be merging the BBs here?
-							result = parse_expression(in);
+							result = PLIRBasicBlock.merge(result, parse_expression(in));
 							
 							exprInst = result.getLastInst();
 							if (exprInst.isArray)
@@ -1514,6 +1507,7 @@ public class PLParser
 							else
 							{
 								exprInst.forceGenerate(scope);
+								result.addInstruction(exprInst);
 							}
 							
 							operands.add(exprInst);
@@ -1525,9 +1519,9 @@ public class PLParser
 							SyntaxError("Function: " + funcName + " invoked with the wrong number of arguments. Expected " + paramMap.get(funcName) + ", got " + operands.size());
 						}
 						
-						PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, funcBlockMap.containsKey(funcName), operands);
+						PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, funcFlagMap.get(funcName), operands);
 						callInst.forceGenerate(scope);
-						result = new PLIRBasicBlock();
+//						result = new PLIRBasicBlock();
 						result.hasReturn = funcFlagMap.get(funcName); // special case... this is a machine instruction, not a user-defined function
 						result.addInstruction(callInst);
 						result.isEntry = false;
@@ -1548,7 +1542,7 @@ public class PLParser
 					PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.READ);
 					inst.type = OperandType.INST;
 					inst.forceGenerate(scope);
-					result = new PLIRBasicBlock();
+//					result = new PLIRBasicBlock();
 					result.hasReturn = true; // special case... this is a machine instruction, not a user-defined function
 					result.addInstruction(inst);
 				}
@@ -1556,25 +1550,25 @@ public class PLParser
 				{
 					PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.WLN);
 					inst.forceGenerate(scope);
-					result = new PLIRBasicBlock();
+//					result = new PLIRBasicBlock();
 					result.addInstruction(inst);
 				}
 				else
 				{
-					PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, funcBlockMap.containsKey(funcName), operands);
+					PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, funcFlagMap.get(funcName), operands);
 					callInst.forceGenerate(scope);
-					result = new PLIRBasicBlock();
+//					result = new PLIRBasicBlock();
 					result.addInstruction(callInst);
 				}
 				
 				// Eat the last token and proceed
 				advance(in);
 			}
-			else if (paramMap.get(funcName) == 0) // a function with parameters, just write out the call
+			else if (paramMap.get(funcName) == 0) // a function without parameters, just write out the call
 			{
 				ArrayList<PLIRInstruction> emptyList = new ArrayList<PLIRInstruction>();
 				PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, funcFlagMap.get(funcName), emptyList);
-				result = new PLIRBasicBlock();
+//				result = new PLIRBasicBlock();
 				result.hasReturn = funcFlagMap.get(funcName); // special case... this is a machine instruction, not a user-defined function
 				result.addInstruction(callInst);
 				result.isEntry = true;
@@ -1605,14 +1599,17 @@ public class PLParser
 			debug("returning from: " + funcName);
 			
 			// Handle replacement of global variables 
-			for (PLIRInstruction glob : scope.functions.get(funcName).modifiedGlobals.keySet())
+			if (funcName.equals("OutputNum") == false && funcName.equals("OutputNewLine") == false && funcName.equals("InputNum") == false)
 			{
-				glob.type = OperandType.ADDRESS;
-				glob.kind = ResultKind.VAR;
-				glob.overrideGenerate = true;
-				glob.forceGenerate(scope);
-				debug(glob.toString());
-				debug(scope.getCurrentValue("x").toString());
+				for (PLIRInstruction glob : scope.functions.get(funcName).modifiedGlobals.keySet())
+				{
+					glob.type = OperandType.ADDRESS;
+					glob.kind = ResultKind.VAR;
+					glob.overrideGenerate = true;
+					glob.forceGenerate(scope);
+					debug(glob.toString());
+					debug(scope.getCurrentValue("x").toString());
+				}
 			}
 			
 			callStack.remove(callStack.size() - 1);
@@ -1815,12 +1812,53 @@ public class PLParser
 					entry.modifiedIdents.put(var, phi);
 					joinNode.modifiedIdents.put(var, phi);
 				}
+				
+				modifiers = new ArrayList<String>();
+				for (String modded : thenBlock.modifiedIdents.keySet())
+				{
+					if (sharedModifiers.contains(modded) == false) // don't double-add
+					{
+						modifiers.add(modded);
+					}
+				}
+				debug("(if statement without else) Inserting " + modifiers.size() + " phis");
+				for (String var : modifiers)
+				{
+					// Check to make sure this thing was actually in scope!
+					if (scope.getCurrentValue(var) == null)
+					{
+						debug("Uninitialized identifier in path: " + var);
+					}
+					
+					offset++;
+					PLIRInstruction leftInst = thenBlock.modifiedIdents.get(var);
+					leftInst.forceGenerate(scope, leftInst.tempPosition);
+					
+//					PLIRInstruction followInst = scope.getCurrentValue(var);
+					PLIRInstruction followInst = scope.getLastValue(var);
+					
+					followInst.forceGenerate(scope, followInst.tempPosition);
+					PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
+					debug(phi.toString());
+					joinNode.insertInstruction(phi, 0);
+					
+					// The current value in scope needs to be updated now with the result of the phi
+					System.out.println(scope.getCurrentScope());
+					scope.updateSymbol(var, phi);
+					
+					// Add to this block's list of modified identifiers
+					// Rationale: since we added a phi, the value potentially changes (is modified), 
+					// 	so the latest value in the current scope needs to be modified
+					entry.modifiedIdents.put(var, phi);
+					joinNode.modifiedIdents.put(var, phi);
+				}
 			}
 			else // there was no else block, so the right child becomes the join node
 			{
 				entry.rightChild = joinNode;
 				joinNode.parents.add(entry);
 //				scope.popScope();
+//			}
 				
 				// Check for necessary phis to be inserted in the join block
 				// We need phis for variables that were modified in both branches so we fall through with the right value
@@ -2321,6 +2359,17 @@ public class PLParser
 			scope.displayCurrentScopeSymbols();
 			
 			funcName = sym; // save for recovery later on
+			
+			switch (callType)
+			{
+			case PLToken.funcToken:
+				funcFlagMap.put(funcName, true);
+				break;
+			case PLToken.procToken:
+				funcFlagMap.put(funcName, false);
+				break;
+			}
+			
 			result = parse_ident(in);
 			
 			isFunction = toksym == PLToken.funcToken ? true : false;

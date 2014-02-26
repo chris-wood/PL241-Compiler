@@ -1,3 +1,1088 @@
+main
+var a;
+{
+  let a <- call InputNum();
+  let a <- a * 100 + 1;
+  call OutputNum(a);
+  call OutputNewLine()
+}.
+
+main
+var input;
+
+function factIter(n);
+var i, f;
+{
+  let i <- 1;
+  let f <- 1;
+  while i <= n do
+    let f <- f * i;
+    let i <- i + 1
+  od;
+  return f
+};
+
+function factRec(n);
+{
+  if n <= 1 then
+    return 1
+  fi;
+  return call factRec(n - 1) * n
+};
+
+{
+  let input <- call InputNum();
+  call OutputNum(call factIter(input));
+  call OutputNewLine();
+  call OutputNum(call factRec(input));
+  call OutputNewLine()
+}
+.
+
+main
+
+procedure foo();
+var i,b;
+{
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od;
+  let i <- 1;
+  while i < 4 do
+  let b <- call InputNum();
+    call OutputNum(b);
+    let i <- i + 1
+  od
+};
+{
+  call foo()
+}.
+
+
+// Copy propagation test
+main
+procedure foo();
+var a, b, c, d, e, f, g, h;
+{
+  let c <- a + b;
+  let d <- c;
+  let e <- d * d;
+  let f <- a + c;
+  let g <- e;
+  let a <- g + d;
+  
+  if a < c then
+    let h <- g + 1
+  else
+    let f <- d - g;
+    if f > a then
+      let c <- 2
+    fi
+  fi;
+  
+  let b <- g * a;
+  
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
+  call OutputNum(d);
+  call OutputNum(f);
+  call OutputNum(g);
+  call OutputNum(h)
+};
+
+{
+  call foo
+}
+.
+
 // kind of hard, a lot of procedures
 main
 var x, y;

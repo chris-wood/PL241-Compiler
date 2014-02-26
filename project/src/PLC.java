@@ -14,7 +14,9 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import com.uci.cs241.pl241.backend.DLXBasicBlock;
 import com.uci.cs241.pl241.backend.DLXGenerator;
+import com.uci.cs241.pl241.backend.DLXInstruction;
 import com.uci.cs241.pl241.frontend.PLEndOfFileException;
 import com.uci.cs241.pl241.frontend.PLParser;
 import com.uci.cs241.pl241.frontend.PLScanner;
@@ -142,7 +144,7 @@ public class PLC
 					
 					// Perform CSE, starting at the root
 					CSE cse = new CSE();
-					cse.performCSE(root);
+					cse.performCSE(entry);
 				}
 				
 				// Display the instructions AFTER CSE
@@ -203,7 +205,17 @@ public class PLC
 			if (runAll || (runStep1 && runStep2 && runStep3 && runStep4))
 			{
 				DLXGenerator dlxGen = new DLXGenerator();
-				dlxGen.convertFromColoredSSA(PLStaticSingleAssignment.instructions);
+				ArrayList<DLXBasicBlock> dlxBlocks = dlxGen.convertFromColoredSSA(blocks);
+				
+				for (DLXBasicBlock db : dlxBlocks)
+				{
+					for (DLXInstruction inst : db.instructions)
+					{
+//						System.out.println(Long.toHexString(inst.encodedForm));
+						System.out.println(inst.encodedForm);
+					}
+				}
+				System.out.println("done");
 			}
 		}
 	}
