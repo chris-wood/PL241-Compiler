@@ -191,12 +191,23 @@ public class PLC
 			
 			if (runAll || (runStep1 && runStep2 && runStep3))
 			{
-				// Register allocation
-				root = blocks.get(blocks.size() - 1);
-				RegisterAllocator ra = new RegisterAllocator();
-				ra.ComputeLiveRange(root);
-				InterferenceGraph ig = ra.ig;
-				ra.Color(ra.ig);
+				// Add the constant instruction
+				PLIRInstruction constInst = new PLIRInstruction(parser.scope);
+				constInst.id = 0;
+				PLStaticSingleAssignment.instructions.add(constInst);
+				InterferenceGraph ig = new InterferenceGraph(PLStaticSingleAssignment.instructions);
+				
+				// Register allocation on each block
+				RegisterAllocator ra = new RegisterAllocator(ig);
+				
+				// Compute live range of each function body, including main
+				for (PLIRBasicBlock block : blocks)
+				{
+					ra.ComputeLiveRange(block, constInst);
+				}
+				
+				// Perform allocation via coloring (with spilling)
+				ra.Color(ig);
 				String igdot = render.renderInterferenceGraph(ig, ra.regMap);
 				PrintWriter igWriter = new PrintWriter(new BufferedWriter(new FileWriter(sourceFile + ".ig.dot")));
 				igWriter.println(igdot);

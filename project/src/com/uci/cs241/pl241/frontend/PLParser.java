@@ -237,7 +237,7 @@ public class PLParser
 				inst.i2 = 0;
 				inst.op2type = OperandType.CONST;
 				inst.kind = ResultKind.VAR;
-				inst.type = OperandType.ADDRESS;
+				inst.type = OperandType.LOCALVARIABLE;
 				inst.overrideGenerate = true;
 				inst.forceGenerate(scope);
 				inst.origIdent = symName;

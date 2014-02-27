@@ -135,7 +135,7 @@ public class PLIRInstruction
 	
 	public enum OperandType
 	{
-		CONST, INST, NULL, ADDRESS, FP, BASEADDRESS, FUNC_PARAM
+		CONST, INST, NULL, ADDRESS, FP, BASEADDRESS, FUNC_PARAM, LOCALVARIABLE
 	};
 	
 	public PLIRInstruction(PLSymbolTable table)

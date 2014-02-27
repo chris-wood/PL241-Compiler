@@ -22,14 +22,15 @@
 22 := phi (15) (25)
 23 := cmp (21) #0
 24 := ble (23) #6
-25 := add #0 #1000
+25 := add #0 #666
 26 := write (21)
 27 := wln
 28 := sub (21) #1
 29 := beq #0 #-8
-30 := proc foo (21)
-31 := write (22)
-32 := write (21)
-33 := wln
-34 := end
+30 := write (21)
+31 := proc foo (22)
+32 := write (22)
+33 := write (21)
+34 := wln
+35 := end
 

@@ -7,6 +7,8 @@ import java.util.HashSet;
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
 import com.uci.cs241.pl241.ir.PLIRInstruction.InstructionType;
+import com.uci.cs241.pl241.ir.PLIRInstruction.OperandType;
+import com.uci.cs241.pl241.ir.PLIRInstruction.ResultKind;
 import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
 
 public class RegisterAllocator
@@ -16,6 +18,11 @@ public class RegisterAllocator
 
 	public HashMap<Integer, Integer> regMap = new HashMap<Integer, Integer>();
 	public HashSet<Integer> regSet = new HashSet<Integer>();
+	
+	public RegisterAllocator(InterferenceGraph ig)
+	{
+		this.ig = ig;
+	}
 
 	// Graph coloring algorithm
 	public void Color(InterferenceGraph graph)
@@ -73,15 +80,14 @@ public class RegisterAllocator
 		PLStaticSingleAssignment.getInstruction(x).regNum = color;
 	}
 
-	public void ComputeLiveRange(PLIRBasicBlock entryBlock)
+	public void ComputeLiveRange(PLIRBasicBlock entryBlock, PLIRInstruction constInst)
 	{
-		ig = new InterferenceGraph(PLStaticSingleAssignment.instructions);
 		HashSet<PLIRInstruction> live = new HashSet<PLIRInstruction>();
-		live.addAll(CalcLiveRange(entryBlock, 1, 1));
-		live.addAll(CalcLiveRange(entryBlock, 1, 2));
+		live.addAll(CalcLiveRange(entryBlock, 1, 1, constInst));
+		live.addAll(CalcLiveRange(entryBlock, 1, 2, constInst));
 	}
 
-	public HashSet<PLIRInstruction> CalcLiveRange(PLIRBasicBlock b, int branch, int pass)
+	public HashSet<PLIRInstruction> CalcLiveRange(PLIRBasicBlock b, int branch, int pass, PLIRInstruction constInst)
 	{
 		HashSet<PLIRInstruction> live = new HashSet<PLIRInstruction>();
 
@@ -113,22 +119,17 @@ public class RegisterAllocator
 				// recursively add children to the live set
 				if (b.leftChild != null)
 				{
-					live.addAll(CalcLiveRange(b.leftChild, 1, pass));
+					live.addAll(CalcLiveRange(b.leftChild, 1, pass, constInst));
 				}
 				if (b.rightChild != null)
 				{
-					live.addAll(CalcLiveRange(b.rightChild, 2, pass));
+					live.addAll(CalcLiveRange(b.rightChild, 2, pass, constInst));
 				}
 
 				// for all non-phis
 				for (int i = b.instructions.size() - 1; i >= 0; i--)
 				{
 					PLIRInstruction inst = b.instructions.get(i);
-					if (inst.opcode == InstructionType.LOADPARAM)
-					{
-						System.err.println("found loadparam");
-						System.exit(-1);
-					}
 					if (inst.opcode != InstructionType.PHI && inst.isNotLiveInstruction() == false)
 					{
 						
@@ -165,6 +166,10 @@ public class RegisterAllocator
 								op = op.refInst;
 							}
 							live.add(op);
+						}
+						if (inst.type == OperandType.LOCALVARIABLE)
+						{
+							live.add(constInst);
 						}
 					}
 				}

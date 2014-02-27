@@ -26,11 +26,12 @@ var i;
   while b > 0 do
     call OutputNum(b);
     call OutputNewLine();
-    let a <- 1000;
+    let a <- 666;
     let b <- b - 1
   od;
 
-  call foo(b);
+  call OutputNum(b);
+  call foo(a);
 
   call OutputNum(a);
   call OutputNum(b);

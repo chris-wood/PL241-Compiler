@@ -35,7 +35,7 @@ public class DLXGenerator
 	public HashMap<InstructionType, InstructionFormat> formatMap = new HashMap<InstructionType, InstructionFormat>();
 	public HashMap<Integer, DLXBasicBlock> allBlocks = new HashMap<Integer, DLXBasicBlock>();
 
-	public int pc = 2; // account for the initial jump
+	public int pc = 1; // account for the initial jump
 
 	public DLXGenerator()
 	{
@@ -904,7 +904,10 @@ public class DLXGenerator
 							DLXInstruction push3 = new DLXInstruction();
 							push3.opcode = InstructionType.PSH;
 							push3.format = formatMap.get(InstructionType.PSH);
-							push3.ra = RA; // save contents of ssaInst.regNum
+							
+							
+							// TODO: do check to see if this is a constant or not
+							push3.ra = operand.regNum; // save contents of ssaInst.regNum
 							push3.rb = SP; //
 							push3.rc = 4; // word size
 							push3.encodedForm = encodeInstruction(push3);
@@ -989,8 +992,6 @@ public class DLXGenerator
 						break;
 
 					case LOADPARAM:
-//						System.err.println("LOADPARAM instructions are syntactic sugar to make calling conventions easier - error!");
-//						System.exit(-1);
 						// loadparam operand#
 						// i1 for ssaInst is the operand# 
 						// load from stack
@@ -1000,7 +1001,7 @@ public class DLXGenerator
 						loadInst.format = formatMap.get(InstructionType.LDW);
 						loadInst.ra = ssaInst.regNum;
 						loadInst.rb = SP;
-						loadInst.rc = -4 * (ssaInst.i1 + 1);
+						loadInst.rc = -4 * (ssaInst.i1 + 2);
 						branchOffset++;
 						loadInst.encodedForm = encodeInstruction(loadInst);
 						appendInstructionToBlock(edb, loadInst);
