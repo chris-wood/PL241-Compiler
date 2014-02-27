@@ -211,6 +211,7 @@ public class PLC
 					DLXBasicBlock db = dlxGen.generateBlockTree(null, block, new HashSet<Integer>());
 					dlxGen.generateBlockTreeInstructons(db, block, 0, new HashSet<Integer>());
 					ArrayList<DLXInstruction> dlxInstructions = dlxGen.convertToStraightLineCode(db, -1, new HashSet<Integer>());
+					dlxGen.fixup(dlxInstructions);
 					for (DLXInstruction inst : dlxInstructions)
 					{
 //						System.out.println(Long.toHexString(inst.encodedForm));

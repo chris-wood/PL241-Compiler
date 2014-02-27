@@ -318,7 +318,7 @@ public class PLParser
 		{
 			// Initialize the variable to 0
 			PLIRInstruction inst = new PLIRInstruction(scope);
-			inst.opcode = InstructionType.GLOBAL;
+			inst.opcode = InstructionType.ADD;
 			inst.i1 = 0;
 			inst.op1type = OperandType.CONST;
 			inst.i2 = 0;

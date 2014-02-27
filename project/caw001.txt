@@ -12,8 +12,11 @@ var a, b;
     call OutputNum(a)
   fi;
 
-  while b < 5 do
-    let b <- 10
+  while b > 0 do
+    call OutputNum(b);
+    call OutputNewLine();
+    let a <- 1000;
+    let b <- b - 1
   od;
 
   call OutputNum(a);

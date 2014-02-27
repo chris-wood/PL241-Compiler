@@ -10,6 +10,7 @@ import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
 import com.uci.cs241.pl241.ir.PLIRInstruction.OperandType;
 import com.uci.cs241.pl241.ir.PLIRInstruction.ResultKind;
+import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
 
 public class DLXGenerator
 {
@@ -20,7 +21,7 @@ public class DLXGenerator
 	
 	public int branchOffset = 0;
 	
-	public HashMap<PLIRInstruction, Integer> offsetMap = new HashMap<PLIRInstruction, Integer>(); 
+	public HashMap<Integer, DLXInstruction> offsetMap = new HashMap<Integer, DLXInstruction>(); 
 	
 	public ArrayList<DLXInstruction> instructions = new ArrayList<DLXInstruction>();
 	
@@ -143,6 +144,40 @@ public class DLXGenerator
 		}
 	}
 	
+	public void fixup(ArrayList<DLXInstruction> instructions)
+	{
+		// Reset pc for each instruction
+		int pc = 0;
+		for (DLXInstruction inst : instructions)
+		{
+			inst.pc = pc++;
+			System.out.println(inst);
+		}
+		
+		// Fix branches
+		for (DLXInstruction inst : instructions)
+		{
+			if (DLXInstruction.isBranch(inst))
+			{
+				if (inst.rc < 0)
+				{
+					int refId = inst.ssaInst + inst.rc;
+					PLIRInstruction refInst = PLStaticSingleAssignment.getInstruction(refId);
+					int offset = offsetMap.get(refInst.id).pc;
+					inst.rc = offset - inst.pc + inst.offset; // this needs to be + # of phi's added...
+				}
+				else // positive offset
+				{
+					int refId = inst.ssaInst + inst.rc;
+					PLIRInstruction refInst = PLStaticSingleAssignment.getInstruction(refId);
+					int offset = offsetMap.get(refInst.id).pc;
+					inst.rc = offset - inst.pc;
+				}
+				inst.encodedForm = encodeInstruction(inst);
+			}
+		}
+	}
+	
 	public long encodeInstruction(DLXInstruction inst)
 	{
 		long code = 0;
@@ -183,25 +218,32 @@ public class DLXGenerator
 		return code;
 	}
 	
-	public void prependInstructionToBlock(DLXBasicBlock block, DLXInstruction inst)
-	{
-		inst.encodedForm = encodeInstruction(inst);
-		block.instructions.add(0, inst);
-		pc++;
-	}
-	
+//	public void prependInstructionToBlock(DLXBasicBlock block, DLXInstruction inst)
+//	{
+//		inst.encodedForm = encodeInstruction(inst);
+//		block.instructions.add(0, inst);
+//		inst.pc = pc++;
+//	}
+
 	public void appendInstructionToBlock(DLXBasicBlock block, DLXInstruction inst)
 	{
 		inst.encodedForm = encodeInstruction(inst);
 		block.instructions.add(inst);
-		pc++;
+		inst.pc = pc++;
+	}
+	
+	public void appendInstructionToEndBlock(DLXBasicBlock block, DLXInstruction inst)
+	{
+		inst.encodedForm = encodeInstruction(inst);
+		block.endInstructions.add(inst);
+		inst.pc = pc++;
 	}
 	
 	public void appendInstructionToBlockFromOffset(DLXBasicBlock block, DLXInstruction inst, int offset)
 	{
 		inst.encodedForm = encodeInstruction(inst);
 		block.instructions.add(block.instructions.size() + offset, inst);
-		pc++;
+		inst.pc = pc++;
 	}
 	
 	public ArrayList<DLXInstruction> convertToStraightLineCode(DLXBasicBlock entry, int stopBlock, HashSet<Integer> visited)
@@ -216,6 +258,11 @@ public class DLXGenerator
 			for (DLXInstruction inst : entry.instructions)
 			{
 				instructions.add(inst);
+			}
+			instructions.get(instructions.size() - 1).offset = entry.endInstructions.size();
+			for (DLXInstruction inst : entry.endInstructions)
+			{
+				instructions.add(instructions.size() - 1, inst);
 			}
 			
 			boolean end = entry.left == null && entry.right == null;
@@ -318,15 +365,6 @@ public class DLXGenerator
 		{
 			visited.add(b.id);
 			
-			if (b.leftChild != null)
-			{
-				generateBlockTreeInstructons(edb.left, b.leftChild, 0, visited);
-			}
-			if (b.rightChild != null)
-			{
-				generateBlockTreeInstructons(edb.right, b.rightChild, 1, visited);
-			}
-			
 			for (int i = 0; i < b.instructions.size(); i++)
 			{
 				PLIRInstruction ssaInst = b.instructions.get(i);
@@ -376,7 +414,7 @@ public class DLXGenerator
 							newInst.rc = ssaInst.i2;
 							
 							branchOffset++;
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, preInst);
 							appendInstructionToBlock(edb, preInst);
 							appendInstructionToBlock(edb, newInst);
 						}
@@ -388,7 +426,7 @@ public class DLXGenerator
 							newInst.rb = ssaInst.op2.regNum;
 							newInst.rc = ssaInst.i1;
 							
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 						}
 						else if (rightConst)
@@ -399,7 +437,7 @@ public class DLXGenerator
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.i2;
 							
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 						}
 						else
@@ -409,7 +447,7 @@ public class DLXGenerator
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.op2.regNum;
 							
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 						}
 						
@@ -433,7 +471,7 @@ public class DLXGenerator
 							newInst.rc = ssaInst.i2;
 							
 							branchOffset++;
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, preInst);
 							appendInstructionToBlock(edb, preInst);
 							appendInstructionToBlock(edb, newInst);
 						}
@@ -450,7 +488,7 @@ public class DLXGenerator
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.i2;
 							
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 						}
 						else
@@ -461,7 +499,7 @@ public class DLXGenerator
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.op2.regNum;
 							
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 						}
 						break;
@@ -485,7 +523,7 @@ public class DLXGenerator
 							newInst.rc = ssaInst.i2;
 							
 							branchOffset++;
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, preInst);
 							appendInstructionToBlock(edb, preInst);
 							appendInstructionToBlock(edb, newInst);
 						}
@@ -497,7 +535,7 @@ public class DLXGenerator
 							newInst.rb = ssaInst.op2.regNum;
 							newInst.rc = ssaInst.i1;
 							
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 						}
 						else if (rightConst)
@@ -508,7 +546,7 @@ public class DLXGenerator
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.i2;
 							
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 						}
 						else
@@ -518,7 +556,7 @@ public class DLXGenerator
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.op2.regNum;
 							
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 						}
 						break;
@@ -542,7 +580,7 @@ public class DLXGenerator
 							newInst.rc = ssaInst.i2;
 							
 							branchOffset++;
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, preInst);
 							appendInstructionToBlock(edb, preInst);
 							appendInstructionToBlock(edb, newInst);
 						}
@@ -559,7 +597,7 @@ public class DLXGenerator
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.i2;
 							
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 						}
 						else
@@ -570,7 +608,7 @@ public class DLXGenerator
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.op2.regNum;
 							
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 						}
 						break;
@@ -588,7 +626,7 @@ public class DLXGenerator
 						if (ssaInst.op1type == OperandType.ADDRESS || ssaInst.op1type == OperandType.INST)
 						{
 							newInst.rb = ssaInst.op1.regNum;
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 						}
 						else // constant, push regNum onto stack, load constant into rb, pop off of stack
@@ -620,7 +658,7 @@ public class DLXGenerator
 							popInst.encodedForm = encodeInstruction(popInst);
 							
 							branchOffset += 3;
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, pushInst);
 							appendInstructionToBlock(edb, pushInst);
 							appendInstructionToBlock(edb, loadInst);
 							appendInstructionToBlock(edb, newInst);
@@ -634,7 +672,7 @@ public class DLXGenerator
 						newInst.rb = 0;
 						newInst.rc = 0;
 						
-						offsetMap.put(ssaInst, pc);
+						offsetMap.put(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
 						break;
 					case WLN:
@@ -644,7 +682,7 @@ public class DLXGenerator
 						newInst.rb = 0;
 						newInst.rc = 0;
 						
-						offsetMap.put(ssaInst, pc);
+						offsetMap.put(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
 						break;
 					case END:
@@ -654,7 +692,7 @@ public class DLXGenerator
 						newInst.rb = 0;
 						newInst.rc = 0;
 						
-						offsetMap.put(ssaInst, pc);
+						offsetMap.put(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
 						break;
 					case CMP:
@@ -676,7 +714,7 @@ public class DLXGenerator
 							newInst.rc = ssaInst.i2;
 							
 							branchOffset++;
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, preInst);
 							appendInstructionToBlock(edb, preInst);
 							appendInstructionToBlock(edb, newInst);
 						}
@@ -693,7 +731,7 @@ public class DLXGenerator
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.i2;
 							
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 						}
 						else
@@ -704,7 +742,7 @@ public class DLXGenerator
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.op2.regNum;
 							
-							offsetMap.put(ssaInst, pc);
+							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 						}
 						break;
@@ -721,10 +759,10 @@ public class DLXGenerator
 						{
 							newInst.ra = ssaInst.op1.regNum; // e.g. BEQ (0) #4
 						}
-						
 						newInst.rc = ssaInst.i2;
+						newInst.ssaInst = ssaInst.id;
 						
-						offsetMap.put(ssaInst, pc);
+						offsetMap.put(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
 						break;
 						
@@ -732,11 +770,10 @@ public class DLXGenerator
 						newInst.opcode = InstructionType.BNE;
 						newInst.format = formatMap.get(InstructionType.BNE);
 						newInst.ra = ssaInst.op1.regNum; // BNE (0) #4
-						
-//						int index = ssaInst.i2 + ssaInst.id;
 						newInst.rc = ssaInst.i2;
+						newInst.ssaInst = ssaInst.id;
 						
-						offsetMap.put(ssaInst, pc);
+						offsetMap.put(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
 						break;
 						
@@ -745,8 +782,9 @@ public class DLXGenerator
 						newInst.format = formatMap.get(InstructionType.BLT);
 						newInst.ra = ssaInst.op1.regNum; // BLT (0) #4
 						newInst.rc = ssaInst.i2;
+						newInst.ssaInst = ssaInst.id;
 						
-						offsetMap.put(ssaInst, pc);
+						offsetMap.put(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
 						break;
 						
@@ -755,8 +793,9 @@ public class DLXGenerator
 						newInst.format = formatMap.get(InstructionType.BGE);
 						newInst.ra = ssaInst.op1.regNum; // BGE (0) #4
 						newInst.rc = ssaInst.i2;
+						newInst.ssaInst = ssaInst.id;
 						
-						offsetMap.put(ssaInst, pc);
+						offsetMap.put(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
 						break;
 						
@@ -765,8 +804,9 @@ public class DLXGenerator
 						newInst.format = formatMap.get(InstructionType.BLE);
 						newInst.ra = ssaInst.op1.regNum; // BLE (0) #4
 						newInst.rc = ssaInst.i2;
+						newInst.ssaInst = ssaInst.id;
 						
-						offsetMap.put(ssaInst, pc);
+						offsetMap.put(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
 						break;
 						
@@ -775,8 +815,9 @@ public class DLXGenerator
 						newInst.format = formatMap.get(InstructionType.BGT);
 						newInst.ra = ssaInst.op1.regNum; // BGT (0) #4
 						newInst.rc = ssaInst.i2;
+						newInst.ssaInst = ssaInst.id;
 						
-						offsetMap.put(ssaInst, pc);
+						offsetMap.put(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
 						break;
 						
@@ -828,7 +869,7 @@ public class DLXGenerator
 									leftInst.rc = ssaInst.op1.regNum;
 									
 									branchOffset++;
-									offsetMap.put(ssaInst, pc);
+									offsetMap.put(ssaInst.id, leftInst);
 									appendInstructionToBlock(edb, leftInst);
 								}
 								if (ssaInst.regNum != ssaInst.op2.regNum) // move ssaInst.op1.regNum to ssaInst.regNum
@@ -841,8 +882,9 @@ public class DLXGenerator
 									rightInst.rc = ssaInst.op2.regNum;
 									
 									branchOffset++;
-									offsetMap.put(ssaInst, pc);
-									appendInstructionToBlockFromOffset(insertBlock, rightInst, -1);
+//									offsetMap.put(ssaInst.id, rightInst);
+//									appendInstructionToBlockFromOffset(insertBlock, rightInst, -1);
+									appendInstructionToEndBlock(insertBlock, rightInst);
 								}
 							}
 						}
@@ -861,7 +903,7 @@ public class DLXGenerator
 									insertBlock = edb.parents.get(branch);
 									
 									branchOffset++;
-									offsetMap.put(ssaInst, pc);
+									offsetMap.put(ssaInst.id, leftInst);
 //									prependInstructionToBlock(insertBlock, leftInst);
 									appendInstructionToBlock(insertBlock, leftInst);
 								}
@@ -876,7 +918,7 @@ public class DLXGenerator
 									insertBlock = edb.parents.get(branch);
 									
 									branchOffset++;
-									offsetMap.put(ssaInst, pc);
+									offsetMap.put(ssaInst.id, rightInst);
 //									prependInstructionToBlock(insertBlock, rightInst);
 									appendInstructionToBlock(insertBlock, rightInst);
 								}
@@ -884,6 +926,15 @@ public class DLXGenerator
 						}
 						break;
 				}
+			}
+			
+			if (b.leftChild != null)
+			{
+				generateBlockTreeInstructons(edb.left, b.leftChild, 0, visited);
+			}
+			if (b.rightChild != null)
+			{
+				generateBlockTreeInstructons(edb.right, b.rightChild, 1, visited);
 			}
 		}
 	}

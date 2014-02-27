@@ -1,11 +1,18 @@
 package com.uci.cs241.pl241.backend;
 
+import com.uci.cs241.pl241.ir.PLIRInstruction;
+
 public class DLXInstruction
 {
 	// Instruction information
 	public InstructionType opcode;
 	public InstructionFormat format;
 	public long encodedForm;
+	
+	public int fixupLocation;
+	public int pc = -1;
+	public int ssaInst = -1;
+	public int offset = 0;
 	
 	// Register operands
 	public int ra;
@@ -18,7 +25,7 @@ public class DLXInstruction
 	@Override
 	public String toString()
 	{
-		return opcode.toString() + " " + ra + " " + rb + " " + rc;
+		return pc + ": " + opcode.toString() + " " + ra + " " + rb + " " + rc;
 	}
 	
 	public enum InstructionFormat
@@ -80,5 +87,12 @@ public class DLXInstruction
 		WRD,
 		WRH,
 		WRL
+	}
+	
+	public static boolean isBranch(DLXInstruction inst)
+	{
+		return (inst.opcode == InstructionType.BEQ || inst.opcode == InstructionType.BNE 
+				|| inst.opcode == InstructionType.BLT || inst.opcode == InstructionType.BGE 
+				|| inst.opcode == InstructionType.BLE || inst.opcode == InstructionType.BGT);
 	}
 }
