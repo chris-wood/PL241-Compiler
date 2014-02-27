@@ -35,7 +35,7 @@ public class DLXGenerator
 	public HashMap<InstructionType, InstructionFormat> formatMap = new HashMap<InstructionType, InstructionFormat>();
 	public HashMap<Integer, DLXBasicBlock> allBlocks = new HashMap<Integer, DLXBasicBlock>();
 
-	public int pc = 1; // account for the initial jump
+	public int pc = 2; // account for the initial jump
 
 	public DLXGenerator()
 	{
@@ -167,13 +167,9 @@ public class DLXGenerator
 					int refId = inst.ssaInst + inst.rc;
 					PLIRInstruction refInst = PLStaticSingleAssignment.getInstruction(refId);
 					int offset = offsetMap.get(refInst.id).pc;
-					inst.rc = offset - inst.pc + inst.offset; // this needs to
-																// be + # of
-																// phi's
-																// added...
+					inst.rc = offset - inst.pc + inst.offset; 
 				}
-				else
-				// positive offset
+				else // positive offset
 				{
 					int refId = inst.ssaInst + inst.rc;
 					PLIRInstruction refInst = PLStaticSingleAssignment.getInstruction(refId);
@@ -372,10 +368,11 @@ public class DLXGenerator
 					retInst.ra = 0;
 					retInst.rb = 0;
 					retInst.rc = RA; // jump to RA
+					retInst.encodedForm = encodeInstruction(retInst);
 
 					// TODO: do these need offsets?
 					// offsetMap.put(ssaInst.id, retInst);
-					appendInstructionToBlock(entry, retInst);
+//					appendInstructionToBlock(entry, retInst);
 					instructions.add(retInst);
 				}
 				else if (func != null && func.hasReturn == true)
@@ -696,7 +693,7 @@ public class DLXGenerator
 							popInst.ra = ssaInst.regNum; // save contents of
 															// ssaInst.regNum
 							popInst.rb = SP;
-							popInst.rc = -4; // word size
+							popInst.rc = 4; // word size
 							popInst.encodedForm = encodeInstruction(popInst);
 
 							branchOffset += 3;
@@ -905,28 +902,33 @@ public class DLXGenerator
 						appendInstructionToBlock(edb, push2);
 
 						// Set FP = SP - FP
-						DLXInstruction ppush4 = new DLXInstruction();
-						ppush4.opcode = InstructionType.SUB;
-						ppush4.format = formatMap.get(InstructionType.ADDI);
-						ppush4.ra = FP;
-						ppush4.rb = SP;
-						ppush4.rc = FP;
+						DLXInstruction push4 = new DLXInstruction();
+						push4.opcode = InstructionType.SUB;
+						push4.format = formatMap.get(InstructionType.ADDI);
+						push4.ra = FP;
+						push4.rb = SP;
+						push4.rc = FP;
+						push4.encodedForm = encodeInstruction(push4);
+						appendInstructionToBlock(edb, push4);
 
 						// FP = FP - 2, equating to FP = SP - FP - 2
-						DLXInstruction p5 = new DLXInstruction();
-						p5.opcode = InstructionType.SUBI;
-						p5.format = formatMap.get(InstructionType.SUBI);
-						p5.ra = FP;
-						p5.rb = FP;
-						p5.rc = 2; // subtract 2, one for FP and one for RA
-									// register on the stack
+						DLXInstruction push5 = new DLXInstruction();
+						push5.opcode = InstructionType.SUBI;
+						push5.format = formatMap.get(InstructionType.SUBI);
+						push5.ra = FP;
+						push5.rb = FP;
+						push5.rc = 2; // subtract 2, one for FP and one for RA register on the stack
+						push5.encodedForm = encodeInstruction(push5);
+						appendInstructionToBlock(edb, push5);
 
 						// Add the JSR routine
 						DLXInstruction jsrInst = new DLXInstruction();
 						jsrInst.opcode = InstructionType.JSR;
 						jsrInst.format = formatMap.get(InstructionType.JSR);
-						newInst.ra = newInst.rb = 0;
-						jsrInst.rc = functionAddressTable.get(ssaInst.funcName);
+						jsrInst.ra = newInst.rb = 0;
+						jsrInst.rc = functionAddressTable.get(ssaInst.funcName) * 4;
+						jsrInst.encodedForm = encodeInstruction(jsrInst);
+						offsetMap.put(ssaInst.id, jsrInst);
 						appendInstructionToBlock(edb, jsrInst);
 
 						// Recover the FP
@@ -935,7 +937,7 @@ public class DLXGenerator
 						pop1.format = formatMap.get(InstructionType.POP);
 						pop1.ra = FP;
 						pop1.rb = SP;
-						pop1.rc = -4; // word size
+						pop1.rc = 4; // word size
 						pop1.encodedForm = encodeInstruction(pop1);
 						appendInstructionToBlock(edb, pop1);
 
@@ -946,10 +948,9 @@ public class DLXGenerator
 							DLXInstruction pop2 = new DLXInstruction();
 							pop2.opcode = InstructionType.POP;
 							pop2.format = formatMap.get(InstructionType.POP);
-							pop2.ra = 0; // toss away the operands that were
-											// passed onto the stack
+							pop2.ra = 0; // toss away the operands that were passed onto the stack
 							pop2.rb = SP;
-							pop2.rc = -4; // word size
+							pop2.rc = 4; // word size
 							pop2.encodedForm = encodeInstruction(pop2);
 							appendInstructionToBlock(edb, pop2);
 						}
@@ -960,7 +961,7 @@ public class DLXGenerator
 						pop3.format = formatMap.get(InstructionType.POP);
 						pop3.ra = RA;
 						pop3.rb = SP;
-						pop3.rc = -4; // word size
+						pop3.rc = 4; // word size
 						pop3.encodedForm = encodeInstruction(pop3);
 						appendInstructionToBlock(edb, pop3);
 

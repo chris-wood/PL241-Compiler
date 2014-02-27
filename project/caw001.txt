@@ -4,7 +4,9 @@ var a, b;
 procedure foo();
 var i;
 {
-  call OutputNum(1337)
+  call OutputNum(1337);
+  //call OutputNum(i);
+  call OutputNewLine()
 };
 
 {

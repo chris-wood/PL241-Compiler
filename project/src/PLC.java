@@ -261,26 +261,26 @@ public class PLC
 				
 				// Insert jump to the start of the program
 				DLXInstruction mainJump = new DLXInstruction();
-				mainJump.opcode = InstructionType.JSR;
+				mainJump.opcode = InstructionType.BEQ;
 				mainJump.ra = mainJump.rb = 0;
 				mainJump.rc = mainStart;
-				mainJump.format = dlxGen.formatMap.get(InstructionType.JSR);
+				mainJump.format = dlxGen.formatMap.get(InstructionType.BEQ);
 				mainJump.encodedForm = dlxGen.encodeInstruction(mainJump);
 				mainJump.pc = 0;
 				slp.add(0, mainJump);
 				
 				// Write the DLX machine code
-				System.out.println("\n\n--FINAL PROGARM--");
+				System.out.println("\n\n--FINAL PROGARM--\n");
 				PrintWriter dlxWriter = new PrintWriter(new BufferedWriter(new FileWriter(sourceFile + ".dlx")));
 				for (DLXInstruction inst : slp)
 				{
 					dlxWriter.println(inst.encodedForm);
-					System.out.println(inst);
+					System.out.println(inst + ", " + Long.toHexString(inst.encodedForm));
 				}
 				dlxWriter.flush();
 				dlxWriter.close();
 				
-				System.out.println("done");
+				System.out.println("\n--COMPILATION COMPLETE--");
 			}
 		}
 	}
