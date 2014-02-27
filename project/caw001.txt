@@ -1,5 +1,12 @@
 main
 var a, b;
+
+procedure foo();
+var i;
+{
+  call OutputNum(1337)
+};
+
 {
   call OutputNum(a);
   call OutputNewLine();
@@ -18,6 +25,8 @@ var a, b;
     let a <- 1000;
     let b <- b - 1
   od;
+
+  call foo();
 
   call OutputNum(a);
   call OutputNum(b);

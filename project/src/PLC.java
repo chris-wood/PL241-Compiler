@@ -17,6 +17,8 @@ import org.apache.commons.cli.ParseException;
 import com.uci.cs241.pl241.backend.DLXBasicBlock;
 import com.uci.cs241.pl241.backend.DLXGenerator;
 import com.uci.cs241.pl241.backend.DLXInstruction;
+import com.uci.cs241.pl241.backend.DLXInstruction.InstructionType;
+import com.uci.cs241.pl241.frontend.Function;
 import com.uci.cs241.pl241.frontend.PLEndOfFileException;
 import com.uci.cs241.pl241.frontend.PLParser;
 import com.uci.cs241.pl241.frontend.PLScanner;
@@ -205,28 +207,78 @@ public class PLC
 			if (runAll || (runStep1 && runStep2 && runStep3 && runStep4))
 			{
 				DLXGenerator dlxGen = new DLXGenerator();
-				dlxGen.populateGlobalAddressTable(parser.globalVariables);
-				for (PLIRBasicBlock block : blocks)
-				{
+				
+//				dlxGen.populateGlobalAddressTable(parser.globalVariables);
+				int mainStart = 0;
+				
+				ArrayList<ArrayList<DLXInstruction>> program = new ArrayList<ArrayList<DLXInstruction>>();
+				for (int i = 0; i < blocks.size(); i++)
+				{	
+					PLIRBasicBlock block = blocks.get(i);
+					
+					boolean isFunc = false;
+					boolean isProc = false;
+					boolean isMain = true;
+					Function func = null;
+					if (block.label != null && block.label.length() > 0)
+					{
+						isFunc = parser.funcFlagMap.get(block.label);
+						isProc = !isFunc;
+						isMain = false;
+						func = parser.scope.functions.get(block.label);
+					}
+					
+					// save the start of the program
+					if (isMain)
+					{
+						mainStart = dlxGen.pc; 
+					}
+					
 					DLXBasicBlock db = dlxGen.generateBlockTree(null, block, new HashSet<Integer>());
-					dlxGen.generateBlockTreeInstructons(db, block, 0, new HashSet<Integer>());
-					ArrayList<DLXInstruction> dlxInstructions = dlxGen.convertToStraightLineCode(db, -1, new HashSet<Integer>());
+					dlxGen.generateBlockTreeInstructons(db, block, isMain, 0, new HashSet<Integer>());
+					ArrayList<DLXInstruction> dlxInstructions = dlxGen.convertToStraightLineCode(db, func, -1, new HashSet<Integer>());
 					dlxGen.fixup(dlxInstructions);
+					program.add(dlxInstructions);
 					for (DLXInstruction inst : dlxInstructions)
 					{
 //						System.out.println(Long.toHexString(inst.encodedForm));
 						System.out.println(inst);
 					}
 					
-					// Write the DLX machine code
-					PrintWriter dlxWriter = new PrintWriter(new BufferedWriter(new FileWriter(sourceFile + ".dlx")));
-					for (DLXInstruction inst : dlxInstructions)
-					{
-						dlxWriter.println(inst.encodedForm);
-					}
-					dlxWriter.flush();
-					dlxWriter.close();
+					// Update the address table
+					dlxGen.functionAddressTable.put(block.label, dlxGen.pc - dlxInstructions.size());
 				}
+				
+				// Flatten the lists into one SLP
+				ArrayList<DLXInstruction> slp = new ArrayList<DLXInstruction>();
+				for (ArrayList<DLXInstruction> list : program)
+				{
+					for (DLXInstruction inst : list)
+					{
+						slp.add(inst);
+					}
+				}
+				
+				// Insert jump to the start of the program
+				DLXInstruction mainJump = new DLXInstruction();
+				mainJump.opcode = InstructionType.JSR;
+				mainJump.ra = mainJump.rb = 0;
+				mainJump.rc = mainStart;
+				mainJump.format = dlxGen.formatMap.get(InstructionType.JSR);
+				mainJump.encodedForm = dlxGen.encodeInstruction(mainJump);
+				mainJump.pc = 0;
+				slp.add(0, mainJump);
+				
+				// Write the DLX machine code
+				System.out.println("\n\n--FINAL PROGARM--");
+				PrintWriter dlxWriter = new PrintWriter(new BufferedWriter(new FileWriter(sourceFile + ".dlx")));
+				for (DLXInstruction inst : slp)
+				{
+					dlxWriter.println(inst.encodedForm);
+					System.out.println(inst);
+				}
+				dlxWriter.flush();
+				dlxWriter.close();
 				
 				System.out.println("done");
 			}

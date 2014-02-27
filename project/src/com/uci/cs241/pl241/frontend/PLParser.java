@@ -27,7 +27,7 @@ public class PLParser
 	private boolean globalFunctionParsing; 
 	
 	// Other necessary things
-	private PLSymbolTable scope;
+	public PLSymbolTable scope;
 	
 	public enum IdentType {VAR, ARRAY, FUNC};
 	private HashMap<String, IdentType> identTypeMap = new HashMap<String, IdentType>();
@@ -44,7 +44,7 @@ public class PLParser
 	private HashMap<String, PLIRBasicBlock> funcBlockMap = new HashMap<String, PLIRBasicBlock>();
 	private HashMap<String, PLIRBasicBlock> procBlockMap = new HashMap<String, PLIRBasicBlock>();
 	private HashMap<String, Integer> paramMap = new HashMap<String, Integer>();
-	private HashMap<String, Boolean> funcFlagMap = new HashMap<String, Boolean>();
+	public HashMap<String, Boolean> funcFlagMap = new HashMap<String, Boolean>();
 	
 	// def-use chain data structure
 	public HashMap<PLIRInstruction, HashSet<PLIRInstruction>> duChain = new HashMap<PLIRInstruction, HashSet<PLIRInstruction>>(); 
