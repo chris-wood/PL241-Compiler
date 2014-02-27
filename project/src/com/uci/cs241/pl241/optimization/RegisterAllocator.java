@@ -158,6 +158,10 @@ public class RegisterAllocator
 							}
 							live.add(op);
 						}
+						else if (inst.op1type == OperandType.CONST)
+						{
+							live.add(constInst);
+						}
 						if (inst.op2 != null && PLStaticSingleAssignment.isIncluded(inst.op2.id))
 						{
 							PLIRInstruction op = inst.op2;
@@ -167,10 +171,17 @@ public class RegisterAllocator
 							}
 							live.add(op);
 						}
-						if (inst.type == OperandType.LOCALVARIABLE)
+						else if (inst.op2type == OperandType.CONST)
 						{
 							live.add(constInst);
 						}
+						
+						// Assign to constant instruction pad if either one of them is a variable
+//						if (inst.type == OperandType.LOCALVARIABLE)
+//						{
+//							live.add(constInst);
+//						}
+						
 					}
 				}
 
