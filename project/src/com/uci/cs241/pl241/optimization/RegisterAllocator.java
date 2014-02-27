@@ -81,8 +81,7 @@ public class RegisterAllocator
 		live.addAll(CalcLiveRange(entryBlock, 1, 2));
 	}
 
-	public HashSet<PLIRInstruction> CalcLiveRange(PLIRBasicBlock b, int branch,
-			int pass)
+	public HashSet<PLIRInstruction> CalcLiveRange(PLIRBasicBlock b, int branch, int pass)
 	{
 		HashSet<PLIRInstruction> live = new HashSet<PLIRInstruction>();
 
@@ -125,12 +124,18 @@ public class RegisterAllocator
 				for (int i = b.instructions.size() - 1; i >= 0; i--)
 				{
 					PLIRInstruction inst = b.instructions.get(i);
-					if (inst.opcode != InstructionType.PHI
-							&& inst.isNotLiveInstruction() == false)
+					if (inst.opcode == InstructionType.LOADPARAM)
 					{
-
+						System.err.println("found loadparam");
+						System.exit(-1);
+					}
+					if (inst.opcode != InstructionType.PHI && inst.isNotLiveInstruction() == false)
+					{
+						
 						while (inst.refInst != null)
+						{
 							inst = inst.refInst;
+						}
 
 						// live = live - {i}
 						live.remove(inst);
@@ -143,9 +148,7 @@ public class RegisterAllocator
 
 						// live = live + {j,k}, if j/k are actual values and not
 						// constants
-						if (inst.op1 != null
-								&& PLStaticSingleAssignment
-										.isIncluded(inst.op1.id))
+						if (inst.op1 != null && PLStaticSingleAssignment.isIncluded(inst.op1.id))
 						{
 							PLIRInstruction op = inst.op1;
 							while (op.refInst != null)
@@ -154,9 +157,7 @@ public class RegisterAllocator
 							}
 							live.add(op);
 						}
-						if (inst.op2 != null
-								&& PLStaticSingleAssignment
-										.isIncluded(inst.op2.id))
+						if (inst.op2 != null && PLStaticSingleAssignment.isIncluded(inst.op2.id))
 						{
 							PLIRInstruction op = inst.op2;
 							while (op.refInst != null)
@@ -191,8 +192,7 @@ public class RegisterAllocator
 					// live = live + {j,k}, if j/k are actual values and not
 					// constants
 					// but only add the phi operand indexed by the branch number
-					if (branch == 1 && inst.op1 != null
-							&& PLStaticSingleAssignment.isIncluded(inst.op1.id))
+					if (branch == 1 && inst.op1 != null && PLStaticSingleAssignment.isIncluded(inst.op1.id))
 					{
 						PLIRInstruction op = inst.op1;
 						while (op.refInst != null)
@@ -201,8 +201,7 @@ public class RegisterAllocator
 						}
 						live.add(op);
 					}
-					if (branch == 2 && inst.op2 != null
-							&& PLStaticSingleAssignment.isIncluded(inst.op2.id))
+					if (branch == 2 && inst.op2 != null && PLStaticSingleAssignment.isIncluded(inst.op2.id))
 					{
 						PLIRInstruction op = inst.op2;
 						while (op.refInst != null)

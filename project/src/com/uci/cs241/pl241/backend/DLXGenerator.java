@@ -256,7 +256,9 @@ public class DLXGenerator
 		ArrayList<DLXInstruction> instructions = new ArrayList<DLXInstruction>();
 
 		if (entry.id == stopBlock)
+		{
 			return instructions;
+		}
 
 		if (visited.contains(entry.id) == false)
 		{
@@ -372,7 +374,7 @@ public class DLXGenerator
 
 					// TODO: do these need offsets?
 					// offsetMap.put(ssaInst.id, retInst);
-//					appendInstructionToBlock(entry, retInst);
+					appendInstructionToBlock(entry, retInst);
 					instructions.add(retInst);
 				}
 				else if (func != null && func.hasReturn == true)
@@ -385,16 +387,32 @@ public class DLXGenerator
 		return instructions;
 	}
 
-	public void generateBlockTreeInstructons(DLXBasicBlock edb, PLIRBasicBlock b, boolean isMain, int branch,
-			HashSet<Integer> visited)
+	public void generateBlockTreeInstructons(DLXBasicBlock edb, PLIRBasicBlock b, Function func, boolean isMain, int branch, HashSet<Integer> visited)
 	{
 		// Handle the rest
 		if (visited.contains(b.id) == false)
 		{
 			// Entry block - only visited once
-			if (b.parents.size() == 0)
+			if (b.parents.size() == 0 && func != null)
 			{
-				// TODO: handle parameter invocation and loading here
+				// Load parameters from the stack
+				for (int i = 0; i < func.params.size(); i++)
+				{
+//					// loadparam operand#
+//					// i1 for ssaInst is the operand# 
+//					// load from stack
+//					// LDW a, b, c R.a := Mem[R.b + c] 
+//					PLIRInstruction ssaInst = func.params.get(i);
+//					DLXInstruction loadInst = new DLXInstruction();
+//					loadInst.opcode = InstructionType.LDW;
+//					loadInst.format = formatMap.get(InstructionType.LDW);
+//					loadInst.ra = ssaInst.regNum;
+//					loadInst.rb = SP;
+//					loadInst.rc = -4 * (ssaInst.i1 + 1);
+//					branchOffset++;
+//					loadInst.encodedForm = encodeInstruction(loadInst);
+//					appendInstructionToBlock(edb, loadInst);
+				}
 			}
 
 			visited.add(b.id);
@@ -878,8 +896,10 @@ public class DLXGenerator
 
 						// Push all operands onto the stack (callee recovers the
 						// proper order)
-						for (PLIRInstruction operand : ssaInst.callOperands)
+//						for (PLIRInstruction operand : ssaInst.callOperands)
+						for (int opIndex = ssaInst.callOperands.size() - 1; opIndex >= 0; opIndex--)
 						{
+							PLIRInstruction operand = ssaInst.callOperands.get(opIndex);
 							System.out.println("pushing: " + operand);
 							DLXInstruction push3 = new DLXInstruction();
 							push3.opcode = InstructionType.PSH;
@@ -942,8 +962,9 @@ public class DLXGenerator
 						appendInstructionToBlock(edb, pop1);
 
 						// Pop operands off of the stack
-						for (PLIRInstruction operand : ssaInst.callOperands)
+						for (int opIndex = ssaInst.callOperands.size() - 1; opIndex >= 0; opIndex--)
 						{
+							PLIRInstruction operand = ssaInst.callOperands.get(opIndex);
 							System.out.println("popping: " + operand);
 							DLXInstruction pop2 = new DLXInstruction();
 							pop2.opcode = InstructionType.POP;
@@ -968,15 +989,31 @@ public class DLXGenerator
 						break;
 
 					case LOADPARAM:
-
+//						System.err.println("LOADPARAM instructions are syntactic sugar to make calling conventions easier - error!");
+//						System.exit(-1);
+						// loadparam operand#
+						// i1 for ssaInst is the operand# 
+						// load from stack
+						// LDW a, b, c R.a := Mem[R.b + c] 
+						DLXInstruction loadInst = new DLXInstruction();
+						loadInst.opcode = InstructionType.LDW;
+						loadInst.format = formatMap.get(InstructionType.LDW);
+						loadInst.ra = ssaInst.regNum;
+						loadInst.rb = SP;
+						loadInst.rc = -4 * (ssaInst.i1 + 1);
+						branchOffset++;
+						loadInst.encodedForm = encodeInstruction(loadInst);
+						appendInstructionToBlock(edb, loadInst);
 						break;
 
 					case LOAD:
-						// TODO
+						System.err.println("TODO: LOAD");
+//						System.exit(-1);
 						break;
 
 					case STORE:
-						// TODO
+						System.err.println("TODO: STORE");
+//						System.exit(-1);
 						break;
 
 					case PHI:
@@ -998,19 +1035,20 @@ public class DLXGenerator
 									curr = tmp;
 									seen.add(tmp.id);
 									if (curr.right != null)
+									{
 										leftStack.add(curr.right);
+									}
 									if (curr.left != null)
+									{
 										leftStack.add(curr.left);
+									}
 								}
 							}
 							insertBlock = curr;
 
 							if (!(ssaInst.op1.regNum == ssaInst.op2.regNum && ssaInst.regNum == ssaInst.op1.regNum))
 							{
-								if (ssaInst.regNum != ssaInst.op1.regNum) // move
-																			// ssaInst.op1.regNum
-																			// to
-																			// ssaInst.regNum
+								if (ssaInst.regNum != ssaInst.op1.regNum) 
 								{
 									DLXInstruction leftInst = new DLXInstruction();
 									leftInst.opcode = InstructionType.ADD;
@@ -1023,10 +1061,7 @@ public class DLXGenerator
 									offsetMap.put(ssaInst.id, leftInst);
 									appendInstructionToBlock(edb, leftInst);
 								}
-								if (ssaInst.regNum != ssaInst.op2.regNum) // move
-																			// ssaInst.op1.regNum
-																			// to
-																			// ssaInst.regNum
+								if (ssaInst.regNum != ssaInst.op2.regNum) 
 								{
 									DLXInstruction rightInst = new DLXInstruction();
 									rightInst.opcode = InstructionType.ADD;
@@ -1036,9 +1071,6 @@ public class DLXGenerator
 									rightInst.rc = ssaInst.op2.regNum;
 
 									branchOffset++;
-									// offsetMap.put(ssaInst.id, rightInst);
-									// appendInstructionToBlockFromOffset(insertBlock,
-									// rightInst, -1);
 									appendInstructionToEndBlock(insertBlock, rightInst);
 								}
 							}
@@ -1047,10 +1079,7 @@ public class DLXGenerator
 						{
 							if (!(ssaInst.op1.regNum == ssaInst.op2.regNum && ssaInst.regNum == ssaInst.op1.regNum))
 							{
-								if (ssaInst.regNum != ssaInst.op1.regNum) // move
-																			// ssaInst.op1.regNum
-																			// to
-																			// ssaInst.regNum
+								if (ssaInst.regNum != ssaInst.op1.regNum) 
 								{
 									DLXInstruction leftInst = new DLXInstruction();
 									leftInst.opcode = InstructionType.ADD;
@@ -1062,14 +1091,9 @@ public class DLXGenerator
 
 									branchOffset++;
 									offsetMap.put(ssaInst.id, leftInst);
-									// prependInstructionToBlock(insertBlock,
-									// leftInst);
 									appendInstructionToBlock(insertBlock, leftInst);
 								}
-								if (ssaInst.regNum != ssaInst.op2.regNum) // move
-																			// ssaInst.op1.regNum
-																			// to
-																			// ssaInst.regNum
+								if (ssaInst.regNum != ssaInst.op2.regNum) 
 								{
 									DLXInstruction rightInst = new DLXInstruction();
 									rightInst.opcode = InstructionType.ADD;
@@ -1081,8 +1105,6 @@ public class DLXGenerator
 
 									branchOffset++;
 									offsetMap.put(ssaInst.id, rightInst);
-									// prependInstructionToBlock(insertBlock,
-									// rightInst);
 									appendInstructionToBlock(insertBlock, rightInst);
 								}
 							}
@@ -1093,11 +1115,11 @@ public class DLXGenerator
 
 			if (b.leftChild != null)
 			{
-				generateBlockTreeInstructons(edb.left, b.leftChild, isMain, 0, visited);
+				generateBlockTreeInstructons(edb.left, b.leftChild, func, isMain, 0, visited);
 			}
 			if (b.rightChild != null)
 			{
-				generateBlockTreeInstructons(edb.right, b.rightChild, isMain, 1, visited);
+				generateBlockTreeInstructons(edb.right, b.rightChild, func, isMain, 1, visited);
 			}
 		}
 	}

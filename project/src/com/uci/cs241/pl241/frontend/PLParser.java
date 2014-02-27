@@ -1396,8 +1396,11 @@ public class PLParser
 					}
 					else
 					{
-						exprInst.forceGenerate(scope);
-						result.addInstruction(exprInst);
+						if (!exprInst.generated)
+						{
+							exprInst.forceGenerate(scope);
+							result.addInstruction(exprInst);
+						}
 					}
 					
 					// Add the first expression instruction to the list of operands
@@ -1416,7 +1419,10 @@ public class PLParser
 							SyntaxError("Invalid parameter to OutputNum");
 						}
 						
-						exprInst.forceGenerate(scope);
+						if (!exprInst.generated)
+						{
+							exprInst.forceGenerate(scope);
+						}
 						PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.WRITE, exprInst);
 						inst.forceGenerate(scope);
 						result.addInstruction(inst);
@@ -2387,7 +2393,14 @@ public class PLParser
 			
 			// Eat the semicolon and then parse the body
 			advance(in);  
-			result = parse_funcBody(in);
+			if (result != null)
+			{
+				result = PLIRBasicBlock.merge(result, parse_funcBody(in));
+			}
+			else
+			{
+				result = parse_funcBody(in);
+			}
 			
 //			for (int i = result.instructions.size() - 1; i>= 0; i--)
 //			{
@@ -2418,7 +2431,7 @@ public class PLParser
 	public ArrayList<PLIRInstruction> params;
 	private PLIRBasicBlock parse_formalParam(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
-		PLIRBasicBlock result = null;
+		PLIRBasicBlock result = new PLIRBasicBlock();
 		params = new ArrayList<PLIRInstruction>();
 		
 		if (toksym == PLToken.openParenToken)
@@ -2443,6 +2456,7 @@ public class PLParser
 				dummy.overrideGenerate = true;
 				dummy.paramNumber = params.size();
 				dummy.forceGenerate(scope);
+				result.addInstruction(dummy);
 				
 				// Add to the list of operands
 				params.add(dummy);
@@ -2461,6 +2475,7 @@ public class PLParser
 					dummy.overrideGenerate = true;
 					dummy.paramNumber = params.size();
 					dummy.forceGenerate(scope);
+					result.addInstruction(dummy);
 					
 					// Add to the list of operands
 					params.add(dummy);

@@ -228,14 +228,14 @@ public class PLC
 						func = parser.scope.functions.get(block.label);
 					}
 					
-					// save the start of the program
+					// Save the start of the program so we can jump there later
 					if (isMain)
 					{
 						mainStart = dlxGen.pc; 
 					}
 					
 					DLXBasicBlock db = dlxGen.generateBlockTree(null, block, new HashSet<Integer>());
-					dlxGen.generateBlockTreeInstructons(db, block, isMain, 0, new HashSet<Integer>());
+					dlxGen.generateBlockTreeInstructons(db, block, func, isMain, 0, new HashSet<Integer>());
 					ArrayList<DLXInstruction> dlxInstructions = dlxGen.convertToStraightLineCode(db, func, -1, new HashSet<Integer>());
 					dlxGen.fixup(dlxInstructions);
 					program.add(dlxInstructions);

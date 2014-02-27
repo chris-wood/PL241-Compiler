@@ -1,11 +1,13 @@
 main
 var a, b;
 
-procedure foo();
+procedure foo( x );
 var i;
 {
+  call OutputNewLine();
   call OutputNum(1337);
-  //call OutputNum(i);
+  call OutputNum(x);
+  call OutputNum(1337);
   call OutputNewLine()
 };
 
@@ -28,7 +30,7 @@ var i;
     let b <- b - 1
   od;
 
-  call foo();
+  call foo(b);
 
   call OutputNum(a);
   call OutputNum(b);
