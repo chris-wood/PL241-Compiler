@@ -25,7 +25,7 @@ public class DLX {
 		String line = reader.readLine().trim();
 		while (line != null && line.length() > 0)
 		{
-			System.out.println("parsing: " + line);
+			// System.out.println("parsing: " + line);
 			codes.add(new BigInteger(line));
 			line = reader.readLine();
 			if (line != null)
@@ -63,6 +63,7 @@ public class DLX {
 		execloop:
 		while (true) {
 			R[0] = 0;
+			System.out.println("Disassembling: " + Integer.toHexString(M[PC]));
 			disassem(M[PC]); // initializes op, a, b, c
 
 			int nextPC = PC + 1;
@@ -150,6 +151,8 @@ public class DLX {
 					break;
 				case LDW:
 				case LDX: // remember: c == R[origc] because of F2 format
+					System.out.println("Loading: " + (R[b]+c));
+					bug(10);
 					R[a] = M[(R[b]+c) / 4]; 
 					break;
 				case STW:
@@ -219,6 +222,7 @@ public class DLX {
 				case JSR:
 					R[31] = (PC+1) * 4;
 					nextPC = c / 4;
+					System.out.println("Going tooooo: " + nextPC);
 					break;
 				case RET: 
 					if (origc == 0) break execloop; // remember: c==R[origc]
@@ -359,6 +363,10 @@ public class DLX {
 				b = (instructionWord >>> 16) & 0x1F;
 				c = (short) instructionWord; // another dirty trick
 				break;
+			// case LDW:
+			// 	System.out.println("disassem!");
+			// 	format = -1;
+			// 	break;
 				
 			// F2 Format
 			case RET:

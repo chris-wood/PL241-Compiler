@@ -205,8 +205,7 @@ public class RegisterAllocator
 						ig.addEdge(inst.id, liveInst.id);
 					}
 
-					// live = live + {j,k}, if j/k are actual values and not
-					// constants
+					// live = live + {j,k}, if j/k are actual values and not constants
 					// but only add the phi operand indexed by the branch number
 					if (branch == 1 && inst.op1 != null && PLStaticSingleAssignment.isIncluded(inst.op1.id))
 					{

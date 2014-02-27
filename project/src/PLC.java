@@ -286,7 +286,7 @@ public class PLC
 				for (DLXInstruction inst : slp)
 				{
 					dlxWriter.println(inst.encodedForm);
-					System.out.println(inst + ", " + Long.toHexString(inst.encodedForm));
+					System.out.println(inst);// + ", " + Long.toHexString(inst.encodedForm));
 				}
 				dlxWriter.flush();
 				dlxWriter.close();

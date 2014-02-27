@@ -6,7 +6,7 @@ BB36[shape = box, label = "BB(36)\n" + "18 := write (13)\n" + "19 := beq #0 #2\n
 BB40[shape = box, label = "BB(40)\n" + "20 := write (15)\n"];
 BB37[shape = box, label = "BB(37)\n" + "21 := phi (13) (28)\n" + "22 := phi (15) (25)\n" + "23 := cmp (21) #0\n" + "24 := ble (23) #6\n"];
 BB46[shape = box, label = "BB(46)\n" + "25 := add #0 #666\n" + "26 := write (21)\n" + "27 := wln\n" + "28 := sub (21) #1\n" + "29 := beq #0 #-8\n"];
-BB54[shape = box, label = "BB(54)\n" + "30 := write (21)\n" + "31 := proc foo (22)\n" + "32 := write (22)\n" + "33 := write (21)\n" + "34 := wln\n" + "35 := end\n"];
+BB54[shape = box, label = "BB(54)\n" + "30 := write (21)\n" + "31 := proc foo (21)\n" + "32 := write (22)\n" + "33 := write (21)\n" + "34 := wln\n" + "35 := end\n"];
 BB19 -> BB36;
 BB19 -> BB40;
 BB36 -> BB37;

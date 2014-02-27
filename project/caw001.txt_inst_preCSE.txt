@@ -28,7 +28,7 @@
 28 := sub (21) #1
 29 := beq #0 #-8
 30 := write (21)
-31 := proc foo (22)
+31 := proc foo (21)
 32 := write (22)
 33 := write (21)
 34 := wln

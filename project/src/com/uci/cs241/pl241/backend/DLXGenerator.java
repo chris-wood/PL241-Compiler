@@ -196,6 +196,7 @@ public class DLXGenerator
 				a = inst.ra;
 				b = inst.rb;
 				c = inst.rc;
+				System.out.println((b & 0x1F));
 				code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (c & 0xFFFF);
 				break;
 			case F2:
@@ -894,9 +895,7 @@ public class DLXGenerator
 						offsetMap.put(ssaInst.id, push1);
 						appendInstructionToBlock(edb, push1);
 
-						// Push all operands onto the stack (callee recovers the
-						// proper order)
-//						for (PLIRInstruction operand : ssaInst.callOperands)
+						// Push all operands onto the stack (callee recovers the proper order)
 						for (int opIndex = ssaInst.callOperands.size() - 1; opIndex >= 0; opIndex--)
 						{
 							PLIRInstruction operand = ssaInst.callOperands.get(opIndex);
@@ -905,8 +904,7 @@ public class DLXGenerator
 							push3.opcode = InstructionType.PSH;
 							push3.format = formatMap.get(InstructionType.PSH);
 							
-							
-							// TODO: do check to see if this is a constant or not
+							// ***TODO: do check to see if this is a constant or not
 							push3.ra = operand.regNum; // save contents of ssaInst.regNum
 							push3.rb = SP; //
 							push3.rc = 4; // word size
@@ -1001,9 +999,8 @@ public class DLXGenerator
 						loadInst.format = formatMap.get(InstructionType.LDW);
 						loadInst.ra = ssaInst.regNum;
 						loadInst.rb = SP;
-						loadInst.rc = -4 * (ssaInst.i1 + 2);
+						loadInst.rc = -4 * (ssaInst.i1 + 1);
 						branchOffset++;
-						loadInst.encodedForm = encodeInstruction(loadInst);
 						appendInstructionToBlock(edb, loadInst);
 						break;
 
