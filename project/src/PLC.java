@@ -221,13 +221,16 @@ public class PLC
 				int mainStart = 0;
 				
 				HashMap<Integer, Integer> globalOffset = new HashMap<Integer, Integer>();
+				HashMap<String, Integer> globalRefMap = new HashMap<String, Integer>();
 				int globalIndex = 0;
 				for (PLIRInstruction inst : parser.globalVariables.values())
 				{
 					globalOffset.put(inst.id, globalIndex++);
+					globalRefMap.put(inst.origIdent, inst.id);
 				}
 				
-				DLXGenerator dlxGen = new DLXGenerator(globalOffset);
+				
+				DLXGenerator dlxGen = new DLXGenerator(globalOffset, globalRefMap);
 				
 				ArrayList<ArrayList<DLXInstruction>> program = new ArrayList<ArrayList<DLXInstruction>>();
 				for (int i = 0; i < blocks.size(); i++)

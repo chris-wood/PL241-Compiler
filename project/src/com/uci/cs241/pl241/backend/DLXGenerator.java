@@ -24,6 +24,7 @@ public class DLXGenerator
 	public int branchOffset = 0;
 	
 	public HashMap<Integer, Integer> globalOffset;
+	public HashMap<String, Integer> globalRefMap;
 
 	public HashMap<Integer, DLXInstruction> offsetMap = new HashMap<Integer, DLXInstruction>();
 
@@ -39,9 +40,10 @@ public class DLXGenerator
 
 	public int pc = 3; // account for the initial jump and SP/FP initialization stuff
 
-	public DLXGenerator(HashMap<Integer, Integer> globalOffset)
+	public DLXGenerator(HashMap<Integer, Integer> globalOffset, HashMap<String, Integer> globalRefMap)
 	{
 		this.globalOffset = globalOffset;
+		this.globalRefMap = globalRefMap;
 		
 		opcodeMap.put(InstructionType.ADD, 0);
 		formatMap.put(InstructionType.ADD, InstructionFormat.F2);
@@ -391,7 +393,7 @@ public class DLXGenerator
 		return instructions;
 	}
 	
-	public boolean checkForLoad(DLXBasicBlock edb, PLIRInstruction usingInst, int refId, int regNum)
+	public boolean checkForGlobalLoad(DLXBasicBlock edb, PLIRInstruction usingInst, int refId, int regNum, int offset, boolean fixOffset)
 	{
 		if (globalOffset.containsKey(refId))
 		{
@@ -400,25 +402,66 @@ public class DLXGenerator
 			loadInst.format = formatMap.get(InstructionType.LDW);
 			loadInst.ra = regNum; // save contents of ssaInst.regNum
 			loadInst.rb = GLOBAL_ADDRESS;
-			loadInst.rc = -4 * (globalOffset.get(refId)); // word size
-			offsetMap.put(usingInst.id, loadInst);
+			loadInst.rc = -4 * (globalOffset.get(refId) + 1); // word size
+			
+			if (fixOffset) offsetMap.put(offset, loadInst);
+			appendInstructionToBlock(edb, loadInst);
+			return true;
+		}
+		else if (usingInst.isGlobalVariable)
+		{
+			DLXInstruction loadInst = new DLXInstruction();
+			loadInst.opcode = InstructionType.LDW;
+			loadInst.format = formatMap.get(InstructionType.LDW);
+			loadInst.ra = regNum; // save contents of ssaInst.regNum
+			loadInst.rb = GLOBAL_ADDRESS;
+			loadInst.rc = -4 * (globalOffset.get(globalRefMap.get(usingInst.origIdent)) + 1); // word size
+			
+			if (fixOffset) offsetMap.put(offset, loadInst);
 			appendInstructionToBlock(edb, loadInst);
 			return true;
 		}
 		return false;
 	}
 	
-	public boolean checkForStore(DLXBasicBlock edb, PLIRInstruction usingInst, int refId, int regNum)
+	public boolean checkForGlobalStore(DLXBasicBlock edb, PLIRInstruction usingInst, boolean appendToStart)
 	{
-		if (globalOffset.containsKey(refId))
+		if (globalOffset.containsKey(usingInst.id))
 		{
 			DLXInstruction storeInst = new DLXInstruction();
-			storeInst.opcode = InstructionType.LDW;
-			storeInst.format = formatMap.get(InstructionType.LDW);
-			storeInst.ra = regNum; // save contents of ssaInst.regNum
+			storeInst.opcode = InstructionType.STW;
+			storeInst.format = formatMap.get(InstructionType.STW);
+			storeInst.ra = usingInst.regNum; // save contents of ssaInst.regNum
 			storeInst.rb = GLOBAL_ADDRESS;
-			storeInst.rc = -4 * (globalOffset.get(refId)); // word size
-			appendInstructionToBlock(edb, storeInst);
+			storeInst.rc = -4 * (globalOffset.get(usingInst.id) + 1); // word size
+			
+			if (appendToStart)
+			{
+				appendInstructionToBlock(edb, storeInst);
+			}
+			else
+			{
+				appendInstructionToEndBlock(edb, storeInst);
+			}
+			return true;
+		}
+		else if (usingInst.isGlobalVariable)
+		{
+			DLXInstruction storeInst = new DLXInstruction();
+			storeInst.opcode = InstructionType.STW;
+			storeInst.format = formatMap.get(InstructionType.STW);
+			storeInst.ra = usingInst.regNum; // save contents of ssaInst.regNum
+			storeInst.rb = GLOBAL_ADDRESS;
+			storeInst.rc = -4 * (globalOffset.get(globalRefMap.get(usingInst.origIdent)) + 1); // word size
+			
+			if (appendToStart)
+			{
+				appendInstructionToBlock(edb, storeInst);
+			}
+			else
+			{
+				appendInstructionToEndBlock(edb, storeInst);
+			}
 			return true;
 		}
 		return false;
@@ -506,6 +549,8 @@ public class DLXGenerator
 							offsetMap.put(ssaInst.id, preInst);
 							appendInstructionToBlock(edb, preInst);
 							appendInstructionToBlock(edb, newInst);
+							
+							checkForGlobalStore(edb, ssaInst, true);
 						}
 						else if (leftConst)
 						{
@@ -517,6 +562,8 @@ public class DLXGenerator
 
 							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
+							
+							checkForGlobalStore(edb, ssaInst, true);
 						}
 						else if (rightConst)
 						{
@@ -528,6 +575,8 @@ public class DLXGenerator
 
 							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
+							
+							checkForGlobalStore(edb, ssaInst, true);
 						}
 						else
 						{
@@ -538,6 +587,8 @@ public class DLXGenerator
 
 							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
+							
+							checkForGlobalStore(edb, ssaInst, true);
 						}
 
 						break;
@@ -563,6 +614,8 @@ public class DLXGenerator
 							offsetMap.put(ssaInst.id, preInst);
 							appendInstructionToBlock(edb, preInst);
 							appendInstructionToBlock(edb, newInst);
+							
+							checkForGlobalStore(edb, ssaInst, true);
 						}
 						else if (leftConst)
 						{
@@ -579,6 +632,8 @@ public class DLXGenerator
 
 							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
+							
+							checkForGlobalStore(edb, ssaInst, true);
 						}
 						else
 						{
@@ -590,6 +645,8 @@ public class DLXGenerator
 
 							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
+							
+							checkForGlobalStore(edb, ssaInst, true);
 						}
 						break;
 
@@ -615,6 +672,8 @@ public class DLXGenerator
 							offsetMap.put(ssaInst.id, preInst);
 							appendInstructionToBlock(edb, preInst);
 							appendInstructionToBlock(edb, newInst);
+							
+							checkForGlobalStore(edb, ssaInst, true);
 						}
 						else if (leftConst)
 						{
@@ -626,6 +685,8 @@ public class DLXGenerator
 
 							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
+							
+							checkForGlobalStore(edb, ssaInst, true);
 						}
 						else if (rightConst)
 						{
@@ -637,6 +698,8 @@ public class DLXGenerator
 
 							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
+							
+							checkForGlobalStore(edb, ssaInst, true);
 						}
 						else
 						{
@@ -647,6 +710,8 @@ public class DLXGenerator
 
 							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
+							
+							checkForGlobalStore(edb, ssaInst, true);
 						}
 						break;
 
@@ -672,6 +737,8 @@ public class DLXGenerator
 							offsetMap.put(ssaInst.id, preInst);
 							appendInstructionToBlock(edb, preInst);
 							appendInstructionToBlock(edb, newInst);
+							
+							checkForGlobalStore(edb, ssaInst, true);
 						}
 						else if (leftConst)
 						{
@@ -688,6 +755,8 @@ public class DLXGenerator
 
 							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
+							
+							checkForGlobalStore(edb, ssaInst, true);
 						}
 						else
 						{
@@ -699,11 +768,13 @@ public class DLXGenerator
 
 							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
+							
+							checkForGlobalStore(edb, ssaInst, true);
 						}
 						break;
 
 					case ADDA:
-						// TODO
+						// TODO: for arrays...
 						break;
 
 					case WRITE:
@@ -712,10 +783,10 @@ public class DLXGenerator
 						newInst.ra = 0;
 						newInst.rc = 0;
 
-						if (ssaInst.op1type == OperandType.ADDRESS || ssaInst.op1type == OperandType.INST)
+						if (!(ssaInst.op1type == OperandType.CONST)) 
 						{
 							newInst.rb = ssaInst.op1.regNum;
-							if (checkForLoad(edb, ssaInst.op1, ssaInst.op1.id, ssaInst.op1.regNum))
+							if (checkForGlobalLoad(edb, ssaInst.op1, ssaInst.op1.id, ssaInst.op1.regNum, ssaInst.id, true))
 							{
 								appendInstructionToBlock(edb, newInst);
 							}
@@ -767,9 +838,12 @@ public class DLXGenerator
 						newInst.ra = ssaInst.regNum;
 						newInst.rb = 0;
 						newInst.rc = 0;
-
 						offsetMap.put(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
+						
+						// Check to see if the value needs to be stored at the global address
+						checkForGlobalStore(edb, ssaInst, true);
+						
 						break;
 					case WLN:
 						newInst.opcode = InstructionType.WRL;
@@ -826,9 +900,17 @@ public class DLXGenerator
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.i2;
-
-							offsetMap.put(ssaInst.id, newInst);
-							appendInstructionToBlock(edb, newInst);
+							
+							// Check for loading global
+							if (checkForGlobalLoad(edb, ssaInst.op1, ssaInst.op1.id, ssaInst.op1.regNum, ssaInst.id, true))
+							{
+								appendInstructionToBlock(edb, newInst);
+							}
+							else
+							{
+								offsetMap.put(ssaInst.id, newInst);
+								appendInstructionToBlock(edb, newInst);
+							}
 						}
 						else
 						{
@@ -837,8 +919,25 @@ public class DLXGenerator
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.op2.regNum;
-
-							offsetMap.put(ssaInst.id, newInst);
+							
+							// Check for loading global of left
+							boolean fixOffset = true;
+							if (checkForGlobalLoad(edb, ssaInst.op1, ssaInst.op1.id, ssaInst.op1.regNum, ssaInst.id, fixOffset))
+							{
+								fixOffset = false;
+								appendInstructionToBlock(edb, newInst);
+							}
+							
+							if (checkForGlobalLoad(edb, ssaInst.op2, ssaInst.op2.id, ssaInst.op2.regNum, ssaInst.id, fixOffset))
+							{
+								fixOffset = false;
+								appendInstructionToBlock(edb, newInst);
+							}
+							
+							if (fixOffset)
+							{
+								offsetMap.put(ssaInst.id, newInst);
+							}
 							appendInstructionToBlock(edb, newInst);
 						}
 						break;
@@ -956,7 +1055,8 @@ public class DLXGenerator
 							push3.opcode = InstructionType.PSH;
 							push3.format = formatMap.get(InstructionType.PSH);
 							
-							// ***TODO: do check to see if this is a constant or not
+							// ***TODO: do check to see if this is a constant or global variable
+							
 							push3.ra = operand.regNum; // save contents of ssaInst.regNum
 							push3.rb = SP; //
 							push3.rc = 4; // word size
@@ -1086,7 +1186,8 @@ public class DLXGenerator
 						storeInst.format = formatMap.get(InstructionType.STW);
 						storeInst.ra = ssaInst.op1.regNum; // save contents of ssaInst.regNum
 						storeInst.rb = GLOBAL_ADDRESS;
-						storeInst.rc = -4 * (globalOffset.get(ssaInst.op2.id)); // word size
+						storeInst.rc = -4 * (globalOffset.get(ssaInst.op2.id) + 1); // word size
+						
 						offsetMap.put(ssaInst.id, storeInst);
 						appendInstructionToBlock(edb, storeInst);
 						System.err.println("TODO: SAVEGLOBAL");
@@ -1136,6 +1237,7 @@ public class DLXGenerator
 									branchOffset++;
 									offsetMap.put(ssaInst.id, leftInst);
 									appendInstructionToBlock(edb, leftInst);
+									checkForGlobalStore(edb, ssaInst, true);
 								}
 								if (ssaInst.regNum != ssaInst.op2.regNum) 
 								{
@@ -1148,6 +1250,7 @@ public class DLXGenerator
 
 									branchOffset++;
 									appendInstructionToEndBlock(insertBlock, rightInst);
+									checkForGlobalStore(insertBlock, ssaInst, false);
 								}
 							}
 						}
@@ -1168,6 +1271,7 @@ public class DLXGenerator
 									branchOffset++;
 									offsetMap.put(ssaInst.id, leftInst);
 									appendInstructionToBlock(insertBlock, leftInst);
+									checkForGlobalStore(insertBlock, ssaInst, true);
 								}
 								if (ssaInst.regNum != ssaInst.op2.regNum) 
 								{
@@ -1182,6 +1286,7 @@ public class DLXGenerator
 									branchOffset++;
 									offsetMap.put(ssaInst.id, rightInst);
 									appendInstructionToBlock(insertBlock, rightInst);
+									checkForGlobalStore(insertBlock, ssaInst, true);
 								}
 							}
 						}

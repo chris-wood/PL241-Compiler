@@ -38,6 +38,7 @@ public class PLIRInstruction
 	public PLIRBasicBlock block;
 	
 	public boolean globalMark = false; 
+	public boolean isGlobalVariable = false;
 	
 	// Register allocation information
 	public int regNum;

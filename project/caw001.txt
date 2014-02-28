@@ -9,8 +9,9 @@ var i;
   call OutputNum(c);
   call OutputNum(x);
   call OutputNum(1337);
-  let c <- 10;
-  call OutputNewLine()
+  call OutputNewLine();
+  let c <- call InputNum();
+  let a <- call InputNum()
 };
 
 {
@@ -28,6 +29,9 @@ var i;
     call OutputNewLine()
   fi;
 
+  call OutputNum(b);
+  call OutputNewLine();
+  
   while b > 0 do
     call OutputNum(b);
     call OutputNewLine();
@@ -41,7 +45,7 @@ var i;
   call OutputNum(c);
   call OutputNewLine();
 
-  call foo(c);
+  call foo(a);
 
   call OutputNum(c);
   call OutputNewLine();

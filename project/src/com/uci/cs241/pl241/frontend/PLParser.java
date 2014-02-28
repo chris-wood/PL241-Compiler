@@ -1090,6 +1090,11 @@ public class PLParser
 					markToSave = true;
 				}
 				
+				if (globalVariables.containsKey(desigBlock.getLastInst().origIdent))
+				{
+					desigBlock.getLastInst().isGlobalVariable = true;
+				}
+				
 				if (toksym == PLToken.becomesToken)
 				{
 					advance(in);
@@ -1097,6 +1102,7 @@ public class PLParser
 					
 					// Check if the result is an array, in which case we need to load it from memory
 					PLIRInstruction storeInst = result.getLastInst();
+					storeInst.isGlobalVariable = desigBlock.getLastInst().isGlobalVariable;
 					if (storeInst.isArray)
 					{
 						PLIRInstruction lastAddress = null;
@@ -1177,7 +1183,6 @@ public class PLParser
 							storeInst.overrideGenerate = true;
 							storeInst.forceGenerate(scope);
 						}
-						//cawcaw
 						else if (globalFunctionParsing && globalVariables.containsKey(varName))
 						{
 							storeInst.kind = ResultKind.VAR;
@@ -1768,6 +1773,7 @@ public class PLParser
 					debug(elseInst.toString());
 					elseInst.forceGenerate(scope, elseInst.tempPosition);
 					PLIRInstruction phi = PLIRInstruction.create_phi(scope, thenInst, elseInst, PLStaticSingleAssignment.globalSSAIndex);
+					phi.isGlobalVariable = thenInst.isGlobalVariable || elseInst.isGlobalVariable;
 					joinNode.insertInstruction(phi, 0);
 					phisToAdd.add(phi);
 					
@@ -1818,6 +1824,7 @@ public class PLParser
 					PLIRInstruction followInst = scope.getCurrentValue(var);
 					followInst.forceGenerate(scope, followInst.tempPosition);
 					PLIRInstruction phi = PLIRInstruction.create_phi(scope, followInst, elseInst, PLStaticSingleAssignment.globalSSAIndex);
+					phi.isGlobalVariable = followInst.isGlobalVariable || elseInst.isGlobalVariable;
 					debug(phi.toString());
 					joinNode.insertInstruction(phi, 0);
 					
@@ -1857,6 +1864,7 @@ public class PLParser
 					
 					followInst.forceGenerate(scope, followInst.tempPosition);
 					PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
+					phi.isGlobalVariable = leftInst.isGlobalVariable || followInst.isGlobalVariable;
 					debug(phi.toString());
 					joinNode.insertInstruction(phi, 0);
 					
@@ -1906,6 +1914,7 @@ public class PLParser
 					
 					followInst.forceGenerate(scope, followInst.tempPosition);
 					PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
+					phi.isGlobalVariable = leftInst.isGlobalVariable || followInst.isGlobalVariable;
 					debug(phi.toString());
 					joinNode.insertInstruction(phi, 0);
 					
@@ -2062,6 +2071,7 @@ public class PLParser
 				
 				// Inject the phi at the appropriate spot in the join node...
 				PLIRInstruction phi = PLIRInstruction.create_phi(scope, preInst, bodyInst, loopLocation + offset);
+				phi.isGlobalVariable = preInst.isGlobalVariable || bodyInst.isGlobalVariable;
 				phi.whilePhi = true;
 				phisGenerated.add(phi);
 				debug("new phi: " + phi.id + " := " + phi.toString());
