@@ -11,6 +11,7 @@ public class Function
 	public boolean hasReturn;
 	public ArrayList<PLIRInstruction> params;
 	public ArrayList<PLIRInstruction> vars;
+	public ArrayList<String> scope;
 	public HashMap<PLIRInstruction, PLIRInstruction> modifiedGlobals;
 	public String name;
 	
@@ -21,6 +22,7 @@ public class Function
 		this.params = new ArrayList<PLIRInstruction>();
 		this.vars = new ArrayList<PLIRInstruction>();
 		this.modifiedGlobals = new HashMap<PLIRInstruction, PLIRInstruction>();
+		this.scope = new ArrayList<String>();
 		for (PLIRInstruction s : parameters)
 		{
 			this.params.add(s);
@@ -34,6 +36,7 @@ public class Function
 		this.params = new ArrayList<PLIRInstruction>();
 		this.vars = new ArrayList<PLIRInstruction>();
 		this.modifiedGlobals = new HashMap<PLIRInstruction, PLIRInstruction>();
+		this.scope = new ArrayList<String>();
 		for (PLIRInstruction s : parameters)
 		{
 			this.params.add(s);
@@ -52,6 +55,16 @@ public class Function
 	public void addLocalVariable(PLIRInstruction inst)
 	{
 		vars.add(inst);
+	}
+	
+	public void addVarToScope(String sym)
+	{
+		scope.add(sym);
+	}
+	
+	public boolean isVarInScope(String sym)
+	{
+		return scope.contains(sym);
 	}
 	
 	public boolean isLocalVariable(String v)

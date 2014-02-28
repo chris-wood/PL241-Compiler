@@ -63,7 +63,6 @@ public class DLX {
 		execloop:
 		while (true) {
 			R[0] = 0;
-			System.out.println("Disassembling: " + Integer.toHexString(M[PC]));
 			disassem(M[PC]); // initializes op, a, b, c
 
 			int nextPC = PC + 1;
@@ -151,8 +150,6 @@ public class DLX {
 					break;
 				case LDW:
 				case LDX: // remember: c == R[origc] because of F2 format
-					System.out.println("Loading: " + (R[b]+c));
-					bug(10);
 					R[a] = M[(R[b]+c) / 4]; 
 					break;
 				case STW:
@@ -161,11 +158,16 @@ public class DLX {
 					break;
 				case POP:
 					R[a] = M[R[b] / 4];
+					// System.out.println("Recovering " + R[a] + " from " + (R[b] / 4));
 					R[b] = R[b] + c;
+
+					// for (int i = 0; i < 32; i++) { System.out.print(i + ":" + R[i] + " "); };
+					// System.out.println();
 					break;
 				case PSH:
 					R[b] = R[b] + c;
 					M[R[b] / 4] = R[a];
+					// System.out.println("Writing: " + R[a] + " to " + (R[b] / 4));
 					break;
 				case BEQ:
 					if (R[a] == 0) nextPC = PC + c;
@@ -222,7 +224,6 @@ public class DLX {
 				case JSR:
 					R[31] = (PC+1) * 4;
 					nextPC = c / 4;
-					System.out.println("Going tooooo: " + nextPC);
 					break;
 				case RET: 
 					if (origc == 0) break execloop; // remember: c==R[origc]

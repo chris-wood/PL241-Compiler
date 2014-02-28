@@ -1,14 +1,14 @@
 digraph dom {
-BB4[shape = box, label = "BB(4 [ foo ])\n" + "3 := loadparam 0\n" + "4 := add #0 #0\n" + "5 := wln\n" + "6 := write #1337\n" + "7 := write (3)\n" + "8 := write #1337\n" + "9 := wln\n"];
-BB19[shape = box, label = "BB(19)\n" + "1 := add #0 #0\n" + "2 := (1)\n" + "10 := write (1)\n" + "11 := wln\n" + "12 := read\n" + "13 := read\n" + "14 := mul (12) #5\n" + "15 := add (14) #1\n" + "16 := cmp (15) #100\n" + "17 := bge (16) #3\n"];
-BB36[shape = box, label = "BB(36)\n" + "18 := write (13)\n" + "19 := beq #0 #2\n"];
-BB40[shape = box, label = "BB(40)\n" + "20 := write (15)\n"];
-BB37[shape = box, label = "BB(37)\n" + "21 := phi (13) (28)\n" + "22 := phi (15) (25)\n" + "23 := cmp (21) #0\n" + "24 := ble (23) #6\n"];
-BB46[shape = box, label = "BB(46)\n" + "25 := add #0 #666\n" + "26 := write (21)\n" + "27 := wln\n" + "28 := sub (21) #1\n" + "29 := beq #0 #-8\n"];
-BB54[shape = box, label = "BB(54)\n" + "30 := write (21)\n" + "31 := proc foo (21)\n" + "32 := write (22)\n" + "33 := write (21)\n" + "34 := wln\n" + "35 := end\n"];
-BB19 -> BB36;
-BB19 -> BB40;
-BB19 -> BB37;
-BB37 -> BB46;
-BB37 -> BB54;
+BB5[shape = box, label = "BB(5 [ foo ])\n" + "4 := loadparam 0\n" + "5 := add #0 #0\n" + "6 := wln\n" + "7 := write #1337\n" + "8 := write (3)\n" + "9 := write (4)\n" + "10 := write #1337\n" + "11 := add #0 #10\n" + "12 := wln\n" + "13 := saveglobal (11) (3)\n"];
+BB25[shape = box, label = "BB(25)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := global #0\n" + "14 := write (1)\n" + "15 := wln\n" + "16 := read\n" + "17 := read\n" + "18 := read\n" + "19 := mul (16) #5\n" + "20 := add (19) #1\n" + "21 := cmp (20) #100\n" + "22 := bge (21) #4\n"];
+BB44[shape = box, label = "BB(44)\n" + "23 := write (17)\n" + "24 := wln\n" + "25 := beq #0 #3\n"];
+BB49[shape = box, label = "BB(49)\n" + "26 := write (20)\n" + "27 := wln\n"];
+BB46[shape = box, label = "BB(46)\n" + "28 := phi (17) (35)\n" + "29 := phi (20) (32)\n" + "30 := cmp (28) #0\n" + "31 := ble (30) #6\n"];
+BB56[shape = box, label = "BB(56)\n" + "32 := add #0 #666\n" + "33 := write (28)\n" + "34 := wln\n" + "35 := sub (28) #1\n" + "36 := beq #0 #-8\n"];
+BB64[shape = box, label = "BB(64)\n" + "37 := write (28)\n" + "38 := wln\n" + "39 := write (18)\n" + "40 := wln\n" + "41 := proc foo (18)\n" + "42 := write (18)\n" + "43 := wln\n" + "44 := write (29)\n" + "45 := wln\n" + "46 := write (28)\n" + "47 := wln\n" + "48 := end\n"];
+BB25 -> BB44;
+BB25 -> BB49;
+BB25 -> BB46;
+BB46 -> BB56;
+BB46 -> BB64;
 }

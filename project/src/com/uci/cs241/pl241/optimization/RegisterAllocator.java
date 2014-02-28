@@ -130,6 +130,10 @@ public class RegisterAllocator
 				for (int i = b.instructions.size() - 1; i >= 0; i--)
 				{
 					PLIRInstruction inst = b.instructions.get(i);
+					if (inst.opcode == InstructionType.WRITE && inst.id == 8) 
+					{
+						System.err.println("write");
+					}
 					if (inst.opcode != InstructionType.PHI && inst.isNotLiveInstruction() == false)
 					{
 						
@@ -147,8 +151,7 @@ public class RegisterAllocator
 							ig.addEdge(inst.id, liveInst.id);
 						}
 
-						// live = live + {j,k}, if j/k are actual values and not
-						// constants
+						// live = live + {j,k}
 						if (inst.op1 != null && PLStaticSingleAssignment.isIncluded(inst.op1.id))
 						{
 							PLIRInstruction op = inst.op1;
@@ -158,7 +161,7 @@ public class RegisterAllocator
 							}
 							live.add(op);
 						}
-						else if (inst.op1type == OperandType.CONST)
+						else if (inst.op1type == OperandType.CONST && inst.i1 != 0)
 						{
 							live.add(constInst);
 						}
@@ -171,7 +174,7 @@ public class RegisterAllocator
 							}
 							live.add(op);
 						}
-						else if (inst.op2type == OperandType.CONST)
+						else if (inst.op2type == OperandType.CONST && inst.i2 != 0)
 						{
 							live.add(constInst);
 						}

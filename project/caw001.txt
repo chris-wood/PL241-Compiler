@@ -1,13 +1,15 @@
 main
-var a, b;
+var a, b, c;
 
 procedure foo( x );
 var i;
 {
   call OutputNewLine();
   call OutputNum(1337);
+  call OutputNum(c);
   call OutputNum(x);
   call OutputNum(1337);
+  let c <- 10;
   call OutputNewLine()
 };
 
@@ -16,11 +18,14 @@ var i;
   call OutputNewLine();
   let a <- call InputNum();
   let b <- call InputNum();
+  let c <- call InputNum();
   let a <- a * 5 + 1;
   if a < 100 then
-    call OutputNum(b)
+    call OutputNum(b);
+    call OutputNewLine()
   else
-    call OutputNum(a)
+    call OutputNum(a);
+    call OutputNewLine()
   fi;
 
   while b > 0 do
@@ -31,9 +36,19 @@ var i;
   od;
 
   call OutputNum(b);
-  call foo(b);
+  call OutputNewLine();
+
+  call OutputNum(c);
+  call OutputNewLine();
+
+  call foo(c);
+
+  call OutputNum(c);
+  call OutputNewLine();
 
   call OutputNum(a);
+  call OutputNewLine();
+
   call OutputNum(b);
   call OutputNewLine()
 }.

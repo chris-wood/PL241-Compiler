@@ -3,6 +3,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane.SystemMenuBar;
@@ -216,11 +217,17 @@ public class PLC
 			}
 			
 			if (runAll || (runStep1 && runStep2 && runStep3 && runStep4))
-			{
-				DLXGenerator dlxGen = new DLXGenerator();
-				
-//				dlxGen.populateGlobalAddressTable(parser.globalVariables);
+			{	
 				int mainStart = 0;
+				
+				HashMap<Integer, Integer> globalOffset = new HashMap<Integer, Integer>();
+				int globalIndex = 0;
+				for (PLIRInstruction inst : parser.globalVariables.values())
+				{
+					globalOffset.put(inst.id, globalIndex++);
+				}
+				
+				DLXGenerator dlxGen = new DLXGenerator(globalOffset);
 				
 				ArrayList<ArrayList<DLXInstruction>> program = new ArrayList<ArrayList<DLXInstruction>>();
 				for (int i = 0; i < blocks.size(); i++)
@@ -277,8 +284,30 @@ public class PLC
 				mainJump.rc = mainStart;
 				mainJump.format = dlxGen.formatMap.get(InstructionType.BEQ);
 				mainJump.encodedForm = dlxGen.encodeInstruction(mainJump);
-				mainJump.pc = 0;
+				mainJump.pc = 2;
 				slp.add(0, mainJump);
+				
+				// Initialize SP and FP (FP points SP to start)
+				DLXInstruction fpInit = new DLXInstruction();
+				fpInit.opcode = InstructionType.ADDI;
+				fpInit.ra = dlxGen.FP;
+				fpInit.rb = 0;
+				fpInit.rc = (slp.size() + 2) * 4;
+				fpInit.format = dlxGen.formatMap.get(InstructionType.ADDI);
+				fpInit.encodedForm = dlxGen.encodeInstruction(fpInit);
+				fpInit.pc = 1;
+				slp.add(0, fpInit);
+				
+				// Initialize SP and FP (FP points SP to start)
+				DLXInstruction spInit = new DLXInstruction();
+				spInit.opcode = InstructionType.ADDI;
+				spInit.ra = dlxGen.SP;
+				spInit.rb = 0;
+				spInit.rc = (slp.size() + 1) * 4;
+				spInit.format = dlxGen.formatMap.get(InstructionType.ADDI);
+				spInit.encodedForm = dlxGen.encodeInstruction(spInit);
+				spInit.pc = 0;
+				slp.add(0, spInit);
 				
 				// Write the DLX machine code
 				System.out.println("\n\n--FINAL PROGARM--\n");

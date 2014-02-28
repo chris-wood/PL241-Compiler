@@ -454,20 +454,21 @@ public class PLIRInstruction
 	
 	public boolean isNotLiveInstruction()
 	{
-		switch (opcode)
-		{
-		case BEQ:
-		case BNE:
-		case BLT:
-		case BGT:
-		case BGE:
-		case BLE:
-//		case MOVE:
-//		case CMP:
-			return true;
-		default:
-			return false;
-		}
+		return false;
+//		switch (opcode)
+//		{
+//		case BEQ:
+//		case BNE:
+//		case BLT:
+//		case BGT:
+//		case BGE:
+//		case BLE:
+////		case MOVE:
+////		case CMP:
+//			return true;
+//		default:
+//			return false;
+//		}
 	}
 	
 	public static PLIRInstruction create_cmp(PLSymbolTable table, PLIRInstruction left, PLIRInstruction right)

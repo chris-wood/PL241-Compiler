@@ -147,7 +147,7 @@ public class PLParser
 					for (PLIRInstruction inst : func.modifiedGlobals.keySet())
 					{
 						PLIRInstruction saveInst = new PLIRInstruction(scope);
-						saveInst.opcode = InstructionType.STORE;
+						saveInst.opcode = InstructionType.SAVEGLOBAL;
 						saveInst.op1 = func.modifiedGlobals.get(inst);
 						saveInst.op1type = OperandType.ADDRESS;
 						saveInst.op2 = inst;
@@ -258,23 +258,32 @@ public class PLParser
 				duChain.put(inst, new HashSet<PLIRInstruction>());
 				return block;
 			}
-//			else if (func.isParameter(sym) == false && func.isLocalVariable(sym) == false)
-//			{	
-//				debug("Undeclared identifier.");
-//			} 
+			else if (func.isVarInScope(sym) || func.isLocalVariable(symName))
+			{
+				inst = scope.getCurrentValue(symName);
+			}
 			else if (scope.isGlobalVariable(sym))
 			{
 				inst = scope.getCurrentValue(sym);
+				func.addVarToScope(sym);
 				
-				PLIRInstruction locInst = new PLIRInstruction(scope);
-				locInst.kind = ResultKind.VAR;
-				locInst.type = OperandType.ADDRESS;
-				locInst.opcode = inst.opcode;
-				locInst.op1 = inst.op1;
-				locInst.op1type = inst.op1type;
-				locInst.op2 = inst.op2;
-				locInst.op2type = inst.op2type;
-				locInst.globalMark = true;
+//				PLIRInstruction loadInst = new PLIRInstruction(scope);
+//				loadInst.kind = ResultKind.VAR;
+//				loadInst.type = OperandType.ADDRESS;
+//				loadInst.opcode = InstructionType.LOAD;
+//				loadInst.op1 = inst;
+//				loadInst.op1type = OperandType.ADDRESS;	
+//				loadInst.globalMark = true;
+				
+//				PLIRInstruction locInst = new PLIRInstruction(scope);
+//				locInst.kind = ResultKind.VAR;
+//				locInst.type = OperandType.ADDRESS;
+//				locInst.opcode = inst.opcode;
+//				locInst.op1 = inst.op1;
+//				locInst.op1type = inst.op1type;
+//				locInst.op2 = inst.op2;
+//				locInst.op2type = inst.op2type;
+//				locInst.globalMark = true;
 				
 				// Eat the symbol, create the block with the single instruction, add the ident to the list
 				// of used identifiers, and return
@@ -282,6 +291,7 @@ public class PLParser
 				
 				block = new PLIRBasicBlock();
 				block.addInstruction(inst);
+//				block.addInstruction(loadInst);
 				block.addUsedValue(symName, inst);
 				
 				// Add the sheet to scope
@@ -295,11 +305,11 @@ public class PLParser
 				}
 				return block;
 			}
-			else if (func.isLocalVariable(symName))
-			{
-				inst = scope.getCurrentValue(symName);
-//				inst = func.getLocalVariableByName(symName);
-			}
+//			else if (func.isLocalVariable(symName))
+//			{
+//				inst = scope.getCurrentValue(symName);
+////				inst = func.getLocalVariableByName(symName);
+//			}
 			else
 			{
 				inst = func.getOperandByName(sym);
@@ -318,11 +328,11 @@ public class PLParser
 		{
 			// Initialize the variable to 0
 			PLIRInstruction inst = new PLIRInstruction(scope);
-			inst.opcode = InstructionType.ADD;
+			inst.opcode = InstructionType.GLOBAL;
 			inst.i1 = 0;
 			inst.op1type = OperandType.CONST;
-			inst.i2 = 0;
-			inst.op2type = OperandType.CONST;
+//			inst.i2 = 0;
+//			inst.op2type = OperandType.CONST;
 			inst.kind = ResultKind.VAR;
 			inst.type = OperandType.ADDRESS;
 			inst.overrideGenerate = true;
@@ -1614,7 +1624,7 @@ public class PLParser
 					glob.overrideGenerate = true;
 					glob.forceGenerate(scope);
 					debug(glob.toString());
-					debug(scope.getCurrentValue("x").toString());
+//					debug(scope.getCurrentValue("x").toString());
 				}
 			}
 			

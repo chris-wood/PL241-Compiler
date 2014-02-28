@@ -22,6 +22,8 @@ public class DLXGenerator
 	public static final int R0 = 0;
 
 	public int branchOffset = 0;
+	
+	public HashMap<Integer, Integer> globalOffset;
 
 	public HashMap<Integer, DLXInstruction> offsetMap = new HashMap<Integer, DLXInstruction>();
 
@@ -35,10 +37,12 @@ public class DLXGenerator
 	public HashMap<InstructionType, InstructionFormat> formatMap = new HashMap<InstructionType, InstructionFormat>();
 	public HashMap<Integer, DLXBasicBlock> allBlocks = new HashMap<Integer, DLXBasicBlock>();
 
-	public int pc = 1; // account for the initial jump
+	public int pc = 3; // account for the initial jump and SP/FP initialization stuff
 
-	public DLXGenerator()
+	public DLXGenerator(HashMap<Integer, Integer> globalOffset)
 	{
+		this.globalOffset = globalOffset;
+		
 		opcodeMap.put(InstructionType.ADD, 0);
 		formatMap.put(InstructionType.ADD, InstructionFormat.F2);
 		opcodeMap.put(InstructionType.SUB, 1);
@@ -371,7 +375,6 @@ public class DLXGenerator
 					retInst.ra = 0;
 					retInst.rb = 0;
 					retInst.rc = RA; // jump to RA
-					retInst.encodedForm = encodeInstruction(retInst);
 
 					// TODO: do these need offsets?
 					// offsetMap.put(ssaInst.id, retInst);
@@ -386,6 +389,39 @@ public class DLXGenerator
 		}
 
 		return instructions;
+	}
+	
+	public boolean checkForLoad(DLXBasicBlock edb, PLIRInstruction usingInst, int refId, int regNum)
+	{
+		if (globalOffset.containsKey(refId))
+		{
+			DLXInstruction loadInst = new DLXInstruction();
+			loadInst.opcode = InstructionType.LDW;
+			loadInst.format = formatMap.get(InstructionType.LDW);
+			loadInst.ra = regNum; // save contents of ssaInst.regNum
+			loadInst.rb = GLOBAL_ADDRESS;
+			loadInst.rc = -4 * (globalOffset.get(refId)); // word size
+			offsetMap.put(usingInst.id, loadInst);
+			appendInstructionToBlock(edb, loadInst);
+			return true;
+		}
+		return false;
+	}
+	
+	public boolean checkForStore(DLXBasicBlock edb, PLIRInstruction usingInst, int refId, int regNum)
+	{
+		if (globalOffset.containsKey(refId))
+		{
+			DLXInstruction storeInst = new DLXInstruction();
+			storeInst.opcode = InstructionType.LDW;
+			storeInst.format = formatMap.get(InstructionType.LDW);
+			storeInst.ra = regNum; // save contents of ssaInst.regNum
+			storeInst.rb = GLOBAL_ADDRESS;
+			storeInst.rc = -4 * (globalOffset.get(refId)); // word size
+			appendInstructionToBlock(edb, storeInst);
+			return true;
+		}
+		return false;
 	}
 
 	public void generateBlockTreeInstructons(DLXBasicBlock edb, PLIRBasicBlock b, Function func, boolean isMain, int branch, HashSet<Integer> visited)
@@ -679,18 +715,22 @@ public class DLXGenerator
 						if (ssaInst.op1type == OperandType.ADDRESS || ssaInst.op1type == OperandType.INST)
 						{
 							newInst.rb = ssaInst.op1.regNum;
-							offsetMap.put(ssaInst.id, newInst);
-							appendInstructionToBlock(edb, newInst);
+							if (checkForLoad(edb, ssaInst.op1, ssaInst.op1.id, ssaInst.op1.regNum))
+							{
+								appendInstructionToBlock(edb, newInst);
+							}
+							else
+							{
+								offsetMap.put(ssaInst.id, newInst);
+								appendInstructionToBlock(edb, newInst);
+							}
 						}
-						else
-						// constant, push regNum onto stack, load constant into
-						// rb, pop off of stack
+						else // constant, push regNum onto stack, load constant into rb, pop off of stack
 						{
 							DLXInstruction pushInst = new DLXInstruction();
 							pushInst.opcode = InstructionType.PSH;
 							pushInst.format = formatMap.get(InstructionType.PSH);
-							pushInst.ra = ssaInst.regNum; // save contents of
-															// ssaInst.regNum
+							pushInst.ra = ssaInst.regNum; // save contents of ssaInst.regNum
 							pushInst.rb = SP;
 							pushInst.rc = 4; // word size
 							pushInst.encodedForm = encodeInstruction(pushInst);
@@ -703,16 +743,14 @@ public class DLXGenerator
 							loadInst.rc = ssaInst.i1;
 							loadInst.encodedForm = encodeInstruction(loadInst);
 
-							newInst.rb = ssaInst.regNum; // the actual write
-															// instruction
+							newInst.rb = ssaInst.regNum; // the actual write instruction
 
 							DLXInstruction popInst = new DLXInstruction();
 							popInst.opcode = InstructionType.POP;
 							popInst.format = formatMap.get(InstructionType.POP);
-							popInst.ra = ssaInst.regNum; // save contents of
-															// ssaInst.regNum
+							popInst.ra = ssaInst.regNum; // save contents of ssaInst.regNum
 							popInst.rb = SP;
-							popInst.rc = 4; // word size
+							popInst.rc = -4; // word size
 							popInst.encodedForm = encodeInstruction(popInst);
 
 							branchOffset += 3;
@@ -884,6 +922,20 @@ public class DLXGenerator
 						break;
 
 					case PROC:
+						// Push all inuse registers onto the stack
+						for (int ri = 1; ri < 28; ri++)
+						{
+							DLXInstruction regPush = new DLXInstruction();
+							regPush.opcode = InstructionType.PSH;
+							regPush.format = formatMap.get(InstructionType.PSH);
+							regPush.ra = ri; // save contents of ssaInst.regNum
+							regPush.rb = SP; //
+							regPush.rc = 4; // word size
+							regPush.encodedForm = encodeInstruction(regPush);
+							offsetMap.put(ssaInst.id, regPush);
+							appendInstructionToBlock(edb, regPush);
+						}
+						
 						// Push RA onto the stack
 						DLXInstruction push1 = new DLXInstruction();
 						push1.opcode = InstructionType.PSH;
@@ -958,21 +1010,21 @@ public class DLXGenerator
 						pop1.format = formatMap.get(InstructionType.POP);
 						pop1.ra = FP;
 						pop1.rb = SP;
-						pop1.rc = 4; // word size
+						pop1.rc = -4; // word size
 						pop1.encodedForm = encodeInstruction(pop1);
 						appendInstructionToBlock(edb, pop1);
 
 						// Pop operands off of the stack
-						for (int opIndex = ssaInst.callOperands.size() - 1; opIndex >= 0; opIndex--)
+						for (int opIndex = 0; opIndex < ssaInst.callOperands.size(); opIndex++)
 						{
 							PLIRInstruction operand = ssaInst.callOperands.get(opIndex);
 							System.out.println("popping: " + operand);
 							DLXInstruction pop2 = new DLXInstruction();
 							pop2.opcode = InstructionType.POP;
 							pop2.format = formatMap.get(InstructionType.POP);
-							pop2.ra = 0; // toss away the operands that were passed onto the stack
+							pop2.ra = operand.regNum; // toss away the operands that were passed onto the stack
 							pop2.rb = SP;
-							pop2.rc = 4; // word size
+							pop2.rc = -4; // word size
 							pop2.encodedForm = encodeInstruction(pop2);
 							appendInstructionToBlock(edb, pop2);
 						}
@@ -983,9 +1035,23 @@ public class DLXGenerator
 						pop3.format = formatMap.get(InstructionType.POP);
 						pop3.ra = RA;
 						pop3.rb = SP;
-						pop3.rc = 4; // word size
+						pop3.rc = -4; // word size
 						pop3.encodedForm = encodeInstruction(pop3);
 						appendInstructionToBlock(edb, pop3);
+						
+						// Pop all inuse registers from the stack
+						for (int ri = 27; ri >= 1; ri--)
+						{
+							DLXInstruction regPop = new DLXInstruction();
+							regPop.opcode = InstructionType.POP;
+							regPop.format = formatMap.get(InstructionType.POP);
+							regPop.ra = ri; // save contents of ssaInst.regNum
+							regPop.rb = SP; //
+							regPop.rc = -4; // word size
+							regPop.encodedForm = encodeInstruction(regPop);
+							offsetMap.put(ssaInst.id, regPop);
+							appendInstructionToBlock(edb, regPop);
+						}
 
 						break;
 
@@ -1012,6 +1078,18 @@ public class DLXGenerator
 					case STORE:
 						System.err.println("TODO: STORE");
 //						System.exit(-1);
+						break;
+						
+					case SAVEGLOBAL:
+						DLXInstruction storeInst = new DLXInstruction();
+						storeInst.opcode = InstructionType.STW;
+						storeInst.format = formatMap.get(InstructionType.STW);
+						storeInst.ra = ssaInst.op1.regNum; // save contents of ssaInst.regNum
+						storeInst.rb = GLOBAL_ADDRESS;
+						storeInst.rc = -4 * (globalOffset.get(ssaInst.op2.id)); // word size
+						offsetMap.put(ssaInst.id, storeInst);
+						appendInstructionToBlock(edb, storeInst);
+						System.err.println("TODO: SAVEGLOBAL");
 						break;
 
 					case PHI:
