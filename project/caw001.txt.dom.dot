@@ -1,14 +1,8 @@
 digraph dom {
-BB5[shape = box, label = "BB(5 [ foo ])\n" + "4 := loadparam 0\n" + "5 := add #0 #0\n" + "6 := wln\n" + "7 := write #1337\n" + "8 := write (3)\n" + "9 := write (4)\n" + "10 := write #1337\n" + "11 := wln\n" + "12 := read\n" + "13 := read\n" + "14 := saveglobal (13) (1)\n" + "15 := saveglobal (12) (3)\n"];
-BB27[shape = box, label = "BB(27)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := global #0\n" + "16 := write (1)\n" + "17 := wln\n" + "18 := read\n" + "19 := read\n" + "20 := read\n" + "21 := mul (18) #5\n" + "22 := add (21) #1\n" + "23 := cmp (22) #100\n" + "24 := bge (23) #4\n"];
-BB46[shape = box, label = "BB(46)\n" + "25 := write (19)\n" + "26 := wln\n" + "27 := beq #0 #3\n"];
-BB51[shape = box, label = "BB(51)\n" + "28 := write (22)\n" + "29 := wln\n"];
-BB48[shape = box, label = "BB(48)\n" + "30 := write (19)\n" + "31 := wln\n" + "32 := phi (19) (39)\n" + "33 := phi (22) (36)\n" + "34 := cmp (32) #0\n" + "35 := ble (34) #6\n"];
-BB62[shape = box, label = "BB(62)\n" + "36 := add #0 #666\n" + "37 := write (32)\n" + "38 := wln\n" + "39 := sub (32) #1\n" + "40 := beq #0 #-8\n"];
-BB70[shape = box, label = "BB(70)\n" + "41 := write (32)\n" + "42 := wln\n" + "43 := write (20)\n" + "44 := wln\n" + "45 := proc foo (33)\n" + "46 := write (20)\n" + "47 := wln\n" + "48 := write (33)\n" + "49 := wln\n" + "50 := write (32)\n" + "51 := wln\n" + "52 := end\n"];
-BB27 -> BB46;
-BB27 -> BB51;
-BB27 -> BB48;
-BB48 -> BB62;
-BB48 -> BB70;
+BB3[shape = box, label = "BB(3 [ factIter ])\n" + "2 := loadparam 0\n" + "3 := add #0 #0\n" + "4 := (3)\n" + "5 := phi #1 (9)\n" + "6 := phi #1 (10)\n" + "7 := cmp (6) (2)\n" + "8 := bgt (7) #4\n"];
+BB15[shape = box, label = "BB(15)\n" + "9 := mul (5) (6)\n" + "10 := add (6) #1\n" + "11 := beq #0 #-6\n"];
+BB21[shape = box, label = "BB(21)\n" + "12 := write (5)\n"];
+BB3 -> BB15;
+BB3 -> BB21;
+BB27[shape = box, label = "BB(27)\n" + "1 := global #0\n" + "13 := read\n" + "14 := func factIter (13)\n" + "15 := write (14)\n" + "16 := wln\n" + "17 := end\n"];
 }

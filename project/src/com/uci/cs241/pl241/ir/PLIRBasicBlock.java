@@ -203,10 +203,13 @@ public class PLIRBasicBlock
 		if (newBlock.isEntry)
 		{
 			// Handle left child
-			leftJoin.leftChild = newBlock.leftChild;
+			if (newBlock.leftChild != null)
+			{	
+				leftJoin.leftChild = newBlock.leftChild;
+			}
 //			newBlock.leftChild.wrappedLoopHeaders.add(leftJoin);
 			
-			if (newBlock.leftChild.joinNode == null)
+			if (newBlock.leftChild != null && newBlock.leftChild.joinNode == null)
 			{
 				newBlock.leftChild.parents.add(leftJoin);
 				if (newBlock.leftChild.leftChild != null && newBlock.leftChild.leftChild.equals(newBlock))
@@ -214,7 +217,7 @@ public class PLIRBasicBlock
 					newBlock.leftChild.leftChild = leftJoin;
 				}
 			}
-			else
+			else if (newBlock.leftChild != null)
 			{
 				newBlock.leftChild.joinNode.parents.add(leftJoin);
 				if (newBlock.leftChild.joinNode.leftChild != null && newBlock.leftChild.joinNode.leftChild.equals(newBlock))
@@ -224,7 +227,10 @@ public class PLIRBasicBlock
 			}
 			
 			// Handle right child
-			leftJoin.rightChild = newBlock.rightChild;
+			if (newBlock.rightChild != null)
+			{
+				leftJoin.rightChild = newBlock.rightChild;
+			}
 //			newBlock.rightChild.wrappedLoopHeaders.add(leftJoin);
 			
 			if (newBlock.rightChild != null && newBlock.rightChild.joinNode == null)

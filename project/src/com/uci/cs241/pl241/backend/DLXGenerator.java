@@ -1017,10 +1017,144 @@ public class DLXGenerator
 						break;
 
 					case FUNC:
+					{
+						// Push all inuse registers onto the stack
+						for (int ri = 1; ri < 28; ri++)
+						{
+							DLXInstruction regPush = new DLXInstruction();
+							regPush.opcode = InstructionType.PSH;
+							regPush.format = formatMap.get(InstructionType.PSH);
+							regPush.ra = ri; // save contents of ssaInst.regNum
+							regPush.rb = SP; //
+							regPush.rc = 4; // word size
+							regPush.encodedForm = encodeInstruction(regPush);
+							offsetMap.put(ssaInst.id, regPush);
+							appendInstructionToBlock(edb, regPush);
+						}
+						
+						// Push RA onto the stack
+						DLXInstruction push1 = new DLXInstruction();
+						push1.opcode = InstructionType.PSH;
+						push1.format = formatMap.get(InstructionType.PSH);
+						push1.ra = RA; // save contents of ssaInst.regNum
+						push1.rb = SP; //
+						push1.rc = 4; // word size
+						push1.encodedForm = encodeInstruction(push1);
+						offsetMap.put(ssaInst.id, push1);
+						appendInstructionToBlock(edb, push1);
 
+						// Push all operands onto the stack (callee recovers the proper order)
+						for (int opIndex = ssaInst.callOperands.size() - 1; opIndex >= 0; opIndex--)
+						{
+							PLIRInstruction operand = ssaInst.callOperands.get(opIndex);
+							System.out.println("pushing: " + operand);
+							DLXInstruction push3 = new DLXInstruction();
+							push3.opcode = InstructionType.PSH;
+							push3.format = formatMap.get(InstructionType.PSH);
+							
+							// ***TODO: do check to see if this is a constant or global variable
+							
+							push3.ra = operand.regNum; // save contents of ssaInst.regNum
+							push3.rb = SP; //
+							push3.rc = 4; // word size
+							push3.encodedForm = encodeInstruction(push3);
+							appendInstructionToBlock(edb, push3);
+						}
+
+						// Push current FP onto the stack (to become to old FP)
+						DLXInstruction push2 = new DLXInstruction();
+						push2.opcode = InstructionType.PSH;
+						push2.format = formatMap.get(InstructionType.PSH);
+						push2.ra = FP; // save contents of ssaInst.regNum
+						push2.rb = SP; //
+						push2.rc = 4; // word size
+						push2.encodedForm = encodeInstruction(push2);
+						appendInstructionToBlock(edb, push2);
+
+						// Set FP = SP - FP
+						DLXInstruction push4 = new DLXInstruction();
+						push4.opcode = InstructionType.SUB;
+						push4.format = formatMap.get(InstructionType.ADDI);
+						push4.ra = FP;
+						push4.rb = SP;
+						push4.rc = FP;
+						push4.encodedForm = encodeInstruction(push4);
+						appendInstructionToBlock(edb, push4);
+
+						// FP = FP - 2, equating to FP = SP - FP - 2
+						DLXInstruction push5 = new DLXInstruction();
+						push5.opcode = InstructionType.SUBI;
+						push5.format = formatMap.get(InstructionType.SUBI);
+						push5.ra = FP;
+						push5.rb = FP;
+						push5.rc = 2; // subtract 2, one for FP and one for RA register on the stack
+						push5.encodedForm = encodeInstruction(push5);
+						appendInstructionToBlock(edb, push5);
+
+						// Add the JSR routine
+						DLXInstruction jsrInst = new DLXInstruction();
+						jsrInst.opcode = InstructionType.JSR;
+						jsrInst.format = formatMap.get(InstructionType.JSR);
+						jsrInst.ra = newInst.rb = 0;
+						jsrInst.rc = functionAddressTable.get(ssaInst.funcName) * 4;
+						jsrInst.encodedForm = encodeInstruction(jsrInst);
+						offsetMap.put(ssaInst.id, jsrInst);
+						appendInstructionToBlock(edb, jsrInst);
+						
+						/// TODO: store the result!
+
+						// Recover the FP
+						DLXInstruction pop1 = new DLXInstruction();
+						pop1.opcode = InstructionType.POP;
+						pop1.format = formatMap.get(InstructionType.POP);
+						pop1.ra = FP;
+						pop1.rb = SP;
+						pop1.rc = -4; // word size
+						pop1.encodedForm = encodeInstruction(pop1);
+						appendInstructionToBlock(edb, pop1);
+
+						// Pop operands off of the stack
+						for (int opIndex = 0; opIndex < ssaInst.callOperands.size(); opIndex++)
+						{
+							PLIRInstruction operand = ssaInst.callOperands.get(opIndex);
+							System.out.println("popping: " + operand);
+							DLXInstruction pop2 = new DLXInstruction();
+							pop2.opcode = InstructionType.POP;
+							pop2.format = formatMap.get(InstructionType.POP);
+							pop2.ra = operand.regNum; // toss away the operands that were passed onto the stack
+							pop2.rb = SP;
+							pop2.rc = -4; // word size
+							pop2.encodedForm = encodeInstruction(pop2);
+							appendInstructionToBlock(edb, pop2);
+						}
+
+						// Reset the old RA
+						DLXInstruction pop3 = new DLXInstruction();
+						pop3.opcode = InstructionType.POP;
+						pop3.format = formatMap.get(InstructionType.POP);
+						pop3.ra = RA;
+						pop3.rb = SP;
+						pop3.rc = -4; // word size
+						pop3.encodedForm = encodeInstruction(pop3);
+						appendInstructionToBlock(edb, pop3);
+						
+						// Pop all inuse registers from the stack
+						for (int ri = 27; ri >= 1; ri--)
+						{
+							DLXInstruction regPop = new DLXInstruction();
+							regPop.opcode = InstructionType.POP;
+							regPop.format = formatMap.get(InstructionType.POP);
+							regPop.ra = ri; // save contents of ssaInst.regNum
+							regPop.rb = SP; //
+							regPop.rc = -4; // word size
+							regPop.encodedForm = encodeInstruction(regPop);
+							offsetMap.put(ssaInst.id, regPop);
+							appendInstructionToBlock(edb, regPop);
+						}
 						break;
-
+					}
 					case PROC:
+					{
 						// Push all inuse registers onto the stack
 						for (int ri = 1; ri < 28; ri++)
 						{
@@ -1154,6 +1288,7 @@ public class DLXGenerator
 						}
 
 						break;
+					}
 
 					case LOADPARAM:
 						// loadparam operand#
@@ -1223,7 +1358,61 @@ public class DLXGenerator
 							}
 							insertBlock = curr;
 
-							if (!(ssaInst.op1.regNum == ssaInst.op2.regNum && ssaInst.regNum == ssaInst.op1.regNum))
+							// Handle constants in the phi functions specially
+							if (ssaInst.op1type == OperandType.CONST && ssaInst.op2type == OperandType.CONST)
+							{
+								DLXInstruction leftInst = new DLXInstruction();
+								leftInst.opcode = InstructionType.ADDI;
+								leftInst.format = formatMap.get(InstructionType.ADDI);
+								leftInst.ra = ssaInst.regNum; // BGT (0) #4
+								leftInst.rb = 0;
+								leftInst.rc = ssaInst.i1;
+
+								branchOffset++;
+								offsetMap.put(ssaInst.id, leftInst);
+								appendInstructionToBlock(edb, leftInst);
+								checkForGlobalStore(edb, ssaInst, true);
+								
+								DLXInstruction rightInst = new DLXInstruction();
+								rightInst.opcode = InstructionType.ADDI;
+								rightInst.format = formatMap.get(InstructionType.ADDI);
+								rightInst.ra = ssaInst.regNum; // BGT (0) #4
+								rightInst.rb = 0;
+								rightInst.rc = ssaInst.i2;
+
+								branchOffset++;
+								appendInstructionToEndBlock(insertBlock, rightInst);
+								checkForGlobalStore(insertBlock, ssaInst, false);
+							}
+							else if (ssaInst.op1type == OperandType.CONST) // left side is a constant
+							{
+								DLXInstruction leftInst = new DLXInstruction();
+								leftInst.opcode = InstructionType.ADDI;
+								leftInst.format = formatMap.get(InstructionType.ADDI);
+								leftInst.ra = ssaInst.regNum; // BGT (0) #4
+								leftInst.rb = 0;
+								leftInst.rc = ssaInst.i1;
+
+								branchOffset++;
+								offsetMap.put(ssaInst.id, leftInst);
+								appendInstructionToBlock(edb, leftInst);
+								checkForGlobalStore(edb, ssaInst, true);
+								
+								if (ssaInst.regNum != ssaInst.op2.regNum) 
+								{
+									DLXInstruction rightInst = new DLXInstruction();
+									rightInst.opcode = InstructionType.ADDI;
+									rightInst.format = formatMap.get(InstructionType.ADDI);
+									rightInst.ra = ssaInst.regNum; // BGT (0) #4
+									rightInst.rb = 0;
+									rightInst.rc = ssaInst.i2;
+
+									branchOffset++;
+									appendInstructionToEndBlock(insertBlock, rightInst);
+									checkForGlobalStore(insertBlock, ssaInst, false);
+								}
+							}
+							else if (ssaInst.op2type == OperandType.CONST) // right side is a constant
 							{
 								if (ssaInst.regNum != ssaInst.op1.regNum) 
 								{
@@ -1239,54 +1428,85 @@ public class DLXGenerator
 									appendInstructionToBlock(edb, leftInst);
 									checkForGlobalStore(edb, ssaInst, true);
 								}
-								if (ssaInst.regNum != ssaInst.op2.regNum) 
-								{
-									DLXInstruction rightInst = new DLXInstruction();
-									rightInst.opcode = InstructionType.ADD;
-									rightInst.format = formatMap.get(InstructionType.ADD);
-									rightInst.ra = ssaInst.regNum; // BGT (0) #4
-									rightInst.rb = 0;
-									rightInst.rc = ssaInst.op2.regNum;
+								
+								DLXInstruction rightInst = new DLXInstruction();
+								rightInst.opcode = InstructionType.ADDI;
+								rightInst.format = formatMap.get(InstructionType.ADDI);
+								rightInst.ra = ssaInst.regNum; // BGT (0) #4
+								rightInst.rb = 0;
+								rightInst.rc = ssaInst.i2;
 
-									branchOffset++;
-									appendInstructionToEndBlock(insertBlock, rightInst);
-									checkForGlobalStore(insertBlock, ssaInst, false);
-								}
+								branchOffset++;
+								appendInstructionToEndBlock(insertBlock, rightInst);
+								checkForGlobalStore(insertBlock, ssaInst, false);
 							}
-						}
-						else
-						{
-							if (!(ssaInst.op1.regNum == ssaInst.op2.regNum && ssaInst.regNum == ssaInst.op1.regNum))
+							else
 							{
-								if (ssaInst.regNum != ssaInst.op1.regNum) 
+								if (!(ssaInst.op1.regNum == ssaInst.op2.regNum && ssaInst.regNum == ssaInst.op1.regNum))
 								{
-									DLXInstruction leftInst = new DLXInstruction();
-									leftInst.opcode = InstructionType.ADD;
-									leftInst.format = formatMap.get(InstructionType.ADD);
-									leftInst.ra = ssaInst.regNum; // BGT (0) #4
-									leftInst.rb = 0;
-									leftInst.rc = ssaInst.op1.regNum;
-									insertBlock = edb.parents.get(branch);
-
-									branchOffset++;
-									offsetMap.put(ssaInst.id, leftInst);
-									appendInstructionToBlock(insertBlock, leftInst);
-									checkForGlobalStore(insertBlock, ssaInst, true);
+									if (ssaInst.regNum != ssaInst.op1.regNum) 
+									{
+										DLXInstruction leftInst = new DLXInstruction();
+										leftInst.opcode = InstructionType.ADD;
+										leftInst.format = formatMap.get(InstructionType.ADD);
+										leftInst.ra = ssaInst.regNum; // BGT (0) #4
+										leftInst.rb = 0;
+										leftInst.rc = ssaInst.op1.regNum;
+	
+										branchOffset++;
+										offsetMap.put(ssaInst.id, leftInst);
+										appendInstructionToBlock(edb, leftInst);
+										checkForGlobalStore(edb, ssaInst, true);
+									}
+									if (ssaInst.regNum != ssaInst.op2.regNum) 
+									{
+										DLXInstruction rightInst = new DLXInstruction();
+										rightInst.opcode = InstructionType.ADD;
+										rightInst.format = formatMap.get(InstructionType.ADD);
+										rightInst.ra = ssaInst.regNum; // BGT (0) #4
+										rightInst.rb = 0;
+										rightInst.rc = ssaInst.op2.regNum;
+	
+										branchOffset++;
+										appendInstructionToEndBlock(insertBlock, rightInst);
+										checkForGlobalStore(insertBlock, ssaInst, false);
+									}
 								}
-								if (ssaInst.regNum != ssaInst.op2.regNum) 
+								else
 								{
-									DLXInstruction rightInst = new DLXInstruction();
-									rightInst.opcode = InstructionType.ADD;
-									rightInst.format = formatMap.get(InstructionType.ADD);
-									rightInst.ra = ssaInst.regNum; // BGT (0) #4
-									rightInst.rb = 0;
-									rightInst.rc = ssaInst.op2.regNum;
-									insertBlock = edb.parents.get(branch);
+									if (!(ssaInst.op1.regNum == ssaInst.op2.regNum && ssaInst.regNum == ssaInst.op1.regNum))
+									{
+										if (ssaInst.regNum != ssaInst.op1.regNum) 
+										{
+											DLXInstruction leftInst = new DLXInstruction();
+											leftInst.opcode = InstructionType.ADD;
+											leftInst.format = formatMap.get(InstructionType.ADD);
+											leftInst.ra = ssaInst.regNum; // BGT (0) #4
+											leftInst.rb = 0;
+											leftInst.rc = ssaInst.op1.regNum;
+											insertBlock = edb.parents.get(branch);
 
-									branchOffset++;
-									offsetMap.put(ssaInst.id, rightInst);
-									appendInstructionToBlock(insertBlock, rightInst);
-									checkForGlobalStore(insertBlock, ssaInst, true);
+											branchOffset++;
+											offsetMap.put(ssaInst.id, leftInst);
+											appendInstructionToBlock(insertBlock, leftInst);
+											checkForGlobalStore(insertBlock, ssaInst, true);
+										}
+										if (ssaInst.regNum != ssaInst.op2.regNum) 
+										{
+											DLXInstruction rightInst = new DLXInstruction();
+											rightInst.opcode = InstructionType.ADD;
+											rightInst.format = formatMap.get(InstructionType.ADD);
+											rightInst.ra = ssaInst.regNum; // BGT (0) #4
+											rightInst.rb = 0;
+											rightInst.rc = ssaInst.op2.regNum;
+											insertBlock = edb.parents.get(branch);
+
+											branchOffset++;
+											offsetMap.put(ssaInst.id, rightInst);
+											appendInstructionToBlock(insertBlock, rightInst);
+											checkForGlobalStore(insertBlock, ssaInst, true);
+										}
+									}
 								}
 							}
 						}

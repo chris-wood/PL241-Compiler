@@ -93,11 +93,11 @@ public class PLC
 					if (seenBlocks.contains(curr) == false)
 					{
 						seenBlocks.add(curr);
-						HashSet<PLIRInstruction> toRemove = new HashSet<PLIRInstruction>(); 
+						ArrayList<PLIRInstruction> toRemove = new ArrayList<PLIRInstruction>(); 
 						for (int i = 0; i < curr.instructions.size(); i++)
 						{
 							if (PLStaticSingleAssignment.isIncluded(curr.instructions.get(i).id) == false || 
-									seenInst.contains(curr.instructions.get(i).id))
+									seenInst.contains(curr.instructions.get(i).id) || curr.instructions.get(i).id == 0)
 							{
 								toRemove.add(curr.instructions.get(i));
 							}
@@ -194,8 +194,9 @@ public class PLC
 			{
 				// Add the constant instruction
 				PLIRInstruction constInst = new PLIRInstruction(parser.scope);
-				constInst.id = 0;
-				PLStaticSingleAssignment.instructions.add(constInst);
+				constInst.id = PLStaticSingleAssignment.globalSSAIndex;
+//				PLStaticSingleAssignment.instructions.add(constInst);
+				PLStaticSingleAssignment.addInstruction(parser.scope, constInst);
 				InterferenceGraph ig = new InterferenceGraph(PLStaticSingleAssignment.instructions);
 				
 				// Register allocation on each block

@@ -186,6 +186,7 @@ public class PLParser
 						PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.END);
 						result.addInstruction(inst);
 						blocks.add(root);
+						PLStaticSingleAssignment.endInstructions();
 						
 						for (PLIRInstruction glob : globalVariables.values())
 						{
@@ -1414,8 +1415,8 @@ public class PLParser
 						if (!exprInst.generated)
 						{
 							exprInst.forceGenerate(scope);
-							result.addInstruction(exprInst);
 						}
+						result.addInstruction(exprInst);
 					}
 					
 					// Add the first expression instruction to the list of operands
@@ -1543,9 +1544,9 @@ public class PLParser
 						PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, funcFlagMap.get(funcName), operands);
 						callInst.forceGenerate(scope);
 //						result = new PLIRBasicBlock();
-						result.hasReturn = funcFlagMap.get(funcName); // special case... this is a machine instruction, not a user-defined function
+						result.hasReturn = funcFlagMap.get(funcName); 
 						result.addInstruction(callInst);
-						result.isEntry = false;
+						result.isEntry = true;
 						
 						// Update DU chain
 						for (PLIRInstruction operand : operands)
@@ -1566,6 +1567,7 @@ public class PLParser
 //					result = new PLIRBasicBlock();
 					result.hasReturn = true; // special case... this is a machine instruction, not a user-defined function
 					result.addInstruction(inst);
+					result.isEntry = true;
 				}
 				else if (toksym == PLToken.closeParenToken && funcName.equals("OutputNewLine"))
 				{
@@ -1573,6 +1575,7 @@ public class PLParser
 					inst.forceGenerate(scope);
 //					result = new PLIRBasicBlock();
 					result.addInstruction(inst);
+					result.isEntry = true;
 				}
 				else
 				{
@@ -1580,6 +1583,7 @@ public class PLParser
 					callInst.forceGenerate(scope);
 //					result = new PLIRBasicBlock();
 					result.addInstruction(callInst);
+					result.isEntry = true;
 				}
 				
 				// Eat the last token and proceed
@@ -2210,6 +2214,7 @@ public class PLParser
 				result.instructions.get(result.instructions.size() - 1).overrideGenerate = true;
 				result.instructions.get(result.instructions.size() - 1).forceGenerate(scope);
 				result.returnInst = result.getLastInst();
+				result.isEntry = true;
 				debug("Forcing generation of return statement");
 			}
 			else
@@ -2415,7 +2420,9 @@ public class PLParser
 			advance(in);  
 			if (result != null)
 			{
-				result = PLIRBasicBlock.merge(result, parse_funcBody(in));
+				PLIRBasicBlock body = parse_funcBody(in);
+				body.isEntry = true;
+				result = PLIRBasicBlock.merge(result, body);
 			}
 			else
 			{

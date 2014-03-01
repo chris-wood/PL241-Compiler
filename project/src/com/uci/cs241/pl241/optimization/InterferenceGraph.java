@@ -17,6 +17,7 @@ public class InterferenceGraph
 		for (PLIRInstruction inst : instructions)
 		{
 			adjList.put(inst.id, new ArrayList<Integer>());
+			System.out.println("IG: " + inst);
 			costMap.put(inst.id, inst.cost);
 		}
 	}

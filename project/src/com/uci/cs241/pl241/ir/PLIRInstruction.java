@@ -113,6 +113,7 @@ public class PLIRInstruction
 		LOADPARAM,
 		SAVEGLOBAL,
 		GLOBAL,
+		RETURN,
 		
 		END,
 		
@@ -664,7 +665,7 @@ public class PLIRInstruction
 	@Override
 	public String toString()
 	{
-		String s = "";
+		String s = "[" + id + "] ";
 		
 		// Short-circuit for instructions that have already been deleted
 		if (this.isRemoved && this.refInst != null)
@@ -678,7 +679,6 @@ public class PLIRInstruction
 		}
 		else
 		{
-		
 			switch (opcode)
 			{
 				case ADD:

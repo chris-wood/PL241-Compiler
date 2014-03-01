@@ -3,6 +3,7 @@ package com.uci.cs241.pl241.ir;
 import java.util.ArrayList;
 
 import com.uci.cs241.pl241.frontend.PLSymbolTable;
+import com.uci.cs241.pl241.ir.PLIRInstruction.InstructionType;
 
 public class PLStaticSingleAssignment
 {
@@ -11,6 +12,24 @@ public class PLStaticSingleAssignment
 		
 	public static void init()
 	{
+	}
+	
+	public static void endInstructions()
+	{
+		boolean remove = false;
+		ArrayList<Integer> toRemove = new ArrayList<Integer>(); 
+		for (int i = 0; i < instructions.size(); i++)
+		{
+			if (remove) toRemove.add(i);
+			if (instructions.get(i).opcode == InstructionType.END)
+			{
+				remove = true;
+			}
+		}
+		for (Integer i : toRemove)
+		{
+			instructions.remove(i);
+		}
 	}
 	
 	public static void finish()

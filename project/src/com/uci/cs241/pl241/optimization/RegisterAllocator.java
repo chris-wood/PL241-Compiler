@@ -179,6 +179,14 @@ public class RegisterAllocator
 							live.add(constInst);
 						}
 						
+						if (inst.callOperands != null)
+						{
+							for (PLIRInstruction op : inst.callOperands)
+							{
+								live.add(op);
+							}
+						}
+						
 						// Assign to constant instruction pad if either one of them is a variable
 //						if (inst.type == OperandType.LOCALVARIABLE)
 //						{
