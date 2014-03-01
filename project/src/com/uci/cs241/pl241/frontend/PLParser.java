@@ -2215,6 +2215,8 @@ public class PLParser
 				retInst.overrideGenerate = true;
 				retInst.forceGenerate(scope);
 				
+				// TODO: caw: if constant, save as such
+				
 				PLIRInstruction finalRet = new PLIRInstruction(scope);
 				finalRet.opcode = InstructionType.RETURN;
 				finalRet.op1type = OperandType.INST;
@@ -2437,7 +2439,14 @@ public class PLParser
 			{
 				PLIRBasicBlock body = parse_funcBody(in);
 				body.isEntry = true;
+				boolean propogateHeader = body.isWhileEntry;
 				result = PLIRBasicBlock.merge(result, body);
+				if (propogateHeader)
+				{
+					HashSet<PLIRBasicBlock> enclosedSeen = new HashSet<PLIRBasicBlock>();
+					enclosedSeen.add(result);
+					result.leftChild.propogateLoopHeader(enclosedSeen, result);
+				}
 			}
 			else
 			{

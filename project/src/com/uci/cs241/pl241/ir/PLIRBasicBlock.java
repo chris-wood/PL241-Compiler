@@ -58,42 +58,13 @@ public class PLIRBasicBlock
 	public PLIRBasicBlock()
 	{
 		id = bbid++;
-//		this.children = new ArrayList<PLIRBasicBlock>();
 		this.parents = new ArrayList<PLIRBasicBlock>();
 		this.treeVertexSet = new ArrayList<PLIRBasicBlock>();
 		this.dominatorSet = new ArrayList<PLIRBasicBlock>();
 		this.instructions = new ArrayList<PLIRInstruction>();
-//		this.dominatedInstructions = new ArrayList<PLIRInstruction>();
-//		this.carriedInstructions = new ArrayList<PLIRInstruction>();
 		this.modifiedIdents = new HashMap<String, PLIRInstruction>();
 		this.usedIdents = new HashMap<String, PLIRInstruction>();
 	}
-	
-//	public static PLIRBasicBlock buildBlock(int pc)
-//	{
-//		PLIRBasicBlock block = new PLIRBasicBlock();
-//		
-//		while (true)
-//		{
-//			PLIRInstruction inst = PLStaticSingleAssignment.instructions.get(pc++); 
-//			if (PLIRInstruction.isBranch(inst))
-//			{
-//				block.leftChild.
-//			}
-//		}
-//		
-//		return block;
-//	}
-//	
-//	public static ArrayList<PLIRBasicBlock> buildCFG()
-//	{
-//		ArrayList<PLIRBasicBlock> blocks = new ArrayList<PLIRBasicBlock>();
-//		int pc = 0;
-//		
-//		
-//		
-//		return blocks;
-//	}
 	
 	public static PLIRBasicBlock merge(PLIRBasicBlock oldBlock, PLIRBasicBlock newBlock)
 	{	
@@ -114,6 +85,9 @@ public class PLIRBasicBlock
 		{
 			newBlock.addUsedValue(sym, oldBlock.usedIdents.get(sym));
 		}
+		
+		// Save whileEntry flag
+		oldBlock.isWhileEntry = oldBlock.isWhileEntry || newBlock.isWhileEntry;
 		
 		// Walk to the right spot on the BB tree
 		PLIRBasicBlock leftJoin = oldBlock;
@@ -424,8 +398,6 @@ public class PLIRBasicBlock
 	{
 		if (inst != null)
 		{
-//			carriedInstructions.add(inst);
-//			dominatedInstructions.add(inst);
 			return instructions.add(inst);
 		}
 		return false;
@@ -449,7 +421,6 @@ public class PLIRBasicBlock
 	{
 		if (0 <= index && index <= instructions.size())
 		{
-//			dominatedInstructions.add(inst);
 			instructions.add(index, inst);
 			return true;
 		}

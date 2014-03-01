@@ -128,6 +128,12 @@ public class InterferenceGraph
 		}
 	}
 	
+	public void addVertex(int v)
+	{
+		ArrayList<Integer> empty = new ArrayList<Integer>();
+		adjList.put(v, empty);
+	}
+	
 	public boolean isEmpty()
 	{
 		return adjList.keySet().isEmpty();

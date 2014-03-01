@@ -68,35 +68,6 @@ public class PLStaticSingleAssignment
 	
 	public static int addInstruction(PLSymbolTable table, PLIRInstruction inst)
 	{
-//		if (globalSSAIndex == 30)
-//		{
-//			int x = 0;
-//		}
-//		// Check for common subexpressions first
-//		ArrayList<PLIRInstruction> dominated = table.getDominatedInstructions(inst.opcode);
-//		if (dominated != null)
-//		{
-//			boolean common = false;
-//			for (int i = 0; i < dominated.size() && !common; i++)
-//			{
-//				PLIRInstruction other = dominated.get(i);
-//				if (other.equals(inst))
-//				{
-//					inst.removeInstruction(EliminationReason.CSE, other);
-//					common = true;
-//				}
-//			}
-//			if (!common)
-//			{
-//				table.addDominatedInstruction(inst);
-////				table.instTypeMap.get(table.getCurrentScope()).get(inst.opcode).add(inst);
-////				table.addDominatedInstruction(inst);
-//			}
-//		}
-//		else
-//		{
-//			table.addDominatedInstruction(inst);
-//		}
 		inst.depth = table.scopeDepth();
 		boolean success = instructions.add(inst);
 		if (!success) return -1;

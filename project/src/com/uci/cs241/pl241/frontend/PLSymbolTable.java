@@ -218,7 +218,14 @@ public class PLSymbolTable
 	
 	public int scopeDepth()
 	{
-		return currentScope.size();
+		if (currentScope != null)
+		{
+			return currentScope.size();
+		}
+		else
+		{
+			return 0;
+		}
 	}
 	
 	public PLIRInstruction getLastValue(String sym)

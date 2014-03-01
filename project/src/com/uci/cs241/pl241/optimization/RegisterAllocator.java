@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import com.uci.cs241.pl241.frontend.PLSymbolTable;
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
 import com.uci.cs241.pl241.ir.PLIRInstruction.InstructionType;
@@ -19,9 +20,14 @@ public class RegisterAllocator
 	public HashMap<Integer, Integer> regMap = new HashMap<Integer, Integer>();
 	public HashSet<Integer> regSet = new HashSet<Integer>();
 	
-	public RegisterAllocator(InterferenceGraph ig)
+	public HashMap<Integer, PLIRInstruction> constants = new HashMap<Integer, PLIRInstruction>();
+	
+	public PLSymbolTable scope;
+	
+	public RegisterAllocator(InterferenceGraph ig, PLSymbolTable scope)
 	{
 		this.ig = ig;
+		this.scope = scope;
 	}
 
 	// Graph coloring algorithm
@@ -80,14 +86,14 @@ public class RegisterAllocator
 		PLStaticSingleAssignment.getInstruction(x).regNum = color;
 	}
 
-	public void ComputeLiveRange(PLIRBasicBlock entryBlock, PLIRInstruction constInst)
+	public void ComputeLiveRange(PLIRBasicBlock entryBlock)
 	{
 		HashSet<PLIRInstruction> live = new HashSet<PLIRInstruction>();
-		live.addAll(CalcLiveRange(entryBlock, 1, 1, constInst));
-		live.addAll(CalcLiveRange(entryBlock, 1, 2, constInst));
+		live.addAll(CalcLiveRange(entryBlock, 1, 1));
+		live.addAll(CalcLiveRange(entryBlock, 1, 2));
 	}
 
-	public HashSet<PLIRInstruction> CalcLiveRange(PLIRBasicBlock b, int branch, int pass, PLIRInstruction constInst)
+	public HashSet<PLIRInstruction> CalcLiveRange(PLIRBasicBlock b, int branch, int pass)
 	{
 		HashSet<PLIRInstruction> live = new HashSet<PLIRInstruction>();
 
@@ -113,17 +119,18 @@ public class RegisterAllocator
 					for (PLIRBasicBlock h : b.wrappedLoopHeaders)
 					{
 						b.liveAtEnd.addAll(h.liveAtEnd);
+						live.addAll(h.liveAtEnd);
 					}
 				}
 
 				// recursively add children to the live set
 				if (b.leftChild != null)
 				{
-					live.addAll(CalcLiveRange(b.leftChild, 1, pass, constInst));
+					live.addAll(CalcLiveRange(b.leftChild, 1, pass));
 				}
 				if (b.rightChild != null)
 				{
-					live.addAll(CalcLiveRange(b.rightChild, 2, pass, constInst));
+					live.addAll(CalcLiveRange(b.rightChild, 2, pass));
 				}
 
 				// for all non-phis
@@ -150,6 +157,11 @@ public class RegisterAllocator
 						{
 							ig.addEdge(inst.id, liveInst.id);
 						}
+						
+						if (inst.id == 10)
+						{
+							System.err.println("here mk");
+						}
 
 						// live = live + {j,k}
 						if (inst.op1 != null && PLStaticSingleAssignment.isIncluded(inst.op1.id))
@@ -163,7 +175,19 @@ public class RegisterAllocator
 						}
 						else if (inst.op1type == OperandType.CONST && inst.i1 != 0)
 						{
-							live.add(constInst);
+							if (constants.containsKey(inst.i1))
+							{
+								live.add(constants.get(inst.i1));
+							}
+							else
+							{
+								PLIRInstruction constInst = new PLIRInstruction(scope);
+								constInst.id = PLStaticSingleAssignment.globalSSAIndex;
+								ig.addVertex(constInst.id);
+								PLStaticSingleAssignment.addInstruction(scope, constInst);
+								constants.put(inst.i1, constInst);
+								live.add(constInst);
+							}
 						}
 						if (inst.op2 != null && PLStaticSingleAssignment.isIncluded(inst.op2.id))
 						{
@@ -176,7 +200,19 @@ public class RegisterAllocator
 						}
 						else if (inst.op2type == OperandType.CONST && inst.i2 != 0)
 						{
-							live.add(constInst);
+							if (constants.containsKey(inst.i2))
+							{
+								live.add(constants.get(inst.i2));
+							}
+							else
+							{
+								PLIRInstruction constInst = new PLIRInstruction(scope);
+								constInst.id = PLStaticSingleAssignment.globalSSAIndex;
+								ig.addVertex(constInst.id);
+								PLStaticSingleAssignment.addInstruction(scope, constInst);
+								constants.put(inst.i2, constInst);
+								live.add(constInst);
+							}
 						}
 						
 						// All operands must live in some register (derp!)
@@ -191,7 +227,6 @@ public class RegisterAllocator
 				}
 
 				// b.liveAtEnd = live
-				b.liveAtEnd = new HashSet<PLIRInstruction>();
 				b.liveAtEnd.addAll(live);
 			}
 

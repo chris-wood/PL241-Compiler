@@ -1442,7 +1442,7 @@ public class DLXGenerator
 									rightInst.format = formatMap.get(InstructionType.ADDI);
 									rightInst.ra = ssaInst.regNum; 
 									rightInst.rb = 0;
-									rightInst.rc = ssaInst.i2;
+									rightInst.rc = ssaInst.op2.regNum;
 
 									branchOffset++;
 									appendInstructionToEndBlock(insertBlock, rightInst);

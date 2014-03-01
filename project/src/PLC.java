@@ -193,19 +193,18 @@ public class PLC
 			if (runAll || (runStep1 && runStep2 && runStep3))
 			{
 				// Add the constant instruction
-				PLIRInstruction constInst = new PLIRInstruction(parser.scope);
-				constInst.id = PLStaticSingleAssignment.globalSSAIndex;
-//				PLStaticSingleAssignment.instructions.add(constInst);
-				PLStaticSingleAssignment.addInstruction(parser.scope, constInst);
+//				PLIRInstruction constInst = new PLIRInstruction(parser.scope);
+//				constInst.id = PLStaticSingleAssignment.globalSSAIndex;
+//				PLStaticSingleAssignment.addInstruction(parser.scope, constInst);
 				InterferenceGraph ig = new InterferenceGraph(PLStaticSingleAssignment.instructions);
 				
 				// Register allocation on each block
-				RegisterAllocator ra = new RegisterAllocator(ig);
+				RegisterAllocator ra = new RegisterAllocator(ig, parser.scope);
 				
 				// Compute live range of each function body, including main
 				for (PLIRBasicBlock block : blocks)
 				{
-					ra.ComputeLiveRange(block, constInst);
+					ra.ComputeLiveRange(block);
 				}
 				
 				// Perform allocation via coloring (with spilling)
@@ -283,10 +282,13 @@ public class PLC
 				
 				// Insert jump to the start of the program
 				DLXInstruction mainJump = new DLXInstruction();
-				mainJump.opcode = InstructionType.BEQ;
+//				mainJump.opcode = InstructionType.BEQ;
+				mainJump.opcode = InstructionType.JSR;
 				mainJump.ra = mainJump.rb = 0;
-				mainJump.rc = mainStart;
-				mainJump.format = dlxGen.formatMap.get(InstructionType.BEQ);
+//				mainJump.rc = mainStart;
+				mainJump.rc = 4 * mainStart;
+//				mainJump.format = dlxGen.formatMap.get(InstructionType.BEQ);
+				mainJump.format = dlxGen.formatMap.get(InstructionType.JSR);
 				mainJump.encodedForm = dlxGen.encodeInstruction(mainJump);
 				mainJump.pc = 2;
 				slp.add(0, mainJump);

@@ -65,6 +65,8 @@ public class DLX {
 			R[0] = 0;
 			disassem(M[PC]); // initializes op, a, b, c
 
+			System.out.println("@" + PC);
+
 			int nextPC = PC + 1;
 			if (format==2) {
 				origc = c; // used for RET
