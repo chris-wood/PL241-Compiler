@@ -138,7 +138,7 @@ public class PLIRBasicBlock
 		
 		// Not symmetric, order matters.
 		ArrayList<PLIRInstruction> toRemove = new ArrayList<PLIRInstruction>();
-		if (newBlock.joinNode == null || newBlock.isEntry)
+		if (newBlock.joinNode == null || newBlock.isEntry || newBlock.returnInst != null)
 		{ 
 			for (PLIRInstruction inst : newBlock.instructions)
 			{

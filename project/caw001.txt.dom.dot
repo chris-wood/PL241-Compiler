@@ -1,8 +1,8 @@
 digraph dom {
 BB3[shape = box, label = "BB(3 [ factIter ])\n" + "2 := loadparam 0\n" + "3 := add #0 #0\n" + "4 := (3)\n" + "5 := phi #1 (9)\n" + "6 := phi #1 (10)\n" + "7 := cmp (6) (2)\n" + "8 := bgt (7) #4\n"];
 BB15[shape = box, label = "BB(15)\n" + "9 := mul (5) (6)\n" + "10 := add (6) #1\n" + "11 := beq #0 #-6\n"];
-BB21[shape = box, label = "BB(21)\n" + "12 := write (5)\n"];
+BB21[shape = box, label = "BB(21)\n" + "1 := global #0\n" + "12 := write (1)\n" + "13 := write (6)\n" + "14 := write (5)\n" + "15 := return (5)\n"];
 BB3 -> BB15;
 BB3 -> BB21;
-BB27[shape = box, label = "BB(27)\n" + "1 := global #0\n" + "13 := read\n" + "14 := func factIter (13)\n" + "15 := write (14)\n" + "16 := wln\n" + "17 := end\n"];
+BB33[shape = box, label = "BB(33)\n" + "16 := read\n" + "17 := func factIter (16)\n" + "18 := write (17)\n" + "19 := wln\n" + "20 := end\n"];
 }

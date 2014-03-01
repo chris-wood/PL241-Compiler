@@ -2211,9 +2211,23 @@ public class PLParser
 				}
 				
 				// Since the return statement was followed by an expression, force the expression to be generated...
-				result.instructions.get(result.instructions.size() - 1).overrideGenerate = true;
-				result.instructions.get(result.instructions.size() - 1).forceGenerate(scope);
-				result.returnInst = result.getLastInst();
+				PLIRInstruction retInst = result.getLastInst();
+				retInst.overrideGenerate = true;
+				retInst.forceGenerate(scope);
+				
+				PLIRInstruction finalRet = new PLIRInstruction(scope);
+				finalRet.opcode = InstructionType.RETURN;
+				finalRet.op1type = OperandType.INST;
+				finalRet.op1 = retInst;
+				finalRet.overrideGenerate = true;
+				finalRet.forceGenerate(scope);
+				result.addInstruction(finalRet);
+				
+//				result.instructions.get(result.instructions.size() - 1).overrideGenerate = true;
+//				result.instructions.get(result.instructions.size() - 1).forceGenerate(scope);
+				
+//				result.returnInst = result.getLastInst();
+//				result.returnInst.isReturn = true;
 				result.isEntry = true;
 				debug("Forcing generation of return statement");
 			}
@@ -2257,7 +2271,8 @@ public class PLParser
 			
 			if (isReturn)
 			{
-				result.returnInst = result.getLastInst();
+				result.returnInst = nextBlock.getLastInst();
+				result.returnInst.isReturn = true;
 				result.hasReturn = true;
 			}
 			

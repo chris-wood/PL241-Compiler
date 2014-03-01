@@ -15,11 +15,15 @@ import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
 
 public class DLXGenerator
 {
+	// Special registers
 	public static final int RA = 31;
 	public static final int GLOBAL_ADDRESS = 30;
 	public static final int SP = 29;
 	public static final int FP = 28;
 	public static final int R0 = 0;
+	public static final int FUNC_RET_REG = 27;
+	public static final int LOW_REG = 1;
+	public static final int HIGH_REG = 26;
 
 	public int branchOffset = 0;
 	
@@ -1008,18 +1012,32 @@ public class DLXGenerator
 					case BGT:
 						newInst.opcode = InstructionType.BGT;
 						newInst.format = formatMap.get(InstructionType.BGT);
-						newInst.ra = ssaInst.op1.regNum; // BGT (0) #4
+						newInst.ra = ssaInst.op1.regNum; 
 						newInst.rc = ssaInst.i2;
 						newInst.ssaInst = ssaInst.id;
 
 						offsetMap.put(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
 						break;
+						
+					case RETURN:
+						DLXInstruction retInst = new DLXInstruction();
+						retInst.opcode = InstructionType.ADD;
+						retInst.format = formatMap.get(InstructionType.ADD);
+						retInst.ra = FUNC_RET_REG; 
+						retInst.rb = R0;
+						
+						retInst.rc = ssaInst.op1.regNum;
+						
+						offsetMap.put(ssaInst.id, retInst);
+						appendInstructionToBlock(edb, retInst);
+						
+						break;
 
 					case FUNC:
 					{
 						// Push all inuse registers onto the stack
-						for (int ri = 1; ri < 28; ri++)
+						for (int ri = LOW_REG; ri <= HIGH_REG; ri++)
 						{
 							DLXInstruction regPush = new DLXInstruction();
 							regPush.opcode = InstructionType.PSH;
@@ -1101,7 +1119,15 @@ public class DLXGenerator
 						offsetMap.put(ssaInst.id, jsrInst);
 						appendInstructionToBlock(edb, jsrInst);
 						
-						/// TODO: store the result!
+						// Store the result, which is expected to be saved in R27
+						DLXInstruction retPop = new DLXInstruction();
+						retPop.opcode = InstructionType.POP;
+						retPop.format = formatMap.get(InstructionType.POP);
+						retPop.ra = ssaInst.regNum;
+						retPop.rb = SP;
+						retPop.rc = -4; // word size
+						retPop.encodedForm = encodeInstruction(retPop);
+						appendInstructionToBlock(edb, retPop);
 
 						// Recover the FP
 						DLXInstruction pop1 = new DLXInstruction();
@@ -1139,7 +1165,7 @@ public class DLXGenerator
 						appendInstructionToBlock(edb, pop3);
 						
 						// Pop all inuse registers from the stack
-						for (int ri = 27; ri >= 1; ri--)
+						for (int ri = HIGH_REG; ri >= LOW_REG; ri--)
 						{
 							DLXInstruction regPop = new DLXInstruction();
 							regPop.opcode = InstructionType.POP;
@@ -1151,12 +1177,23 @@ public class DLXGenerator
 							offsetMap.put(ssaInst.id, regPop);
 							appendInstructionToBlock(edb, regPop);
 						}
+						
+						// Move the result from the function into the appropriate register
+						DLXInstruction moveInst = new DLXInstruction();
+						moveInst.opcode = InstructionType.ADD;
+						moveInst.format = formatMap.get(InstructionType.ADD);
+						moveInst.ra = ssaInst.regNum;
+						moveInst.rb = 0;
+						moveInst.rc = FUNC_RET_REG; // word size
+						moveInst.encodedForm = encodeInstruction(moveInst);
+						appendInstructionToBlock(edb, moveInst);
+						
 						break;
 					}
 					case PROC:
 					{
 						// Push all inuse registers onto the stack
-						for (int ri = 1; ri < 28; ri++)
+						for (int ri = LOW_REG; ri <= HIGH_REG; ri++)
 						{
 							DLXInstruction regPush = new DLXInstruction();
 							regPush.opcode = InstructionType.PSH;
@@ -1274,7 +1311,7 @@ public class DLXGenerator
 						appendInstructionToBlock(edb, pop3);
 						
 						// Pop all inuse registers from the stack
-						for (int ri = 27; ri >= 1; ri--)
+						for (int ri = HIGH_REG; ri >= LOW_REG; ri--)
 						{
 							DLXInstruction regPop = new DLXInstruction();
 							regPop.opcode = InstructionType.POP;
@@ -1364,7 +1401,7 @@ public class DLXGenerator
 								DLXInstruction leftInst = new DLXInstruction();
 								leftInst.opcode = InstructionType.ADDI;
 								leftInst.format = formatMap.get(InstructionType.ADDI);
-								leftInst.ra = ssaInst.regNum; // BGT (0) #4
+								leftInst.ra = ssaInst.regNum; 
 								leftInst.rb = 0;
 								leftInst.rc = ssaInst.i1;
 
@@ -1376,7 +1413,7 @@ public class DLXGenerator
 								DLXInstruction rightInst = new DLXInstruction();
 								rightInst.opcode = InstructionType.ADDI;
 								rightInst.format = formatMap.get(InstructionType.ADDI);
-								rightInst.ra = ssaInst.regNum; // BGT (0) #4
+								rightInst.ra = ssaInst.regNum; 
 								rightInst.rb = 0;
 								rightInst.rc = ssaInst.i2;
 
@@ -1389,7 +1426,7 @@ public class DLXGenerator
 								DLXInstruction leftInst = new DLXInstruction();
 								leftInst.opcode = InstructionType.ADDI;
 								leftInst.format = formatMap.get(InstructionType.ADDI);
-								leftInst.ra = ssaInst.regNum; // BGT (0) #4
+								leftInst.ra = ssaInst.regNum; 
 								leftInst.rb = 0;
 								leftInst.rc = ssaInst.i1;
 
@@ -1403,7 +1440,7 @@ public class DLXGenerator
 									DLXInstruction rightInst = new DLXInstruction();
 									rightInst.opcode = InstructionType.ADDI;
 									rightInst.format = formatMap.get(InstructionType.ADDI);
-									rightInst.ra = ssaInst.regNum; // BGT (0) #4
+									rightInst.ra = ssaInst.regNum; 
 									rightInst.rb = 0;
 									rightInst.rc = ssaInst.i2;
 
@@ -1419,7 +1456,7 @@ public class DLXGenerator
 									DLXInstruction leftInst = new DLXInstruction();
 									leftInst.opcode = InstructionType.ADD;
 									leftInst.format = formatMap.get(InstructionType.ADD);
-									leftInst.ra = ssaInst.regNum; // BGT (0) #4
+									leftInst.ra = ssaInst.regNum; 
 									leftInst.rb = 0;
 									leftInst.rc = ssaInst.op1.regNum;
 
@@ -1432,7 +1469,7 @@ public class DLXGenerator
 								DLXInstruction rightInst = new DLXInstruction();
 								rightInst.opcode = InstructionType.ADDI;
 								rightInst.format = formatMap.get(InstructionType.ADDI);
-								rightInst.ra = ssaInst.regNum; // BGT (0) #4
+								rightInst.ra = ssaInst.regNum; 
 								rightInst.rb = 0;
 								rightInst.rc = ssaInst.i2;
 
@@ -1449,7 +1486,7 @@ public class DLXGenerator
 										DLXInstruction leftInst = new DLXInstruction();
 										leftInst.opcode = InstructionType.ADD;
 										leftInst.format = formatMap.get(InstructionType.ADD);
-										leftInst.ra = ssaInst.regNum; // BGT (0) #4
+										leftInst.ra = ssaInst.regNum; 
 										leftInst.rb = 0;
 										leftInst.rc = ssaInst.op1.regNum;
 	
@@ -1463,7 +1500,7 @@ public class DLXGenerator
 										DLXInstruction rightInst = new DLXInstruction();
 										rightInst.opcode = InstructionType.ADD;
 										rightInst.format = formatMap.get(InstructionType.ADD);
-										rightInst.ra = ssaInst.regNum; // BGT (0) #4
+										rightInst.ra = ssaInst.regNum; 
 										rightInst.rb = 0;
 										rightInst.rc = ssaInst.op2.regNum;
 	
@@ -1481,7 +1518,7 @@ public class DLXGenerator
 											DLXInstruction leftInst = new DLXInstruction();
 											leftInst.opcode = InstructionType.ADD;
 											leftInst.format = formatMap.get(InstructionType.ADD);
-											leftInst.ra = ssaInst.regNum; // BGT (0) #4
+											leftInst.ra = ssaInst.regNum; 
 											leftInst.rb = 0;
 											leftInst.rc = ssaInst.op1.regNum;
 											insertBlock = edb.parents.get(branch);
@@ -1496,7 +1533,7 @@ public class DLXGenerator
 											DLXInstruction rightInst = new DLXInstruction();
 											rightInst.opcode = InstructionType.ADD;
 											rightInst.format = formatMap.get(InstructionType.ADD);
-											rightInst.ra = ssaInst.regNum; // BGT (0) #4
+											rightInst.ra = ssaInst.regNum; 
 											rightInst.rb = 0;
 											rightInst.rc = ssaInst.op2.regNum;
 											insertBlock = edb.parents.get(branch);

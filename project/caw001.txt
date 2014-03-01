@@ -10,6 +10,8 @@ var i, f;
     let f <- f * i;
     let i <- i + 1
   od;
+  call OutputNum(input);
+  call OutputNum(i);
   call OutputNum(f);
   return f
 };

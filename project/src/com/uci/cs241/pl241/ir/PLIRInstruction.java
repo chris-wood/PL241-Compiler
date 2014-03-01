@@ -39,6 +39,7 @@ public class PLIRInstruction
 	
 	public boolean globalMark = false; 
 	public boolean isGlobalVariable = false;
+	public boolean isReturn = false;
 	
 	// Register allocation information
 	public int regNum;
@@ -752,6 +753,9 @@ public class PLIRInstruction
 					break;
 				case GLOBAL:
 					s = "global";
+					break;
+				case RETURN:
+					s = "return";
 					break;
 			}
 			

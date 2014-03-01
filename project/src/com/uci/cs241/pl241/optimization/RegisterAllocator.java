@@ -179,6 +179,7 @@ public class RegisterAllocator
 							live.add(constInst);
 						}
 						
+						// All operands must live in some register (derp!)
 						if (inst.callOperands != null)
 						{
 							for (PLIRInstruction op : inst.callOperands)
@@ -186,13 +187,6 @@ public class RegisterAllocator
 								live.add(op);
 							}
 						}
-						
-						// Assign to constant instruction pad if either one of them is a variable
-//						if (inst.type == OperandType.LOCALVARIABLE)
-//						{
-//							live.add(constInst);
-//						}
-						
 					}
 				}
 
