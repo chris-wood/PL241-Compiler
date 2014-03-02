@@ -24,6 +24,7 @@ import com.uci.cs241.pl241.frontend.PLEndOfFileException;
 import com.uci.cs241.pl241.frontend.PLParser;
 import com.uci.cs241.pl241.frontend.PLScanner;
 import com.uci.cs241.pl241.frontend.PLSyntaxErrorException;
+import com.uci.cs241.pl241.frontend.PLParser.IdentType;
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
 import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
@@ -221,16 +222,29 @@ public class PLC
 				int mainStart = 0;
 				
 				HashMap<Integer, Integer> globalOffset = new HashMap<Integer, Integer>();
+				HashMap<String, Integer> globalArrayOffset = new HashMap<String, Integer>();
 				HashMap<String, Integer> globalRefMap = new HashMap<String, Integer>();
 				int globalIndex = 0;
 				for (PLIRInstruction inst : parser.globalVariables.values())
 				{
-					globalOffset.put(inst.id, globalIndex++);
+					if (parser.identTypeMap.get(inst.origIdent) == IdentType.ARRAY)
+					{
+						int dimensions = 1;
+						for (Integer d : parser.arrayDimensionMap.get(inst.origIdent))
+						{
+							dimensions *= d;
+						}
+						globalArrayOffset.put(inst.origIdent, globalIndex);
+						globalIndex += dimensions;
+					}
+					else
+					{
+						globalOffset.put(inst.id, globalIndex++);
+					}
 					globalRefMap.put(inst.origIdent, inst.id);
 				}
 				
-				
-				DLXGenerator dlxGen = new DLXGenerator(globalOffset, globalRefMap);
+				DLXGenerator dlxGen = new DLXGenerator(globalOffset, globalArrayOffset, globalRefMap);
 				
 				ArrayList<ArrayList<DLXInstruction>> program = new ArrayList<ArrayList<DLXInstruction>>();
 				for (int i = 0; i < blocks.size(); i++)
@@ -260,14 +274,18 @@ public class PLC
 					ArrayList<DLXInstruction> dlxInstructions = dlxGen.convertToStraightLineCode(db, func, -1, new HashSet<Integer>());
 					dlxGen.fixup(dlxInstructions);
 					program.add(dlxInstructions);
-					for (DLXInstruction inst : dlxInstructions)
-					{
-//						System.out.println(Long.toHexString(inst.encodedForm));
-						System.out.println(inst);
-					}
 					
 					// Update the address table
 					dlxGen.functionAddressTable.put(block.label, dlxGen.pc - dlxInstructions.size());
+					for (DLXInstruction inst : dlxInstructions)
+					{
+						if (inst.jumpNeedsFix)
+						{
+							inst.rc = (dlxGen.functionAddressTable.get(inst.refFunc) - dlxInstructions.size()) * 4;
+						}
+						System.out.println(inst);
+					}
+					
 				}
 				
 				// Flatten the lists into one SLP

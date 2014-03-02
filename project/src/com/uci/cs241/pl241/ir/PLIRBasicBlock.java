@@ -119,7 +119,6 @@ public class PLIRBasicBlock
 //				if (inst.opcode != InstructionType.BEQ)
 				{
 					leftJoin.instructions.add(inst); 
-//					leftJoin.dominatedInstructions.add(inst); 
 					toRemove.add(inst);
 				}
 			}
@@ -186,17 +185,17 @@ public class PLIRBasicBlock
 			if (newBlock.leftChild != null && newBlock.leftChild.joinNode == null)
 			{
 				newBlock.leftChild.parents.add(leftJoin);
-				if (newBlock.leftChild.leftChild != null && newBlock.leftChild.leftChild.equals(newBlock))
+				if (newBlock.leftChild.rightChild != null && newBlock.leftChild.rightChild.equals(newBlock))
 				{
-					newBlock.leftChild.leftChild = leftJoin;
+					newBlock.leftChild.rightChild = leftJoin;
 				}
 			}
 			else if (newBlock.leftChild != null)
 			{
 				newBlock.leftChild.joinNode.parents.add(leftJoin);
-				if (newBlock.leftChild.joinNode.leftChild != null && newBlock.leftChild.joinNode.leftChild.equals(newBlock))
+				if (newBlock.leftChild.joinNode.rightChild != null && newBlock.leftChild.joinNode.rightChild.equals(newBlock))
 				{
-					newBlock.leftChild.joinNode.leftChild = leftJoin;
+					newBlock.leftChild.joinNode.rightChild = leftJoin;
 				}
 			}
 			
@@ -210,18 +209,18 @@ public class PLIRBasicBlock
 			if (newBlock.rightChild != null && newBlock.rightChild.joinNode == null)
 			{
 				newBlock.rightChild.parents.add(leftJoin);
-				if (newBlock.rightChild.leftChild != null && newBlock.rightChild.leftChild.equals(newBlock))
+				if (newBlock.rightChild.rightChild != null && newBlock.rightChild.rightChild.equals(newBlock))
 				{
-					newBlock.rightChild.leftChild = leftJoin;
+					newBlock.rightChild.rightChild = leftJoin;
 				}
 				// same for right child?!?!
 			}
 			else if (newBlock.rightChild != null)
 			{
 				newBlock.rightChild.joinNode.parents.add(leftJoin);
-				if (newBlock.rightChild.joinNode.leftChild != null && newBlock.rightChild.joinNode.leftChild.equals(newBlock))
+				if (newBlock.rightChild.joinNode.rightChild != null && newBlock.rightChild.joinNode.rightChild.equals(newBlock))
 				{
-					newBlock.rightChild.joinNode.leftChild = leftJoin;
+					newBlock.rightChild.joinNode.rightChild = leftJoin;
 				}
 			}
 		}

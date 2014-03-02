@@ -98,7 +98,7 @@ public class InterferenceGraph
 	
 	public ArrayList<Integer> removeVertex(int v)
 	{
-//		System.err.println("Removing vertex: " + v);
+		System.err.println("Removing vertex: " + v);
 		ArrayList<Integer> neighbors = adjList.get(v);
 		
 		// Drop v from the set

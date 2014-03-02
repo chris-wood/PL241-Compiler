@@ -9,6 +9,11 @@ public class DLXInstruction
 	public InstructionFormat format;
 	public long encodedForm;
 	
+	public DLXBasicBlock block;
+	
+	public String refFunc; 
+	public boolean jumpNeedsFix = false;
+	
 	public int fixupLocation;
 	public int pc = -1;
 	public int ssaInst = -1;

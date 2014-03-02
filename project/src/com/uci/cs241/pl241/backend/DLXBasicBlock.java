@@ -4,7 +4,8 @@ import java.util.ArrayList;
 
 public class DLXBasicBlock
 {
-	public int id;
+	public int id = 0;
+	public int skipped = 0;
 	public ArrayList<DLXInstruction> instructions = new ArrayList<DLXInstruction>();
 	public ArrayList<DLXInstruction> endInstructions = new ArrayList<DLXInstruction>();
 	public DLXBasicBlock left;

@@ -6,6 +6,129 @@ var i, f;
 {
   let i <- 1;
   let f <- 1;
+  call OutputNum(n);
+  call OutputNewLine();
+  while i <= n do
+    let f <- f * i;
+    let i <- i + 1;
+    call OutputNum(f);
+    call OutputNum(i);
+    call OutputNewLine()
+  od;
+  call OutputNewLine();
+  call OutputNewLine();
+  call OutputNum(input);
+  call OutputNum(i);
+  call OutputNum(f);
+  return f
+};
+
+function factRec(n);
+{
+  if n <= 1 then
+    return 1
+  fi;
+  return call factRec(n - 1) * n
+};
+
+{
+  let input <- call InputNum();
+  call OutputNum(call factIter(input));
+
+  call OutputNewLine();
+  call OutputNum(call factRec(input));
+
+  call OutputNewLine()
+}
+.
+
+// testing if/else with modifier in only one branch!
+main 
+var a, b;
+array[5] input;
+{
+  let a <- call InputNum();
+  let input[1] <- 22;
+  let input[2] <- a;
+  call OutputNum(input[1]);
+  call OutputNum(a);
+  if input[1] == 0 then
+    call OutputNum(input[2])
+  else
+    call OutputNum(1337)
+  fi;
+  call OutputNewLine()
+}.
+
+// multidimensional array test
+main 
+var a, b, c, d, e, f, g, x, y, z;
+array[10][2] output;
+{
+  let a <- call InputNum();
+  let b <- call InputNum();
+  let output[0][0] <- a + b;
+  call OutputNum(output[0][0]);
+  let c <- output[0][0];
+  call OutputNum(c);
+  call OutputNewLine()
+}.
+
+// super hard
+main
+var a, b, c, d, e, f, g, h;
+{
+  let a <- 1;
+  let b <- 2;
+  let c <- 3;
+  let d <- 4;
+  let e <- 5;
+  let f <- 6;
+  let g <- 7;
+  let h <- 8;
+  
+  while (b / 4 + 5) < 8 do
+    let a <- a * 7 + 9;
+    if c < d then
+      let g <- ( g - 5 ) * h;
+      while g > h do
+        let h <- h + 1
+      od;
+      let g <- g + h
+    else
+      if c >= d then
+        let e <- f * f * 7 - 2;
+        while (d - 7) != e do
+          let d <- d - 1;
+          let e <- e + 1
+        od;
+        let f <- f * e
+      else
+        let g <- 725;
+        while (d - 8) != e do
+          let d <- d - 1;
+          let e <- e + 1
+        od;
+        let f <- (g * f) / 4
+      fi;
+      let g <- g + h
+    fi
+
+  od;
+  let c <- a * d;
+  let h <- g + h - 7;
+  let e <- f + b * c
+}
+.
+
+main
+var input;
+
+function factIter(n);
+var i, f;
+{
+  let i <- 1;
+  let f <- 1;
   while i <= n do
     let f <- f * i;
     let i <- i + 1
@@ -22,7 +145,7 @@ var i, f;
 
   //call OutputNewLine();
   //call OutputNum(call factRec(input));
-  
+
   call OutputNewLine()
 }
 .

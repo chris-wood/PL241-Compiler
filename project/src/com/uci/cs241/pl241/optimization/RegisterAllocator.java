@@ -119,7 +119,7 @@ public class RegisterAllocator
 					for (PLIRBasicBlock h : b.wrappedLoopHeaders)
 					{
 						b.liveAtEnd.addAll(h.liveAtEnd);
-						live.addAll(h.liveAtEnd);
+//						live.addAll(h.liveAtEnd);
 					}
 				}
 
@@ -164,7 +164,7 @@ public class RegisterAllocator
 						}
 
 						// live = live + {j,k}
-						if (inst.op1 != null && PLStaticSingleAssignment.isIncluded(inst.op1.id))
+						if (inst.op1 != null && PLStaticSingleAssignment.isIncluded(inst.op1.id) && inst.op1.id != inst.id)
 						{
 							PLIRInstruction op = inst.op1;
 							while (op.refInst != null)
@@ -189,7 +189,7 @@ public class RegisterAllocator
 								live.add(constInst);
 							}
 						}
-						if (inst.op2 != null && PLStaticSingleAssignment.isIncluded(inst.op2.id))
+						if (inst.op2 != null && PLStaticSingleAssignment.isIncluded(inst.op2.id) && inst.op2.id != inst.id)
 						{
 							PLIRInstruction op = inst.op2;
 							while (op.refInst != null)

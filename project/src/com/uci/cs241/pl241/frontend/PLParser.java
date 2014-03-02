@@ -30,8 +30,8 @@ public class PLParser
 	public PLSymbolTable scope;
 	
 	public enum IdentType {VAR, ARRAY, FUNC};
-	private HashMap<String, IdentType> identTypeMap = new HashMap<String, IdentType>();
-	private HashMap<String, ArrayList<Integer>> arrayDimensionMap = new HashMap<String, ArrayList<Integer>>();
+	public HashMap<String, IdentType> identTypeMap = new HashMap<String, IdentType>();
+	public HashMap<String, ArrayList<Integer>> arrayDimensionMap = new HashMap<String, ArrayList<Integer>>();
 	
 	public HashMap<String, PLIRInstruction> globalVariables = new HashMap<String, PLIRInstruction>();
 	
@@ -2142,22 +2142,18 @@ public class PLParser
 				{
 					join = join.joinNode;
 				}
-//				join.children.add(entry);
-				join.leftChild = entry;
+				join.rightChild = entry;
 				join.fixSpot();
 			}
 			else
 			{
-//				body.children.add(entry);
-				body.leftChild = entry;
+				body.rightChild = entry;
 				body.fixSpot();
 			}
-//			entry.children.add(body);
 			entry.leftChild = body;
 			body.parents.add(entry);
 			
-			// Patch up the follow-through branch
-//			entry.children.add(joinNode); 
+			// Patch up the follow-through branch; 
 			entry.rightChild = joinNode;
 			joinNode.parents.add(entry); 
 			
