@@ -368,8 +368,7 @@ public class DLXGenerator
 			}
 			else
 			{
-				// end.... add stack cleanup instructions if this is the end of
-				// a procedure or function
+				// end.... add stack cleanup instructions if this is the end of a procedure or function
 				if (func != null && func.hasReturn == false)
 				{
 					DLXInstruction retInst = new DLXInstruction();
@@ -403,6 +402,7 @@ public class DLXGenerator
 			loadInst.format = formatMap.get(InstructionType.LDW);
 			loadInst.ra = regNum; // save contents of ssaInst.regNum
 			loadInst.rb = GLOBAL_ADDRESS;
+			
 			loadInst.rc = -4 * (globalOffset.get(refId) + 1); // word size
 			
 			if (fixOffset) offsetMap.put(offset, loadInst);
@@ -416,6 +416,7 @@ public class DLXGenerator
 			loadInst.format = formatMap.get(InstructionType.LDW);
 			loadInst.ra = regNum; // save contents of ssaInst.regNum
 			loadInst.rb = GLOBAL_ADDRESS;
+			
 			loadInst.rc = -4 * (globalOffset.get(globalRefMap.get(usingInst.origIdent)) + 1); // word size
 			
 			if (fixOffset) offsetMap.put(offset, loadInst);
@@ -427,6 +428,7 @@ public class DLXGenerator
 	
 	public boolean checkForGlobalStore(DLXBasicBlock edb, PLIRInstruction usingInst, boolean appendToStart)
 	{
+		// skip if arrays
 		if (globalOffset.containsKey(usingInst.id))
 		{
 			DLXInstruction storeInst = new DLXInstruction();
@@ -596,19 +598,33 @@ public class DLXGenerator
 						{
 							newInst.opcode = InstructionType.ADD;
 							newInst.format = formatMap.get(InstructionType.ADD);
+							newInst.ra = ssaInst.regNum;
 							
-							newInst.rb = FP;
-							
+							// Determine if this is a global thing or not...
 							String ident = ssaInst.op2address.substring(0, ssaInst.op2address.indexOf("_"));
-							newInst.rc = globalArrayOffset.get(ident);
-
+							if (globalArrayOffset.containsKey(ident)) // global array at the end of memory
+							{
+								newInst.rb = GLOBAL_ADDRESS;
+								newInst.rc = -4 * globalArrayOffset.get(ident);
+							}
+							else // local array on the stack
+							{
+								newInst.rb = FP;
+								
+								// TODO: this needs to be func.arrayOffset
+								newInst.rc = globalArrayOffset.get(ident);
+							}
+							
+							// Store the offset
 							offsetMap.put(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 							
-							checkForGlobalStore(edb, ssaInst, true);
+							// TODO: why (or how?) would we ever store an offset in a global variable?
+//							checkForGlobalStore(edb, ssaInst, true);
 						}
 
 						break;
+						
 					case SUB:
 						if (leftConst && rightConst)
 						{
@@ -791,7 +807,20 @@ public class DLXGenerator
 						break;
 
 					case ADDA:
-						// TODO: for arrays...
+						newInst.opcode = InstructionType.ADD;
+						newInst.format = formatMap.get(InstructionType.ADD);
+						newInst.ra = ssaInst.regNum;
+						newInst.rb = ssaInst.op1.regNum;
+						newInst.rc = ssaInst.op2.regNum;
+						
+						// Store the offset
+						offsetMap.put(ssaInst.id, newInst);
+						appendInstructionToBlock(edb, newInst);
+						
+						// TODO: why (or how?) would we ever store an offset in a global variable?
+//						checkForGlobalStore(edb, ssaInst, true);
+
+						System.err.println("TODO: ADDA");
 						break;
 
 					case WRITE:

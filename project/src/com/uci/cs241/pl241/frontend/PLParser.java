@@ -627,6 +627,7 @@ public class PLParser
 				load.op1 = offset;
 				load.type = OperandType.INST;
 				load.forceGenerate(scope);
+				load.isArray = true;
 				termNode.addInstruction(load);
 			}
 			
@@ -702,6 +703,7 @@ public class PLParser
 				load.op1 = offset;
 				load.type = OperandType.INST;
 				load.forceGenerate(scope);
+				load.isArray = true;
 				termNode.addInstruction(load);
 			}
 			
@@ -835,6 +837,7 @@ public class PLParser
 				load.op1 = offset;
 				load.type = OperandType.INST;
 				load.forceGenerate(scope);
+				load.isArray = true;
 				exprNode.addInstruction(load);
 			} 
 			
@@ -912,6 +915,7 @@ public class PLParser
 				load.op1 = offset;
 				load.type = OperandType.INST;
 				load.forceGenerate(scope);
+				load.isArray = true;
 				exprNode.addInstruction(load);
 			}
 			
@@ -1053,6 +1057,7 @@ public class PLParser
 			load.op1 = offset;
 			load.type = OperandType.INST;
 			load.forceGenerate(scope);
+			load.isArray = true;
 			relation.addInstruction(load);
 		}
 		
@@ -1129,6 +1134,7 @@ public class PLParser
 			load.op1 = offset;
 			load.type = OperandType.INST;
 			load.forceGenerate(scope);
+			load.isArray = true;
 			relation.addInstruction(load);
 		}
 		
@@ -1265,6 +1271,7 @@ public class PLParser
 						load.op1 = offset;
 						load.type = OperandType.INST;
 						load.forceGenerate(scope);
+						load.isArray = true;
 						result.addInstruction(load);
 						storeInst = load;
 						storeInst.isGlobalVariable = this.globalVariables.containsKey(desigBlock.arrayName);
@@ -1276,6 +1283,7 @@ public class PLParser
 						if (desigBlock.arrayName != null)
 						{
 							storeInst.origIdent = desigBlock.arrayName;
+							storeInst.isGlobalVariable = false; // code to store in arrays will be in SSA form, we don't generate it on the fly like we do for regular global variables
 						}
 					}
 					
@@ -1592,7 +1600,7 @@ public class PLParser
 					
 					// HANDLE THE FIRST PARAMETER
 					PLIRInstruction exprInst = callExprBlock.getLastInst();
-					if ((exprInst != null && exprInst.isArray) || callExprBlock.arrayOperands != null)
+					if ((exprInst != null && exprInst.isArray && exprInst.opcode != InstructionType.LOAD) || callExprBlock.arrayOperands != null)
 					{	
 						ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(callExprBlock);
 						for (PLIRInstruction inst : offsetInstructions)
@@ -1607,6 +1615,7 @@ public class PLParser
 						load.op1 = offset;
 						load.type = OperandType.INST;
 						load.forceGenerate(scope);
+						load.isArray = true;
 						result.addInstruction(load);
 						exprInst = load;
 						
@@ -1742,6 +1751,7 @@ public class PLParser
 								load.op1 = offset;
 								load.type = OperandType.INST;
 								load.forceGenerate(scope);
+								load.isArray = true;
 								result.addInstruction(load);
 								
 //								PLIRInstruction lastAddress = null;
@@ -1814,7 +1824,6 @@ public class PLParser
 							}
 							
 							operands.add(exprInst);
-//							advance(in);
 						}
 						
 						if (paramMap.get(funcName) != operands.size())
@@ -1824,7 +1833,6 @@ public class PLParser
 						
 						PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, funcFlagMap.get(funcName), operands);
 						callInst.forceGenerate(scope);
-//						result = new PLIRBasicBlock();
 						result.hasReturn = funcFlagMap.get(funcName); 
 						result.addInstruction(callInst);
 						result.isEntry = true;
@@ -1845,7 +1853,6 @@ public class PLParser
 					PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.READ);
 					inst.type = OperandType.INST;
 					inst.forceGenerate(scope);
-//					result = new PLIRBasicBlock();
 					result.hasReturn = true; // special case... this is a machine instruction, not a user-defined function
 					result.addInstruction(inst);
 					result.isEntry = true;
@@ -1854,7 +1861,6 @@ public class PLParser
 				{
 					PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.WLN);
 					inst.forceGenerate(scope);
-//					result = new PLIRBasicBlock();
 					result.addInstruction(inst);
 					result.isEntry = true;
 				}
@@ -1862,7 +1868,6 @@ public class PLParser
 				{
 					PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, funcFlagMap.get(funcName), operands);
 					callInst.forceGenerate(scope);
-//					result = new PLIRBasicBlock();
 					result.addInstruction(callInst);
 					result.isEntry = true;
 					result.hasReturn = funcFlagMap.get(funcName);
@@ -1875,7 +1880,6 @@ public class PLParser
 			{
 				ArrayList<PLIRInstruction> emptyList = new ArrayList<PLIRInstruction>();
 				PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, funcFlagMap.get(funcName), emptyList);
-//				result = new PLIRBasicBlock();
 				result.hasReturn = funcFlagMap.get(funcName); // special case... this is a machine instruction, not a user-defined function
 				result.addInstruction(callInst);
 				result.isEntry = true;
