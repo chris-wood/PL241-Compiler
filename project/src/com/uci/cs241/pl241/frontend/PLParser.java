@@ -1584,6 +1584,7 @@ public class PLParser
 //					result = new PLIRBasicBlock();
 					result.addInstruction(callInst);
 					result.isEntry = true;
+					result.hasReturn = funcFlagMap.get(funcName);
 				}
 				
 				// Eat the last token and proceed

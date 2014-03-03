@@ -1219,6 +1219,9 @@ public class DLXGenerator
 						moveInst.encodedForm = encodeInstruction(moveInst);
 						appendInstructionToBlock(edb, moveInst);
 						
+						// Check for store here...
+						checkForGlobalStore(edb, ssaInst, true);
+						
 						break;
 					}
 					case PROC:

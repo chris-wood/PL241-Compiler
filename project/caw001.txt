@@ -1,4 +1,24 @@
 main
+var input, output;
+
+function test();
+var i, f;
+{
+  return 1
+};
+
+{
+  let input <- call InputNum();
+  let output <- 0;
+  call OutputNum(output);
+  let output <- call test();
+  call OutputNum(output);
+  call OutputNum(input);
+  call OutputNewLine()
+}
+.
+
+main
 var input;
 
 function factIter(n);
