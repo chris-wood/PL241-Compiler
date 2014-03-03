@@ -162,16 +162,16 @@ public class PLC
 				System.out.println("End Instructions\n");
 				
 				// Display the DU chain
-				System.out.println("\nDU chain");
-				for (PLIRInstruction def : parser.duChain.keySet())
-				{
-					System.out.println(def.id + " := " + def.toString());
-					for (PLIRInstruction use : parser.duChain.get(def))
-					{
-						System.out.println("\t" + use.id + " := " + use.toString());
-					}
-				}
-				System.out.println("End DU chain\n");
+//				System.out.println("\nDU chain");
+//				for (PLIRInstruction def : parser.duChain.keySet())
+//				{
+//					System.out.println(def.id + " := " + def.toString());
+//					for (PLIRInstruction use : parser.duChain.get(def))
+//					{
+//						System.out.println("\t" + use.id + " := " + use.toString());
+//					}
+//				}
+//				System.out.println("End DU chain\n");
 			}
 			
 			// Generate visualization strings

@@ -23,6 +23,8 @@ public class PLIRBasicBlock
 	public HashMap<String, PLIRInstruction> modifiedIdents;
 	public HashMap<String, PLIRInstruction> usedIdents;
 	
+	public String arrayName;
+	
 	// These are set if we encounter branches, and must be handled accordingly
 	// By default, they are null, so simple checks to see if they're null will help us determine whether we merge block 
 	// instructions and where to place phi-instructions

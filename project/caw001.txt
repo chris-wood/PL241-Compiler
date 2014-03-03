@@ -1,3 +1,18 @@
+// multidimensional array test
+main 
+var a, b, c;
+array[10][2] output;
+{
+  let a <- call InputNum();
+  let b <- call InputNum();
+  let output[0][0] <- a + b;
+  call OutputNum(output[0][0]);
+  let c <- output[0][0];
+  call OutputNum(c);
+  call OutputNewLine()
+}.
+
+// CSE with register allocation!
 main
 var input, output, a, b;
 
