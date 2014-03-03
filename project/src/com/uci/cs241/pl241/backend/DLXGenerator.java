@@ -473,28 +473,28 @@ public class DLXGenerator
 		// Handle the rest
 		if (visited.contains(b.id) == false)
 		{
-			// Entry block - only visited once
-			if (b.parents.size() == 0 && func != null)
-			{
-				// Load parameters from the stack
-				for (int i = 0; i < func.params.size(); i++)
-				{
-//					// loadparam operand#
-//					// i1 for ssaInst is the operand# 
-//					// load from stack
-//					// LDW a, b, c R.a := Mem[R.b + c] 
-//					PLIRInstruction ssaInst = func.params.get(i);
-//					DLXInstruction loadInst = new DLXInstruction();
-//					loadInst.opcode = InstructionType.LDW;
-//					loadInst.format = formatMap.get(InstructionType.LDW);
-//					loadInst.ra = ssaInst.regNum;
-//					loadInst.rb = SP;
-//					loadInst.rc = -4 * (ssaInst.i1 + 1);
-//					branchOffset++;
-//					loadInst.encodedForm = encodeInstruction(loadInst);
-//					appendInstructionToBlock(edb, loadInst);
-				}
-			}
+//			// Entry block - only visited once
+//			if (b.parents.size() == 0 && func != null)
+//			{
+//				// Load parameters from the stack
+//				for (int i = 0; i < func.params.size(); i++)
+//				{
+////					// loadparam operand#
+////					// i1 for ssaInst is the operand# 
+////					// load from stack
+////					// LDW a, b, c R.a := Mem[R.b + c] 
+////					PLIRInstruction ssaInst = func.params.get(i);
+////					DLXInstruction loadInst = new DLXInstruction();
+////					loadInst.opcode = InstructionType.LDW;
+////					loadInst.format = formatMap.get(InstructionType.LDW);
+////					loadInst.ra = ssaInst.regNum;
+////					loadInst.rb = SP;
+////					loadInst.rc = -4 * (ssaInst.i1 + 1);
+////					branchOffset++;
+////					loadInst.encodedForm = encodeInstruction(loadInst);
+////					appendInstructionToBlock(edb, loadInst);
+//				}
+//			}
 
 			visited.add(b.id);
 
