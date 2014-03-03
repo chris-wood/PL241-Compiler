@@ -14,7 +14,7 @@ public class DLX {
 	static int PC, op, a, b, c, format; 
 	
 	// emulated memory
-	static final int MemSize = 10000; // bytes in memory (divisible by 4)
+	static final int MemSize = 1000000; // bytes in memory (divisible by 4)
 	static int M[] = new int [MemSize/4];
 
     
@@ -167,7 +167,9 @@ public class DLX {
 					// System.out.println();
 					break;
 				case PSH:
+					// System.out.println(a + " " + b + " " + c);
 					R[b] = R[b] + c;
+					// System.out.println(R[b] / 4);
 					M[R[b] / 4] = R[a];
 					// System.out.println("Writing: " + R[a] + " to " + (R[b] / 4));
 					break;
@@ -225,6 +227,7 @@ public class DLX {
 					break;
 				case JSR:
 					R[31] = (PC+1) * 4;
+					// System.out.println("c = " + c);
 					nextPC = c / 4;
 					break;
 				case RET: 

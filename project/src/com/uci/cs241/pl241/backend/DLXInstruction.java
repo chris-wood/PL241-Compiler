@@ -16,7 +16,7 @@ public class DLXInstruction
 	
 	public int fixupLocation;
 	public int pc = -1;
-	public int ssaInst = -1;
+	public PLIRInstruction ssaInst;
 	public int offset = 0;
 	
 	// Register operands

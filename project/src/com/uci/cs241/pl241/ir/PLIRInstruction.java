@@ -29,6 +29,7 @@ public class PLIRInstruction
 	
 	// boolean to flag if phi instruction is for IF or while
 	public boolean whilePhi = false;
+	public PLIRInstruction jumpInst;
 	
 	// Helper info
 	public String dummyName;

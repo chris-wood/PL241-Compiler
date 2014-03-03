@@ -1,17 +1,17 @@
 digraph cfg {
-BB3[shape = box, label = "BB(3 [ factIter ])\n" + "2 := loadparam 0\n" + "3 := add #0 #0\n" + "4 := (3)\n" + "5 := write (2)\n" + "6 := wln\n" + "7 := phi #1 (11)\n" + "8 := phi #1 (12)\n" + "9 := cmp (8) (2)\n" + "10 := bgt (9) #7\n"];
-BB19[shape = box, label = "BB(19)\n" + "11 := mul (7) (8)\n" + "12 := add (8) #1\n" + "13 := write (11)\n" + "14 := write (12)\n" + "15 := wln\n" + "16 := beq #0 #-9\n"];
-BB32[shape = box, label = "BB(32)\n" + "1 := global #0\n" + "17 := wln\n" + "18 := wln\n" + "19 := write (1)\n" + "20 := write (8)\n" + "21 := write (7)\n" + "22 := return (7)\n"];
-BB3 -> BB19;
-BB3 -> BB32;
-BB19 -> BB3;
+BB3[shape = box, label = "BB(3 [ factIter ])\n" + "2 := loadparam 0\n" + "3 := add #0 #0\n" + "4 := (3)\n" + "5 := phi #1 (9)\n" + "6 := phi #1 (10)\n" + "7 := cmp (6) (2)\n" + "8 := bgt (7) #4\n"];
+BB15[shape = box, label = "BB(15)\n" + "9 := mul (5) (6)\n" + "10 := add (6) #1\n" + "11 := beq #0 #-6\n"];
+BB21[shape = box, label = "BB(21)\n" + "12 := return (5)\n"];
+BB3 -> BB15;
+BB3 -> BB21;
+BB15 -> BB3;
 
-BB46[shape = box, label = "BB(46 [ factRec ])\n" + "23 := loadparam 0\n" + "24 := cmp (23) #1\n" + "25 := bgt (24) #3\n"];
-BB50[shape = box, label = "BB(50)\n" + "26 := add #0 #1\n" + "27 := return (26)\n"];
-BB51[shape = box, label = "BB(51)\n" + "28 := sub (23) #1\n" + "29 := func factRec (28)\n" + "30 := mul (29) (23)\n" + "31 := return (30)\n"];
-BB46 -> BB50;
-BB46 -> BB51;
-BB50 -> BB51;
+BB24[shape = box, label = "BB(24 [ factRec ])\n" + "13 := loadparam 0\n" + "14 := add #0 #0\n" + "15 := cmp (13) #1\n" + "16 := bgt (15) #3\n"];
+BB29[shape = box, label = "BB(29)\n" + "17 := add #0 #1\n" + "18 := return (17)\n"];
+BB30[shape = box, label = "BB(30)\n" + "19 := sub (13) #1\n" + "20 := func factRec (19)\n" + "21 := mul (20) (13)\n" + "22 := return (21)\n"];
+BB24 -> BB29;
+BB24 -> BB30;
+BB29 -> BB30;
 
-BB60[shape = box, label = "BB(60)\n" + "32 := read\n" + "33 := func factIter (32)\n" + "34 := write (33)\n" + "35 := wln\n" + "36 := func factRec (32)\n" + "37 := write (36)\n" + "38 := wln\n" + "39 := end\n"];
+BB39[shape = box, label = "BB(39)\n" + "1 := global #0\n" + "23 := read\n" + "24 := write (23)\n" + "25 := wln\n" + "26 := func factIter (23)\n" + "27 := write (26)\n" + "28 := write (23)\n" + "29 := wln\n" + "30 := func factRec (23)\n" + "31 := write (30)\n" + "32 := write (23)\n" + "33 := wln\n" + "34 := end\n"];
 }

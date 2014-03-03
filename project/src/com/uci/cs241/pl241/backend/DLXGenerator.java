@@ -148,17 +148,6 @@ public class DLXGenerator
 		formatMap.put(InstructionType.WRL, InstructionFormat.F1);
 	}
 
-	// public void populateGlobalAddressTable(HashMap<String, PLIRInstruction>
-	// globals)
-	// {
-	// int offset = 0;
-	// for (String v : globals.keySet())
-	// {
-	// addressTable.put(globals.get(v).id, offset);
-	// offset += 4; // addresses are 4 bytes
-	// }
-	// }
-
 	public void fixup(ArrayList<DLXInstruction> instructions)
 	{
 		// Reset pc for each instruction
@@ -176,14 +165,17 @@ public class DLXGenerator
 			{
 				if (inst.rc < 0)
 				{
-					int refId = inst.ssaInst + inst.rc;
-					PLIRInstruction refInst = PLStaticSingleAssignment.getInstruction(refId);
-					int offset = offsetMap.get(refInst.id).pc;
-					inst.rc = offset - inst.pc + inst.offset + inst.block.skipped; 
+//					int refId = inst.ssaInst.id + inst.rc;
+//					int refId = inst.ssaInst.id + 
+//					PLIRInstruction refInst = PLStaticSingleAssignment.getInstruction(refId);
+//					int offset = offsetMap.get(refInst.id).pc;
+					int offset = offsetMap.get(inst.ssaInst.jumpInst.id).pc;
+//					inst.rc = offset - inst.pc + inst.offset + inst.block.skipped;
+					inst.rc = offset - inst.pc;
 				}
 				else // positive offset
 				{
-					int refId = inst.ssaInst + inst.rc;
+					int refId = inst.ssaInst.id + inst.rc;
 					PLIRInstruction refInst = PLStaticSingleAssignment.getInstruction(refId);
 					int offset = offsetMap.get(refInst.id).pc;
 					inst.rc = offset - inst.pc;
@@ -980,7 +972,7 @@ public class DLXGenerator
 							newInst.ra = ssaInst.op1.regNum; // e.g. BEQ (0) #4
 						}
 						newInst.rc = ssaInst.i2;
-						newInst.ssaInst = ssaInst.id;
+						newInst.ssaInst = ssaInst;
 
 						offsetMap.put(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
@@ -991,7 +983,7 @@ public class DLXGenerator
 						newInst.format = formatMap.get(InstructionType.BNE);
 						newInst.ra = ssaInst.op1.regNum; // BNE (0) #4
 						newInst.rc = ssaInst.i2;
-						newInst.ssaInst = ssaInst.id;
+						newInst.ssaInst = ssaInst;
 
 						offsetMap.put(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
@@ -1002,7 +994,7 @@ public class DLXGenerator
 						newInst.format = formatMap.get(InstructionType.BLT);
 						newInst.ra = ssaInst.op1.regNum; // BLT (0) #4
 						newInst.rc = ssaInst.i2;
-						newInst.ssaInst = ssaInst.id;
+						newInst.ssaInst = ssaInst;
 
 						offsetMap.put(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
@@ -1013,7 +1005,7 @@ public class DLXGenerator
 						newInst.format = formatMap.get(InstructionType.BGE);
 						newInst.ra = ssaInst.op1.regNum; // BGE (0) #4
 						newInst.rc = ssaInst.i2;
-						newInst.ssaInst = ssaInst.id;
+						newInst.ssaInst = ssaInst;
 
 						offsetMap.put(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
@@ -1024,7 +1016,7 @@ public class DLXGenerator
 						newInst.format = formatMap.get(InstructionType.BLE);
 						newInst.ra = ssaInst.op1.regNum; // BLE (0) #4
 						newInst.rc = ssaInst.i2;
-						newInst.ssaInst = ssaInst.id;
+						newInst.ssaInst = ssaInst;
 
 						offsetMap.put(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
@@ -1035,22 +1027,32 @@ public class DLXGenerator
 						newInst.format = formatMap.get(InstructionType.BGT);
 						newInst.ra = ssaInst.op1.regNum; 
 						newInst.rc = ssaInst.i2;
-						newInst.ssaInst = ssaInst.id;
+						newInst.ssaInst = ssaInst;
 
 						offsetMap.put(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
 						break;
 						
 					case RETURN:
+						DLXInstruction retParamInst = new DLXInstruction();
+						retParamInst.opcode = InstructionType.PSH;
+						retParamInst.format = formatMap.get(InstructionType.PSH);
+						retParamInst.ra = ssaInst.op1.regNum; 
+						retParamInst.rb = SP;
+						
+						// TODO: handle case of constant returns or nothing (control flow termination)
+//						retParamInst.rc = ssaInst.op1.regNum;
+						retParamInst.rc = 4;
+						
 						DLXInstruction retInst = new DLXInstruction();
-						retInst.opcode = InstructionType.ADD;
-						retInst.format = formatMap.get(InstructionType.ADD);
-						retInst.ra = FUNC_RET_REG; 
-						retInst.rb = R0;
+						retInst.opcode = InstructionType.RET;
+						retInst.format = formatMap.get(InstructionType.RET);
+						retInst.ra = 0;
+						retInst.rb = 0;
+						retInst.rc = RA; // jump to RA
 						
-						retInst.rc = ssaInst.op1.regNum;
-						
-						offsetMap.put(ssaInst.id, retInst);
+						offsetMap.put(ssaInst.id, retParamInst);
+						appendInstructionToBlock(edb, retParamInst);
 						appendInstructionToBlock(edb, retInst);
 						
 						break;
@@ -1152,7 +1154,7 @@ public class DLXGenerator
 						DLXInstruction retPop = new DLXInstruction();
 						retPop.opcode = InstructionType.POP;
 						retPop.format = formatMap.get(InstructionType.POP);
-						retPop.ra = ssaInst.regNum;
+						retPop.ra = FUNC_RET_REG;
 						retPop.rb = SP;
 						retPop.rc = -4; // word size
 						retPop.encodedForm = encodeInstruction(retPop);

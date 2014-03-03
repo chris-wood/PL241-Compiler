@@ -261,6 +261,7 @@ public class PLC
 						isProc = !isFunc;
 						isMain = false;
 						func = parser.scope.functions.get(block.label);
+						func.hasReturn = isFunc;
 					}
 					
 					// Save the start of the program so we can jump there later
@@ -281,7 +282,9 @@ public class PLC
 					{
 						if (inst.jumpNeedsFix)
 						{
-							inst.rc = (dlxGen.functionAddressTable.get(inst.refFunc) - dlxInstructions.size()) * 4;
+							int addr = dlxGen.functionAddressTable.get(inst.refFunc);
+							inst.rc = addr * 4;
+							inst.encodedForm = dlxGen.encodeInstruction(inst);
 						}
 						System.out.println(inst);
 					}

@@ -2159,6 +2159,7 @@ public class PLParser
 			
 			// Insert the unconditional branch at (location - pc)
 			PLIRInstruction beqInst = PLIRInstruction.create_BEQ(scope, loopLocation - PLStaticSingleAssignment.globalSSAIndex);
+			beqInst.jumpInst = cmpInst;
 			if (body.joinNode != null)
 			{
 				PLIRBasicBlock join = body.joinNode;
