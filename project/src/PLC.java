@@ -1,4 +1,5 @@
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -25,6 +26,7 @@ import com.uci.cs241.pl241.frontend.PLParser;
 import com.uci.cs241.pl241.frontend.PLScanner;
 import com.uci.cs241.pl241.frontend.PLSyntaxErrorException;
 import com.uci.cs241.pl241.frontend.PLParser.IdentType;
+import com.uci.cs241.pl241.frontend.ParserException;
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
 import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
@@ -36,11 +38,12 @@ import com.uci.cs241.pl241.visualization.GraphvizRender;
 
 public class PLC
 {
-	public static void main(String[] args) throws IOException, PLSyntaxErrorException, PLEndOfFileException, ParseException
+	public static void main(String[] args) throws IOException, PLSyntaxErrorException, PLEndOfFileException, ParseException, ParserException
 	{
 		// Setup command line argument parser
 		Options options = new Options();
 		options.addOption("f", true, "input file");
+		options.addOption("out", true, "output directory");
 		options.addOption("all", false, "run all compilation steps");
 		options.addOption("s1", false, "step 1: parsing and SSA generation");
 		options.addOption("s2", false, "step 2: CSE and copy propagation");
@@ -52,6 +55,13 @@ public class PLC
 		CommandLine cmd = cmdParser.parse( options, args);
 		
 		// Handle parsing
+		String outPath = "./";
+		if (cmd.hasOption("out"))
+		{
+			outPath = cmd.getOptionValue("out");
+			System.out.println("Exporting results to: " + outPath);
+		}
+		
 		if (cmd.hasOption("f")) 
 		{
 			System.out.println("Running on: " + cmd.getOptionValue("f"));
@@ -59,9 +69,10 @@ public class PLC
 		else
 		{
 			HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp("ant", options );
+			formatter.printHelp("see the options below", options );
 			System.exit(-1);
 		}
+		
 		
 		// Extract pass flags
 		boolean runAll = cmd.hasOption("all");
@@ -128,7 +139,7 @@ public class PLC
 			// Display the instructions BEFORE CSE
 			PLIRBasicBlock root = blocks.get(blocks.size() - 1);
 			System.out.println("\nBegin Instructions\n");
-			PrintWriter instWriter = new PrintWriter(new BufferedWriter(new FileWriter(sourceFile + "_inst_preCSE.txt")));
+			PrintWriter instWriter = new PrintWriter(new BufferedWriter(new FileWriter(outPath + "/" + sourceFile + "_inst_preCSE.txt")));
 			PLStaticSingleAssignment.displayInstructions();
 			instWriter.println(PLStaticSingleAssignment.renderInstructions());
 			instWriter.flush();
@@ -154,7 +165,7 @@ public class PLC
 				// Display the instructions AFTER CSE
 				root = blocks.get(blocks.size() - 1);
 				System.out.println("\nBegin Instructions\n");
-				instWriter = new PrintWriter(new BufferedWriter(new FileWriter(sourceFile + "_inst_postCSE.txt")));
+				instWriter = new PrintWriter(new BufferedWriter(new FileWriter(outPath + "/" + sourceFile + "_inst_postCSE.txt")));
 				PLStaticSingleAssignment.displayInstructions();
 				instWriter.println(PLStaticSingleAssignment.renderInstructions());
 				instWriter.flush();
@@ -180,13 +191,13 @@ public class PLC
 			String domdot = render.renderDominatorTree(blocks);
 			
 			// Write out the CFG string
-			PrintWriter cfgWriter = new PrintWriter(new BufferedWriter(new FileWriter(sourceFile + ".cfg.dot")));
+			PrintWriter cfgWriter = new PrintWriter(new BufferedWriter(new FileWriter(outPath + "/" + sourceFile + ".cfg.dot")));
 			cfgWriter.println(cfgdot);
 			cfgWriter.flush();
 			cfgWriter.close();
 			
 			// Write out the dominator tree
-			PrintWriter domWriter = new PrintWriter(new BufferedWriter(new FileWriter(sourceFile + ".dom.dot")));
+			PrintWriter domWriter = new PrintWriter(new BufferedWriter(new FileWriter(outPath + "/" + sourceFile + ".dom.dot")));
 			domWriter.println(domdot);
 			domWriter.flush();
 			domWriter.close();
@@ -211,7 +222,7 @@ public class PLC
 				// Perform allocation via coloring (with spilling)
 				ra.Color(ig);
 				String igdot = render.renderInterferenceGraph(ig, ra.regMap);
-				PrintWriter igWriter = new PrintWriter(new BufferedWriter(new FileWriter(sourceFile + ".ig.dot")));
+				PrintWriter igWriter = new PrintWriter(new BufferedWriter(new FileWriter(outPath + "/" + sourceFile + ".ig.dot")));
 				igWriter.println(igdot);
 				igWriter.flush();
 				igWriter.close();
@@ -338,7 +349,7 @@ public class PLC
 				
 				// Write the DLX machine code
 				System.out.println("\n\n--FINAL PROGARM--\n");
-				PrintWriter dlxWriter = new PrintWriter(new BufferedWriter(new FileWriter(sourceFile + ".dlx")));
+				PrintWriter dlxWriter = new PrintWriter(new BufferedWriter(new FileWriter(outPath + "/" + sourceFile + ".dlx")));
 				for (DLXInstruction inst : slp)
 				{
 					dlxWriter.println(inst.encodedForm);

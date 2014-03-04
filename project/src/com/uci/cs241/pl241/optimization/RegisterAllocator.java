@@ -21,6 +21,7 @@ public class RegisterAllocator
 	public HashSet<Integer> regSet = new HashSet<Integer>();
 	
 	public HashMap<Integer, PLIRInstruction> constants = new HashMap<Integer, PLIRInstruction>();
+	public HashMap<String, PLIRInstruction> arrays = new HashMap<String, PLIRInstruction>();
 	
 	public PLSymbolTable scope;
 	
@@ -189,6 +190,7 @@ public class RegisterAllocator
 								live.add(constInst);
 							}
 						}
+						
 						if (inst.op2 != null && PLStaticSingleAssignment.isIncluded(inst.op2.id) && inst.op2.id != inst.id)
 						{
 							PLIRInstruction op = inst.op2;
@@ -213,6 +215,22 @@ public class RegisterAllocator
 								constants.put(inst.i2, constInst);
 								live.add(constInst);
 							}
+						}
+						else if (inst.op2type == OperandType.BASEADDRESS)
+						{
+							if (arrays.containsKey(inst.op2address))
+							{
+								live.add(arrays.get(inst.op2address));
+							}
+							else
+							{
+								PLIRInstruction addrInst = new PLIRInstruction(scope);
+								addrInst.id = PLStaticSingleAssignment.globalSSAIndex;
+								ig.addVertex(addrInst.id);
+								PLStaticSingleAssignment.addInstruction(scope, addrInst);
+								arrays.put(inst.op2address, addrInst);
+								live.add(addrInst);
+							}	
 						}
 						
 						// All operands must live in some register (derp!)

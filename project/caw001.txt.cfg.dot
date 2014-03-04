@@ -1,3 +1,37 @@
 digraph cfg {
-BB6[shape = box, label = "BB(6)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := global #0\n" + "4 := global #0\n" + "5 := read\n" + "6 := read\n" + "7 := add (5) (6)\n" + "8 := mul #4 #0\n" + "9 := add FP output_baseaddr\n" + "10 := adda (8) (9)\n" + "11 := (8)\n" + "12 := mul (8) #2\n" + "13 := adda (12) (10)\n" + "14 := store (13) (7)\n" + "15 := (8)\n" + "16 := add FP output_baseaddr\n" + "17 := adda (8) (16)\n" + "18 := (8)\n" + "19 := mul (8) #2\n" + "20 := adda (19) (17)\n" + "21 := load (20)\n" + "22 := write (21)\n" + "23 := (8)\n" + "24 := add FP output_baseaddr\n" + "25 := adda (8) (24)\n" + "26 := (8)\n" + "27 := mul (8) #2\n" + "28 := adda (27) (25)\n" + "29 := load (28)\n" + "30 := write (29)\n" + "31 := wln\n" + "32 := end\n"];
+BB10[shape = box, label = "BB(10)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := global #0\n" + "4 := global #0\n" + "5 := global #0\n" + "6 := global #0\n" + "7 := global #0\n" + "8 := global #0\n" + "9 := phi #6 (54)\n" + "10 := phi #7 (53)\n" + "12 := phi #4 (55)\n" + "13 := phi #5 (56)\n" + "14 := phi #1 (11)\n" + "15 := phi #8 (57)\n" + "16 := cmp #5 #8\n" + "17 := bge (16) #42\n"];
+BB36[shape = box, label = "BB(36)\n" + "11 := add #7 #9\n" + "18 := cmp #3 (12)\n" + "19 := bge (18) #8\n"];
+BB116[shape = box, label = "BB(116)\n" + "59 := mul (14) (12)\n" + "60 := sub (15) #7\n" + "61 := add (10) (60)\n" + "62 := mul #2 (59)\n" + "63 := add (9) (62)\n" + "64 := end\n"];
+BB45[shape = box, label = "BB(45)\n" + "20 := phi #8 (15)\n" + "21 := cmp (10) (20)\n" + "22 := ble (21) #3\n"];
+BB61[shape = box, label = "BB(61)\n" + "27 := (18)\n" + "28 := blt (27) #9\n"];
+BB52[shape = box, label = "BB(52)\n" + "23 := add (20) #1\n" + "24 := beq #0 #-4\n"];
+BB54[shape = box, label = "BB(54)\n" + "25 := add (10) (23)\n" + "26 := beq #0 #27\n"];
+BB69[shape = box, label = "BB(69)\n" + "29 := phi #4 (38)\n" + "30 := phi #250 (39)\n" + "32 := cmp #-3 (30)\n" + "33 := beq (32) #3\n"];
+BB91[shape = box, label = "BB(91)\n" + "38 := phi (49) (43)\n" + "39 := phi (50) (44)\n" + "40 := sub (38) #8\n" + "41 := cmp (40) (39)\n" + "42 := beq (41) #4\n"];
+BB59[shape = box, label = "BB(59)\n" + "53 := phi (25) (52)\n" + "54 := phi #6 (9)\n" + "55 := phi #4 (12)\n" + "56 := phi #5 (13)\n" + "57 := phi (23) (23)\n" + "58 := beq #0 #-49\n"];
+BB78[shape = box, label = "BB(78)\n" + "31 := sub (29) #1\n" + "34 := add (30) #1\n" + "35 := beq #0 #-6\n"];
+BB84[shape = box, label = "BB(84)\n" + "36 := mul (54) (34)\n" + "37 := beq #0 #0\n"];
+BB99[shape = box, label = "BB(99)\n" + "43 := sub (29) #1\n" + "44 := add (30) #1\n" + "45 := beq #0 #-7\n"];
+BB105[shape = box, label = "BB(105)\n" + "46 := mul (52) (36)\n" + "47 := div (46) #4\n"];
+BB89[shape = box, label = "BB(89)\n" + "48 := phi (36) (47)\n" + "49 := phi (31) (38)\n" + "50 := phi (34) (39)\n" + "51 := phi (53) #725\n" + "52 := add (51) (20)\n"];
+BB10 -> BB36;
+BB10 -> BB116;
+BB36 -> BB45;
+BB36 -> BB61;
+BB45 -> BB52;
+BB45 -> BB54;
+BB61 -> BB69;
+BB61 -> BB91;
+BB52 -> BB45;
+BB54 -> BB59;
+BB69 -> BB78;
+BB69 -> BB84;
+BB91 -> BB99;
+BB91 -> BB105;
+BB59 -> BB10;
+BB78 -> BB69;
+BB84 -> BB89;
+BB99 -> BB91;
+BB105 -> BB89;
+BB89 -> BB59;
 }

@@ -87,7 +87,7 @@ public class PLParser
 	}
 	
 	// this is what's called - starting with the computation non-terminal
-	public ArrayList<PLIRBasicBlock> parse(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	public ArrayList<PLIRBasicBlock> parse(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException, ParserException
 	{
 		ArrayList<PLIRBasicBlock> blocks = new ArrayList<PLIRBasicBlock>();
 		
@@ -118,7 +118,7 @@ public class PLParser
 			while (toksym == PLToken.funcToken || toksym == PLToken.procToken)
 			{
 				int funcType = toksym;
-				PLIRBasicBlock funcEntry = this.parse_funcDecl(in); // a separate BB for each function/procedure
+				PLIRBasicBlock funcEntry = parse_funcDecl(in); // a separate BB for each function/procedure
 				funcEntry.label = funcName;
 				blocks.add(funcEntry);
 				
@@ -1893,7 +1893,7 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRBasicBlock parse_statement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_statement(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException, ParserException
 	{
 		PLIRBasicBlock result = null;
 		
@@ -2377,6 +2377,11 @@ public class PLParser
 				// 	so the latest value in the current scope needs to be modified
 				entry.modifiedIdents.put(var, phi);
 				
+				if (cmpInst.id == 16)
+				{
+					System.err.println("here");
+				}
+				
 				// Now loop through the entry and fix instructions as needed
 				// Those fixed are replaced with the result of this phi if they have used or modified the sym...
 				if (cmpInst.op1 != null && cmpInst.op1.origIdent.equals(var))
@@ -2529,7 +2534,7 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRBasicBlock parse_statSequence(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_statSequence(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException, ParserException
 	{
 		boolean isReturn = toksym == PLToken.returnToken;
 		PLIRBasicBlock result = parse_statement(in);
@@ -2678,7 +2683,7 @@ public class PLParser
 		return result;
 	}
 
-	private PLIRBasicBlock parse_funcDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_funcDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException, ParserException
 	{
 		PLIRBasicBlock result = null;
 		if (toksym == PLToken.funcToken || toksym == PLToken.procToken)
@@ -2841,7 +2846,7 @@ public class PLParser
 
 	public boolean parsingFunctionBody = false;
 	public ArrayList<PLIRInstruction> variables = new ArrayList<PLIRInstruction>();
-	private PLIRBasicBlock parse_funcBody(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
+	private PLIRBasicBlock parse_funcBody(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException, ParserException
 	{
 		PLIRBasicBlock result = null;
 		String name = funcName; // save
@@ -2894,6 +2899,7 @@ public class PLParser
 	{
 		x.fixupLocation = PLStaticSingleAssignment.globalSSAIndex;
 		PLIRInstruction inst = PLIRInstruction.create_branch(scope, x, x.condcode);
+		inst.branchDirection = 2; // conditional branches will skip the follow-through branch, going right instead, so remember this
 		return inst;
 	}
 	

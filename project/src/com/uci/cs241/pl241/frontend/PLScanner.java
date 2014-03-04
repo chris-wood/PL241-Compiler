@@ -166,7 +166,7 @@ public class PLScanner
 		char nextChar = reader.sym;
 		
 		// Skip over leading whitespace
-		while (nextChar == ' ')  
+		while (nextChar == ' ' || nextChar == '\t')  
 		{
 			reader.next();
 			nextChar = reader.sym;
@@ -263,7 +263,7 @@ public class PLScanner
 			token.append(nextChar);
 			reader.next();
 		}
-		else if (nextChar == '\n')
+		else if (nextChar == '\n' || nextChar == '\r')
 		{ 
 			reader.next(); // skip over the newline
 			token = new StringBuilder();
@@ -273,7 +273,6 @@ public class PLScanner
 			SyntaxError("Illegal start of token: " + nextChar);
 		}
 		
-		// TODO: map token string/characters to the token ID
 		return token.toString();
 	}
 	

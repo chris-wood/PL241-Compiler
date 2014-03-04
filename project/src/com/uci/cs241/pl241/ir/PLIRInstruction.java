@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.uci.cs241.pl241.frontend.PLSymbolTable;
 import com.uci.cs241.pl241.frontend.PLToken;
+import com.uci.cs241.pl241.frontend.ParserException;
 
 public class PLIRInstruction
 {
@@ -34,6 +35,8 @@ public class PLIRInstruction
 	// Helper info
 	public String dummyName;
 	public int paramNumber;
+	
+	public int branchDirection = 1; // assume this branch goes to the left unless otherwise specified...
 	
 	// Wrapping BB
 	public PLIRBasicBlock block;
@@ -510,11 +513,18 @@ public class PLIRInstruction
 		return inst;
 	}
 	
-	public static PLIRInstruction create_phi(PLSymbolTable table, PLIRInstruction b1, PLIRInstruction b2, int loc)
+	public static PLIRInstruction create_phi(PLSymbolTable table, PLIRInstruction b1, PLIRInstruction b2, int loc) throws ParserException
 	{
 		PLIRInstruction inst = new PLIRInstruction(table);
 		inst.opcode = InstructionType.PHI;
 		inst.kind = ResultKind.VAR;
+		
+		// Ensure
+		if (!(b1.origIdent.equals(b2.origIdent)))
+		{
+			throw new ParserException("Phi instruction pairs don't refer to the same ident");
+		}
+		inst.origIdent = b1.origIdent; // use either b1 or b2 origIndent, they will match at this point
 		
 		if (b1.kind == ResultKind.CONST)
 		{

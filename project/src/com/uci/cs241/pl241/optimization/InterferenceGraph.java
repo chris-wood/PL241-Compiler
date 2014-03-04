@@ -59,7 +59,7 @@ public class InterferenceGraph
 		int smallest = Integer.MAX_VALUE;
 		for (Integer v : costMap.keySet())
 		{
-			if (costMap.get(v) < smallest)
+			if (costMap.get(v) < smallest && adjList.containsKey(v))
 			{
 				smallest = v;
 			}
