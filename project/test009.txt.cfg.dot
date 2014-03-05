@@ -1,0 +1,27 @@
+digraph cfg {
+BB5[shape = box, label = "BB(5)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := global #0\n" + "4 := cmp #1 #2\n" + "5 := ble (4) #9\n"];
+BB15[shape = box, label = "BB(15)\n" + "6 := cmp #2 #2\n" + "7 := bge (6) #4\n"];
+BB34[shape = box, label = "BB(34)\n" + "14 := cmp #2 #7\n" + "15 := bge (14) #2\n"];
+BB22[shape = box, label = "BB(22)\n" + "8 := cmp #3 #8\n" + "9 := beq (8) #1\n"];
+BB30[shape = box, label = "BB(30)\n" + "11 := phi (10) #8\n" + "12 := phi #8 #2\n" + "13 := beq #0 #5\n"];
+BB41[shape = box, label = "BB(41)\n" + "16 := beq #0 #1\n"];
+BB46[shape = box, label = "BB(46)\n"];
+BB28[shape = box, label = "BB(28)\n"];
+BB29[shape = box, label = "BB(29)\n" + "10 := phi #8 #3\n"];
+BB31[shape = box, label = "BB(31)\n" + "18 := phi (12) (17)\n" + "19 := phi #2 #7\n" + "20 := phi (11) (10)\n" + "21 := add (18) #1\n" + "22 := write (21)\n" + "23 := wln\n" + "24 := end\n"];
+BB43[shape = box, label = "BB(43)\n" + "17 := phi #0 #3\n"];
+BB5 -> BB15;
+BB5 -> BB34;
+BB15 -> BB22;
+BB15 -> BB30;
+BB34 -> BB41;
+BB34 -> BB46;
+BB22 -> BB28;
+BB22 -> BB29;
+BB30 -> BB31;
+BB41 -> BB43;
+BB46 -> BB43;
+BB28 -> BB29;
+BB29 -> BB30;
+BB43 -> BB31;
+}

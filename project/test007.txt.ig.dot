@@ -1,0 +1,46 @@
+graph ig {
+    node [shape = circle];
+    N1R2;
+    N2R2;
+    N3R2;
+    N4R2;
+    N5R2;
+    N6R3;
+    N7R4;
+    N8R2;
+    N9R2;
+    N10R1;
+    N11R1;
+    N12R1;
+    N13R1;
+    N14R1;
+    N15R1;
+    N1R2 -- N15R1;
+    N1R2 -- N14R1;
+    N2R2 -- N15R1;
+    N2R2 -- N14R1;
+    N3R2 -- N15R1;
+    N3R2 -- N14R1;
+    N4R2 -- N15R1;
+    N4R2 -- N14R1;
+    N5R2 -- N15R1;
+    N5R2 -- N14R1;
+    N6R3 -- N12R1;
+    N6R3 -- N11R1;
+    N6R3 -- N10R1;
+    N6R3 -- N9R2;
+    N6R3 -- N8R2;
+    N6R3 -- N15R1;
+    N6R3 -- N14R1;
+    N6R3 -- N7R4;
+    N7R4 -- N11R1;
+    N7R4 -- N10R1;
+    N7R4 -- N9R2;
+    N7R4 -- N8R2;
+    N7R4 -- N15R1;
+    N7R4 -- N14R1;
+    N8R2 -- N15R1;
+    N8R2 -- N14R1;
+    N9R2 -- N14R1;
+}
+

@@ -312,6 +312,16 @@ public class PLC
 					}
 				}
 				
+				// End of program instruction
+				DLXInstruction endInst = new DLXInstruction();
+				endInst.opcode = InstructionType.RET;
+				endInst.format = dlxGen.formatMap.get(InstructionType.RET);
+				endInst.ra = 0;
+				endInst.rb = 0;
+				endInst.rc = 0;
+				endInst.pc = slp.size() + 3;
+				slp.add(endInst);
+				
 				// Insert jump to the start of the program
 				DLXInstruction mainJump = new DLXInstruction();
 //				mainJump.opcode = InstructionType.BEQ;

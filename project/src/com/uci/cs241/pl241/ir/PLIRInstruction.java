@@ -519,11 +519,12 @@ public class PLIRInstruction
 		inst.opcode = InstructionType.PHI;
 		inst.kind = ResultKind.VAR;
 		
-		// Ensure
-		if (!(b1.origIdent.equals(b2.origIdent)))
-		{
-			throw new ParserException("Phi instruction pairs don't refer to the same ident");
-		}
+//		if (!(b1.origIdent.equals(b2.origIdent)))
+//		{
+//			System.out.println("b1 = " + b1.origIdent);
+//			System.out.println("b2 = " + b2.origIdent);
+//			throw new ParserException("Phi instruction pairs don't refer to the same ident");
+//		}
 		inst.origIdent = b1.origIdent; // use either b1 or b2 origIndent, they will match at this point
 		
 		if (b1.kind == ResultKind.CONST)

@@ -2173,7 +2173,7 @@ public class PLParser
 			{
 				entry.rightChild = joinNode;
 				joinNode.parents.add(entry);
-				scope.popScope();
+//				scope.popScope();
 //			}
 				
 				// Check for necessary phis to be inserted in the join block
@@ -2218,7 +2218,7 @@ public class PLParser
 					entry.modifiedIdents.put(var, phi);
 					joinNode.modifiedIdents.put(var, phi);
 				}
-//				scope.popScope();
+				scope.popScope();
 //				blockDepth--;
 			}
 			
