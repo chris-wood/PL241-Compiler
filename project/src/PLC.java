@@ -309,25 +309,11 @@ public class PLC
 					}
 				}
 				
-				// End of program instruction
-//				DLXInstruction endInst = new DLXInstruction();
-//				endInst.opcode = InstructionType.RET;
-//				endInst.format = dlxGen.formatMap.get(InstructionType.RET);
-//				endInst.ra = 0;
-//				endInst.rb = 0;
-//				endInst.rc = 0;
-//				endInst.pc = slp.size() + 3;
-//				endInst.encodedForm = dlxGen.encodeInstruction(endInst);
-//				slp.add(endInst);
-				
 				// Insert jump to the start of the program
 				DLXInstruction mainJump = new DLXInstruction();
-//				mainJump.opcode = InstructionType.BEQ;
 				mainJump.opcode = InstructionType.JSR;
 				mainJump.ra = mainJump.rb = 0;
-//				mainJump.rc = mainStart;
 				mainJump.rc = 4 * mainStart;
-//				mainJump.format = dlxGen.formatMap.get(InstructionType.BEQ);
 				mainJump.format = dlxGen.formatMap.get(InstructionType.JSR);
 				mainJump.encodedForm = dlxGen.encodeInstruction(mainJump);
 				mainJump.pc = 2;
