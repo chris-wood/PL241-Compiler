@@ -1024,14 +1024,14 @@ public class DLXGenerator
 						appendInstructionToBlock(edb, newInst);
 						break;
 					case END:
-//						newInst.opcode = InstructionType.RET;
-//						newInst.format = formatMap.get(InstructionType.RET);
-//						newInst.ra = 0;
-//						newInst.rb = 0;
-//						newInst.rc = 0;
-//
-//						fixOffset(ssaInst.id, newInst);
-//						appendInstructionToEndBlock(edb, newInst);
+						newInst.opcode = InstructionType.RET;
+						newInst.format = formatMap.get(InstructionType.RET);
+						newInst.ra = 0;
+						newInst.rb = 0;
+						newInst.rc = 0;
+
+						fixOffset(ssaInst.id, newInst);
+						appendInstructionToEndBlock(edb, newInst);
 						break;
 					case CMP:
 						if (leftConst && rightConst)

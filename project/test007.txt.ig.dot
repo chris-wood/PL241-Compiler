@@ -33,8 +33,6 @@ graph ig {
     N6R3 -- N15R1;
     N6R3 -- N14R1;
     N6R3 -- N7R4;
-    N7R4 -- N11R1;
-    N7R4 -- N10R1;
     N7R4 -- N9R2;
     N7R4 -- N8R2;
     N7R4 -- N15R1;

@@ -1931,6 +1931,9 @@ public class PLParser
 			follow.fixupLocation = 0;
 			advance(in);
 			
+			// Push on a new scope for the then block
+			System.out.println("Before if:");
+			scope.displayCurrentScopeSymbols();
 			scope.pushNewScope("if" + (blockDepth++));
 			
 			// Parse the condition relation
@@ -1982,6 +1985,12 @@ public class PLParser
 			}
 			entry.joinNode = joinNode;
 			
+			// Leave the scope of the then-block
+			System.out.println("After if:");
+			scope.displayCurrentScopeSymbols();
+			scope.popScope();
+			scope.displayCurrentScopeSymbols();
+			
 			// Check for an else branch
 			int offset = 0;
 			PLIRBasicBlock elseBlock = null;
@@ -1989,6 +1998,8 @@ public class PLParser
 			PLIRInstruction uncond = null;
 			if (toksym == PLToken.elseToken)
 			{
+				scope.pushNewScope("else" + (blockDepth++));
+				
 				// Add the unconditional branch at the end of the then block, which will be fixed up later
 				uncond = UnCondBraFwd(follow);
 				uncond.tempPosition = PLStaticSingleAssignment.globalSSAIndex;
@@ -2036,6 +2047,8 @@ public class PLParser
 				entry.rightChild = elseBlock;
 				elseBlock.parents.add(entry);
 				
+				scope.popScope();
+				
 				// Check for necessary phis to be inserted in the join block
 				// We need phis for variables that were modified in both branches so we fall through with the right value
 				sharedModifiers = new ArrayList<String>();
@@ -2058,8 +2071,10 @@ public class PLParser
 					offset++; 
 					PLIRInstruction thenInst = thenBlock.modifiedIdents.get(var);
 					debug(thenInst.toString());
+					
 					thenInst.forceGenerate(scope, thenInst.tempPosition);
 					PLIRInstruction elseInst = elseBlock.modifiedIdents.get(var);
+					
 					debug(elseInst.toString());
 					elseInst.forceGenerate(scope, elseInst.tempPosition);
 					PLIRInstruction phi = PLIRInstruction.create_phi(scope, thenInst, elseInst, PLStaticSingleAssignment.globalSSAIndex);
@@ -2073,8 +2088,7 @@ public class PLParser
 				}
 				
 				// Jump back from the if statement scope so we can update the variables with the appropriate phi result
-				scope.popScope();
-//				blockDepth--;
+//				scope.popScope();
 				for (int i = 0; i < phisToAdd.size(); i++)
 				{
 					scope.updateSymbol(sharedModifiers.get(i), phisToAdd.get(i));
@@ -2111,8 +2125,10 @@ public class PLParser
 					offset++;
 					PLIRInstruction elseInst = elseBlock.modifiedIdents.get(var);
 					elseInst.forceGenerate(scope, elseInst.tempPosition);
-					PLIRInstruction followInst = scope.getCurrentValue(var);
+					
+					PLIRInstruction followInst = scope.getLastValue(var);
 					followInst.forceGenerate(scope, followInst.tempPosition);
+					
 					PLIRInstruction phi = PLIRInstruction.create_phi(scope, followInst, elseInst, PLStaticSingleAssignment.globalSSAIndex);
 					phi.isGlobalVariable = followInst.isGlobalVariable || elseInst.isGlobalVariable;
 					debug(phi.toString());
@@ -2173,8 +2189,6 @@ public class PLParser
 			{
 				entry.rightChild = joinNode;
 				joinNode.parents.add(entry);
-//				scope.popScope();
-//			}
 				
 				// Check for necessary phis to be inserted in the join block
 				// We need phis for variables that were modified in both branches so we fall through with the right value
@@ -2218,8 +2232,6 @@ public class PLParser
 					entry.modifiedIdents.put(var, phi);
 					joinNode.modifiedIdents.put(var, phi);
 				}
-				scope.popScope();
-//				blockDepth--;
 			}
 			
 //			// Check for necessary phis to be inserted in the join block

@@ -123,7 +123,7 @@ public class PLSymbolTable
 			String lastScope = currentScope.get(currentScope.size() - 2);
 			for (String value : symTable.get(lastScope).keySet())
 			{
-//				System.err.println("Adding " + value + " from scope " + lastScope + " to " + scope);
+				System.err.println("Adding " + value + " from scope " + lastScope + " to " + scope);
 				symTable.get(scope).put(value, symTable.get(lastScope).get(value));
 			}
 			for (String value : funScopeTable.get(lastScope))
@@ -236,7 +236,9 @@ public class PLSymbolTable
 		}
 		else
 		{
-			return prevSymTable.get(sym).get(prevSymTable.get(sym).size() - 2);
+			String lastScope = currentScope.get(currentScope.size() - 1);
+			return symTable.get(lastScope).get(sym);
+//			return prevSymTable.get(sym).get(prevSymTable.get(sym).size() - 2);
 		}
 	}
 	
@@ -255,6 +257,7 @@ public class PLSymbolTable
 	public void displayCurrentScopeSymbols()
 	{
 		String scope = getCurrentScope();
+		System.out.println("Scope = " + scope);
 		for (String var : symTable.get(scope).keySet())
 		{
 			System.out.println("Var: " + var + " => " + 
