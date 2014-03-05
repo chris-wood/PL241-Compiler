@@ -18,12 +18,14 @@ public class PLIRInstruction
 	public int i1;
 	public PLIRInstruction op1;
 	public OperandType op1type;
+	public String op1name;
 	
 	// Second operand information
 	public int i2;
 	public PLIRInstruction op2;
 	public OperandType op2type;
 	public String op2address;
+	public String op2name;
 	
 	// used to indicate if this instruction is part of a designator
 //	public boolean isDesig = false;

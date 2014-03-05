@@ -136,6 +136,13 @@ public class PLC
 				}
 			}
 			
+			// Now rename everything so that we're in good shape
+//			PLStaticSingleAssignment.globalSSAIndex = 0;
+//			for (PLIRBasicBlock entry : blocks)
+//			{
+//				
+//			}
+			
 			// Display the instructions BEFORE CSE
 			PLIRBasicBlock root = blocks.get(blocks.size() - 1);
 			System.out.println("\nBegin Instructions\n");

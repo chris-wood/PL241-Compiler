@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import com.uci.cs241.pl241.backend.DLXBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
 import com.uci.cs241.pl241.ir.PLIRInstruction.OperandType;
@@ -84,6 +85,62 @@ public class PLParser
 		{
 			e.printStackTrace();
 		}
+	}
+	
+	public PLIRBasicBlock findJoin(PLIRBasicBlock left, PLIRBasicBlock right)
+	{
+		PLIRBasicBlock join = null;
+		if (left != null && right != null)
+		{
+			// DFS on left to build visited set
+			ArrayList<PLIRBasicBlock> leftStack = new ArrayList<PLIRBasicBlock>();
+			HashMap<Integer, PLIRBasicBlock> joinSeen = new HashMap<Integer, PLIRBasicBlock>();
+			leftStack.add(left);
+			while (leftStack.isEmpty() == false)
+			{
+				PLIRBasicBlock curr = leftStack.get(leftStack.size() - 1);
+				leftStack.remove(leftStack.size() - 1);
+				if (joinSeen.containsKey(curr.id) == false)
+				{
+					joinSeen.put(curr.id, curr);
+					if (curr.rightChild != null)
+					{
+						leftStack.add(curr.rightChild);
+					}
+					if (curr.leftChild != null)
+					{
+						leftStack.add(curr.leftChild);
+					}
+				}
+			}
+
+			// Find common join point
+			ArrayList<PLIRBasicBlock> rightStack = new ArrayList<PLIRBasicBlock>();
+			rightStack.add(right);
+			while (rightStack.isEmpty() == false)
+			{
+				PLIRBasicBlock curr = rightStack.get(rightStack.size() - 1);
+				rightStack.remove(rightStack.size() - 1);
+				if (joinSeen.containsKey(curr.id))
+				{
+					join = joinSeen.get(curr.id);
+					return join;
+				}
+				else
+				{
+					if (curr.rightChild != null)
+					{
+						rightStack.add(curr.rightChild);
+					}
+					if (curr.leftChild != null)
+					{
+						rightStack.add(curr.leftChild);
+					}
+				}
+			}
+		}
+
+		return join;
 	}
 	
 	// this is what's called - starting with the computation non-terminal
@@ -2312,11 +2369,14 @@ public class PLParser
 			{
 				PLIRInstruction bodyInst = body.modifiedIdents.get(var);
 				bodyInst.forceGenerate(scope, bodyInst.tempPosition);
+				
 				PLIRInstruction preInst = scope.getCurrentValue(var);
 				preInst.forceGenerate(scope, preInst.tempPosition);
 				
 				// Inject the phi at the appropriate spot in the join node...
 				PLIRInstruction phi = PLIRInstruction.create_phi(scope, preInst, bodyInst, loopLocation + offset);
+				phi.op1name = preInst.origIdent;
+				phi.op2name = bodyInst.origIdent;
 				phi.isGlobalVariable = preInst.isGlobalVariable || bodyInst.isGlobalVariable;
 				phi.whilePhi = true;
 				phisGenerated.add(phi);
@@ -2332,11 +2392,6 @@ public class PLParser
 				// Rationale: since we added a phi, the value potentially changes (is modified), 
 				// 	so the latest value in the current scope needs to be modified
 				entry.modifiedIdents.put(var, phi);
-				
-				if (cmpInst.id == 16)
-				{
-					System.err.println("here");
-				}
 				
 				// Now loop through the entry and fix instructions as needed
 				// Those fixed are replaced with the result of this phi if they have used or modified the sym...

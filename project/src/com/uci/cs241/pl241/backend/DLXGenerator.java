@@ -660,9 +660,19 @@ public class DLXGenerator
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.op2.regNum;
 							newInst.rc = ssaInst.i1;
+							
+							if (checkForGlobalLoad(edb, ssaInst.op2, ssaInst.op2.id, ssaInst.op2.regNum, ssaInst.id, true))
+							{
+								appendInstructionToBlock(edb, newInst);
+							}
+							else
+							{
+								fixOffset(ssaInst.id, newInst);
+								appendInstructionToBlock(edb, newInst);
+							}
 
-							fixOffset(ssaInst.id, newInst);
-							appendInstructionToBlock(edb, newInst);
+//							fixOffset(ssaInst.id, newInst);
+//							appendInstructionToBlock(edb, newInst);
 
 							checkForGlobalStore(edb, ssaInst, true);
 						}
@@ -673,9 +683,19 @@ public class DLXGenerator
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.i2;
+							
+							if (checkForGlobalLoad(edb, ssaInst.op1, ssaInst.op1.id, ssaInst.op1.regNum, ssaInst.id, true))
+							{
+								appendInstructionToBlock(edb, newInst);
+							}
+							else
+							{
+								fixOffset(ssaInst.id, newInst);
+								appendInstructionToBlock(edb, newInst);
+							}
 
-							fixOffset(ssaInst.id, newInst);
-							appendInstructionToBlock(edb, newInst);
+//							fixOffset(ssaInst.id, newInst);
+//							appendInstructionToBlock(edb, newInst);
 
 							checkForGlobalStore(edb, ssaInst, true);
 						}
@@ -685,9 +705,25 @@ public class DLXGenerator
 							newInst.format = formatMap.get(InstructionType.ADD);
 							newInst.rb = ssaInst.op1.regNum;
 							newInst.rc = ssaInst.op2.regNum;
-
-							fixOffset(ssaInst.id, newInst);
+							
+							boolean fixed = false;
+							if (checkForGlobalLoad(edb, ssaInst.op1, ssaInst.op1.id, ssaInst.op1.regNum, ssaInst.id, true))
+							{
+								fixed = true;
+							}
+							if (checkForGlobalLoad(edb, ssaInst.op2, ssaInst.op2.id, ssaInst.op2.regNum, ssaInst.id, true))
+							{
+								fixed = true;
+							}
+							
+							if (!fixed)
+							{
+								fixOffset(ssaInst.id, newInst);
+							}
 							appendInstructionToBlock(edb, newInst);
+
+//							fixOffset(ssaInst.id, newInst);
+//							appendInstructionToBlock(edb, newInst);
 
 							checkForGlobalStore(edb, ssaInst, true);
 						}
@@ -929,8 +965,7 @@ public class DLXGenerator
 						if (!(ssaInst.op1type == OperandType.CONST))
 						{
 							newInst.rb = ssaInst.op1.regNum;
-							if (checkForGlobalLoad(edb, ssaInst.op1, ssaInst.op1.id, ssaInst.op1.regNum, ssaInst.id,
-									true))
+							if (checkForGlobalLoad(edb, ssaInst.op1, ssaInst.op1.id, ssaInst.op1.regNum, ssaInst.id, true))
 							{
 								appendInstructionToBlock(edb, newInst);
 							}
@@ -1665,8 +1700,8 @@ public class DLXGenerator
 								leftInst.rc = ssaInst.i1;
 
 //								fixOffset(ssaInst.id, leftInst);
-//								leftOffsetMap.put(ssaInst.id, leftInst);
-								lastLeftJumps.add(ssaInst);
+								leftOffsetMap.put(ssaInst.id, leftInst);
+//								lastLeftJumps.add(ssaInst);
 								appendInstructionToBlock(edb, leftInst);
 								checkForGlobalStore(edb, ssaInst, true);
 
@@ -1691,9 +1726,9 @@ public class DLXGenerator
 								leftInst.rc = ssaInst.i1;
 
 //								fixOffset(ssaInst.id, leftInst);
-//								leftOffsetMap.put(ssaInst.id, leftInst);
+								leftOffsetMap.put(ssaInst.id, leftInst);
 //								lastLeftJump = ssaInst.id;
-								lastLeftJumps.add(ssaInst);
+//								lastLeftJumps.add(ssaInst);
 								appendInstructionToBlock(edb, leftInst);
 								checkForGlobalStore(edb, ssaInst, true);
 
@@ -1725,9 +1760,9 @@ public class DLXGenerator
 									leftInst.rc = ssaInst.op1.regNum;
 
 //									fixOffset(ssaInst.id, leftInst);
-//									leftOffsetMap.put(ssaInst.id, leftInst);
+									leftOffsetMap.put(ssaInst.id, leftInst);
 //									lastLeftJump = ssaInst.id;
-									lastLeftJumps.add(ssaInst);
+//									lastLeftJumps.add(ssaInst);
 									
 									appendInstructionToBlock(edb, leftInst);
 									checkForGlobalStore(edb, ssaInst, true);
@@ -1764,9 +1799,9 @@ public class DLXGenerator
 
 									fixedOffset = true;
 //									fixOffset(ssaInst.id, leftInst);
-//									leftOffsetMap.put(ssaInst.id, leftInst);
+									leftOffsetMap.put(ssaInst.id, leftInst);
 //									lastLeftJump = ssaInst.id;
-									lastLeftJumps.add(ssaInst);
+//									lastLeftJumps.add(ssaInst);
 									appendInstructionToBlock(edb, leftInst);
 									checkForGlobalStore(edb, ssaInst, true);
 									insertBlock.skipped++;
@@ -1786,12 +1821,6 @@ public class DLXGenerator
 									checkForGlobalStore(insertBlock, ssaInst, false);
 									insertBlock.skipped++;
 								}
-							}
-							
-							// both were in the same place...
-							if (leftOffsetMap.get(ssaInst.id) == null || rightOffsetMap.get(ssaInst.id) == null)
-							{
-								noops.add(ssaInst);
 							}
 						}
 						else // PHI for an if-statement, contained in the join node
@@ -1916,14 +1945,6 @@ public class DLXGenerator
 									appendInstructionToEndBlock(rightParent, rightInst);
 									checkForGlobalStore(rightParent, ssaInst, false);
 								}
-							}
-							
-							// If both were in the same place then we have a noop, and the jump-to 
-							// offset for this PHI function needs to be fixed when the next instruction
-							// is generated
-							if (leftOffsetMap.get(ssaInst.id) == null || rightOffsetMap.get(ssaInst.id) == null)
-							{
-//								noops.add(ssaInst);
 							}
 						}
 						break;
