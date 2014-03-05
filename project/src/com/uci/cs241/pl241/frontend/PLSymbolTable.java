@@ -30,29 +30,6 @@ public class PLSymbolTable
 		globalVariables = new ArrayList<PLIRInstruction>();
 	}
 	
-	public ArrayList<PLIRInstruction> getDominatedInstructions(InstructionType type)
-	{
-		switch (type)
-		{
-		case NEG:
-		case ADD:
-		case SUB:
-		case MUL:
-		case DIV:
-		case CMP:
-			String scope = getCurrentScope();
-			if (instTypeMap.containsKey(scope) == false)
-			{
-				instTypeMap.put(scope, new HashMap<InstructionType, ArrayList<PLIRInstruction>>());
-				instTypeMap.get(scope).put(type, new ArrayList<PLIRInstruction>());
-			}
-			
-			return instTypeMap.get(scope).get(type);
-		default:
-			return null;
-		}
-	}
-	
 	public PLIRInstruction getGlobalVariable(String v)
 	{
 		for (PLIRInstruction glob : globalVariables)
@@ -84,31 +61,6 @@ public class PLSymbolTable
 	public void addProcedure(String name, ArrayList<PLIRInstruction> params)
 	{
 		functions.put(name, new Function(name, params, false));
-	}
-	
-	public void addDominatedInstruction(PLIRInstruction type)
-	{
-		switch (type.opcode)
-		{
-		case NEG:
-		case ADD:
-		case SUB:
-		case MUL:
-		case DIV:
-		case CMP:
-			String scope = getCurrentScope();
-			if (instTypeMap.containsKey(scope) == false)
-			{
-				instTypeMap.put(scope, new HashMap<InstructionType, ArrayList<PLIRInstruction>>());
-				instTypeMap.get(scope).put(type.opcode, new ArrayList<PLIRInstruction>());
-			}
-			if (instTypeMap.get(scope).containsKey(type.opcode) == false)
-			{
-				instTypeMap.get(scope).put(type.opcode, new ArrayList<PLIRInstruction>());
-			}
-			instTypeMap.get(scope).get(type.opcode).add(type);
-			break;
-		}
 	}
 	
 	public void pushNewScope(String scope)
@@ -169,8 +121,6 @@ public class PLSymbolTable
 		{
 			symTable.put(scope, new HashMap<String, PLIRInstruction>());
 		}
-		
-//		System.out.println("Adding " + sym + " to scope " + scope);
 	}
 	
 	public void addVarToScope(String sym)
@@ -183,7 +133,6 @@ public class PLSymbolTable
 		String scope = getCurrentScope();
 		if (isVarInScope(scope, sym))
 		{
-//			System.err.println("Updating sym " + sym + " with " + inst.toString());
 			symTable.get(scope).put(sym, inst);
 		}
 		else
@@ -238,7 +187,6 @@ public class PLSymbolTable
 		{
 			String lastScope = currentScope.get(currentScope.size() - 1);
 			return symTable.get(lastScope).get(sym);
-//			return prevSymTable.get(sym).get(prevSymTable.get(sym).size() - 2);
 		}
 	}
 	

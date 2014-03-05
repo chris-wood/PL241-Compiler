@@ -1932,8 +1932,6 @@ public class PLParser
 			advance(in);
 			
 			// Push on a new scope for the then block
-			System.out.println("Before if:");
-			scope.displayCurrentScopeSymbols();
 			scope.pushNewScope("if" + (blockDepth++));
 			
 			// Parse the condition relation
@@ -1946,8 +1944,10 @@ public class PLParser
 					inst.forceGenerate(scope);
 				}
 			}
-			PLIRInstruction x = entry.instructions.get(entry.instructions.size() - 1);
-			PLIRInstruction branch = CondNegBraFwd(x);
+			
+			// Fixup setup
+			PLIRInstruction lastEntryInst = entry.getLastInst();
+			PLIRInstruction branch = CondNegBraFwd(lastEntryInst);
 			branch.fixupLocation = PLStaticSingleAssignment.globalSSAIndex - 1;
 			entry.addInstruction(branch);
 			
@@ -1986,10 +1986,7 @@ public class PLParser
 			entry.joinNode = joinNode;
 			
 			// Leave the scope of the then-block
-			System.out.println("After if:");
-			scope.displayCurrentScopeSymbols();
 			scope.popScope();
-			scope.displayCurrentScopeSymbols();
 			
 			// Check for an else branch
 			int offset = 0;
@@ -1998,6 +1995,7 @@ public class PLParser
 			PLIRInstruction uncond = null;
 			if (toksym == PLToken.elseToken)
 			{
+				// Enter a new scope for the else block
 				scope.pushNewScope("else" + (blockDepth++));
 				
 				// Add the unconditional branch at the end of the then block, which will be fixed up later
@@ -2018,10 +2016,6 @@ public class PLParser
 					thenBlock.addInstruction(uncond);
 				}
 				advance(in);
-				
-				// DEBUG
-				debug("parsing the else block");
-				scope.displayCurrentScopeSymbols();
 				
 				// Parse the else block and then configure the BB connections accordingly
 				elseBlock = parse_statSequence(in);
@@ -2047,6 +2041,7 @@ public class PLParser
 				entry.rightChild = elseBlock;
 				elseBlock.parents.add(entry);
 				
+				// Leave the scope of the else block
 				scope.popScope();
 				
 				// Check for necessary phis to be inserted in the join block
@@ -2088,7 +2083,6 @@ public class PLParser
 				}
 				
 				// Jump back from the if statement scope so we can update the variables with the appropriate phi result
-//				scope.popScope();
 				for (int i = 0; i < phisToAdd.size(); i++)
 				{
 					scope.updateSymbol(sharedModifiers.get(i), phisToAdd.get(i));
@@ -2098,11 +2092,6 @@ public class PLParser
 					// 	so the latest value in the current scope needs to be modified
 					entry.modifiedIdents.put(sharedModifiers.get(i), phisToAdd.get(i));
 				}
-				
-				debug("after else block");
-				scope.displayCurrentScopeSymbols();
-				
-//				scope.popScope();
 				
 				// Check for modifications in the else block (but not in the if)
 				ArrayList<String> modifiers = new ArrayList<String>();
@@ -2165,10 +2154,9 @@ public class PLParser
 					PLIRInstruction leftInst = thenBlock.modifiedIdents.get(var);
 					leftInst.forceGenerate(scope, leftInst.tempPosition);
 					
-//					PLIRInstruction followInst = scope.getCurrentValue(var);
 					PLIRInstruction followInst = scope.getLastValue(var);
-					
 					followInst.forceGenerate(scope, followInst.tempPosition);
+					
 					PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
 					phi.isGlobalVariable = leftInst.isGlobalVariable || followInst.isGlobalVariable;
 					debug(phi.toString());
@@ -2213,10 +2201,9 @@ public class PLParser
 					PLIRInstruction leftInst = thenBlock.modifiedIdents.get(var);
 					leftInst.forceGenerate(scope, leftInst.tempPosition);
 					
-//					PLIRInstruction followInst = scope.getCurrentValue(var);
 					PLIRInstruction followInst = scope.getLastValue(var);
-					
 					followInst.forceGenerate(scope, followInst.tempPosition);
+					
 					PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
 					phi.isGlobalVariable = leftInst.isGlobalVariable || followInst.isGlobalVariable;
 					debug(phi.toString());
@@ -2234,58 +2221,15 @@ public class PLParser
 				}
 			}
 			
-//			// Check for necessary phis to be inserted in the join block
-//			// We need phis for variables that were modified in both branches so we fall through with the right value
-//			ArrayList<String> modifiers = new ArrayList<String>();
-//			for (String modded : thenBlock.modifiedIdents.keySet())
-//			{
-//				if (sharedModifiers.contains(modded) == false) // don't double-add
-//				{
-//					modifiers.add(modded);
-//				}
-//			}
-//			debug("(if statement without else) Inserting " + modifiers.size() + " phis");
-//			for (String var : modifiers)
-//			{
-//				// Check to make sure this thing was actually in scope!
-//				if (scope.getCurrentValue(var) == null)
-//				{
-//					debug("Uninitialized identifier in path: " + var);
-//				}
-//				
-//				offset++;
-//				PLIRInstruction leftInst = thenBlock.modifiedIdents.get(var);
-//				leftInst.forceGenerate(scope, leftInst.tempPosition);
-//				PLIRInstruction followInst = scope.getCurrentValue(var);
-//				followInst.forceGenerate(scope, followInst.tempPosition);
-//				PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
-//				debug(phi.toString());
-//				joinNode.insertInstruction(phi, 0);
-//				
-//				// The current value in scope needs to be updated now with the result of the phi
-//				scope.updateSymbol(var, phi);
-//				
-//				// Add to this block's list of modified identifiers
-//				// Rationale: since we added a phi, the value potentially changes (is modified), 
-//				// 	so the latest value in the current scope needs to be modified
-//				entry.modifiedIdents.put(var, phi);
-//				joinNode.modifiedIdents.put(var, phi);
-//			}
-			
-//			if (elseBlock != null)
-//			{
-//				scope.popScope();
-//			}
-			
 			// After the phis have been inserted at the appropriate positions, fixup the entry instructions
 			if (elseBlock != null)
 			{
-				FixupExact(x.fixupLocation, uncond.tempPosition - x.fixupLocation);
+				FixupExact(lastEntryInst.fixupLocation, uncond.tempPosition - lastEntryInst.fixupLocation);
 				FixupExact(uncond.tempPosition - 1, PLStaticSingleAssignment.globalSSAIndex - uncond.tempPosition - offset + 1);
 			}
 			else
 			{
-				Fixup(x.fixupLocation, -offset);
+				Fixup(lastEntryInst.fixupLocation, -offset);
 			}
 			
 			// Fix the join BB index

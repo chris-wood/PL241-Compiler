@@ -25,8 +25,6 @@ public class DLXGenerator
 	public static final int LOW_REG = 1;
 	public static final int HIGH_REG = 26;
 
-	public int branchOffset = 0;
-
 	public HashMap<Integer, Integer> globalOffset;
 	public HashMap<String, Integer> globalRefMap;
 	public HashMap<String, Integer> globalArrayOffset;
@@ -159,10 +157,10 @@ public class DLXGenerator
 	public void fixup(ArrayList<DLXInstruction> instructions)
 	{
 		// Reset pc for each instruction
-		int pc = this.pc - instructions.size();
+		int localPc = this.pc - instructions.size();
 		for (DLXInstruction inst : instructions)
 		{
-			inst.pc = pc++;
+			inst.pc = localPc++;
 			System.out.println(inst);
 		}
 
@@ -337,9 +335,64 @@ public class DLXGenerator
 		inst.pc = pc++;
 		inst.block = block;
 	}
+	
+	public DLXBasicBlock findJoin(DLXBasicBlock left, DLXBasicBlock right)
+	{
+		DLXBasicBlock join = null;
+		if (left != null && right != null)
+		{
+			// DFS on left to build visited set
+			ArrayList<DLXBasicBlock> leftStack = new ArrayList<DLXBasicBlock>();
+			HashMap<Integer, DLXBasicBlock> joinSeen = new HashMap<Integer, DLXBasicBlock>();
+			leftStack.add(left);
+			while (leftStack.isEmpty() == false)
+			{
+				DLXBasicBlock curr = leftStack.get(leftStack.size() - 1);
+				leftStack.remove(leftStack.size() - 1);
+				if (joinSeen.containsKey(curr.id) == false)
+				{
+					joinSeen.put(curr.id, curr);
+					if (curr.right != null)
+					{
+						leftStack.add(curr.right);
+					}
+					if (curr.left != null)
+					{
+						leftStack.add(curr.left);
+					}
+				}
+			}
 
-	public ArrayList<DLXInstruction> convertToStraightLineCode(DLXBasicBlock entry, Function func, int stopBlock,
-			HashSet<Integer> visited)
+			// Find common join point
+			ArrayList<DLXBasicBlock> rightStack = new ArrayList<DLXBasicBlock>();
+			rightStack.add(right);
+			while (rightStack.isEmpty() == false)
+			{
+				DLXBasicBlock curr = rightStack.get(rightStack.size() - 1);
+				rightStack.remove(rightStack.size() - 1);
+				if (joinSeen.containsKey(curr.id))
+				{
+					join = joinSeen.get(curr.id);
+					return join;
+				}
+				else
+				{
+					if (curr.right != null)
+					{
+						rightStack.add(curr.right);
+					}
+					if (curr.left != null)
+					{
+						rightStack.add(curr.left);
+					}
+				}
+			}
+		}
+
+		return join;
+	}
+
+	public ArrayList<DLXInstruction> convertToStraightLineCode(DLXBasicBlock entry, Function func, int stopBlock, HashSet<Integer> visited)
 	{
 		ArrayList<DLXInstruction> instructions = new ArrayList<DLXInstruction>();
 
@@ -373,61 +426,12 @@ public class DLXGenerator
 				instructions.get(instructions.size() - 1).offset = entry.endInstructions.size();
 			}
 
-			boolean end = entry.left == null && entry.right == null;
-
-			// Find the join
-			DLXBasicBlock join = null;
+			// Find the join node, which is the stopping block for straight line code generation
+			DLXBasicBlock join = findJoin(entry.left, entry.right);
 			if (entry.left != null && entry.right != null)
 			{
-				// DFS on left to build visited set
-				ArrayList<DLXBasicBlock> leftStack = new ArrayList<DLXBasicBlock>();
-				HashMap<Integer, DLXBasicBlock> joinSeen = new HashMap<Integer, DLXBasicBlock>();
-				leftStack.add(entry.left);
-				while (leftStack.isEmpty() == false)
-				{
-					DLXBasicBlock curr = leftStack.get(leftStack.size() - 1);
-					leftStack.remove(leftStack.size() - 1);
-					if (joinSeen.containsKey(curr.id) == false)
-					{
-						joinSeen.put(curr.id, curr);
-						if (curr.right != null)
-						{
-							leftStack.add(curr.right);
-						}
-						if (curr.left != null)
-						{
-							leftStack.add(curr.left);
-						}
-					}
-				}
-
-				// Find common join point
-				ArrayList<DLXBasicBlock> rightStack = new ArrayList<DLXBasicBlock>();
-				rightStack.add(entry.right);
-				while (rightStack.isEmpty() == false)
-				{
-					DLXBasicBlock curr = rightStack.get(rightStack.size() - 1);
-					rightStack.remove(rightStack.size() - 1);
-					if (joinSeen.containsKey(curr.id))
-					{
-						join = joinSeen.get(curr.id);
-					}
-					else
-					{
-						if (curr.right != null)
-						{
-							rightStack.add(curr.right);
-						}
-						if (curr.left != null)
-						{
-							rightStack.add(curr.left);
-						}
-					}
-				}
-
-				// if join == null (there is no common point), then left is a
-				// while body and right is the join... handle accordingly
-				if (join != null)
+				// If the join is not null then we have encountered an if statement control flow
+				if (join != null) 
 				{
 					if (entry.left != null && entry.left.id != stopBlock)
 					{
@@ -437,7 +441,13 @@ public class DLXGenerator
 					{
 						instructions.addAll(convertToStraightLineCode(entry.right, func, -1, visited));
 					}
+					
+					// After visiting the left and right, continue at the join node
+					instructions.addAll(convertToStraightLineCode(join, func, -1, visited));
 				}
+				
+				// if join == null (there is no common point), then left is a
+				// while body and right is the join... handle accordingly
 				else
 				{
 					if (entry.left != null && entry.left.id != stopBlock)
@@ -450,18 +460,9 @@ public class DLXGenerator
 					}
 				}
 			}
-			else if (entry.left != null)
-			{
-				instructions.addAll(convertToStraightLineCode(entry.left, func, stopBlock, visited));
-			}
-			else if (entry.right != null)
-			{
-				instructions.addAll(convertToStraightLineCode(entry.right, func, stopBlock, visited));
-			}
 			else
 			{
-				// end.... add stack cleanup instructions if this is the end of
-				// a procedure or function
+				// end.... add stack cleanup instructions if this is the end of a procedure or function
 				if (func != null && func.hasReturn == false)
 				{
 					DLXInstruction retInst = new DLXInstruction();
@@ -471,8 +472,6 @@ public class DLXGenerator
 					retInst.rb = 0;
 					retInst.rc = RA; // jump to RA
 
-					// TODO: do these need offsets?
-					// fixOffset(ssaInst.id, retInst);
 					appendInstructionToBlock(entry, retInst);
 					instructions.add(retInst);
 				}
@@ -486,8 +485,7 @@ public class DLXGenerator
 		return instructions;
 	}
 
-	public boolean checkForGlobalLoad(DLXBasicBlock edb, PLIRInstruction usingInst, int refId, int regNum, int offset,
-			boolean fixOffset)
+	public boolean checkForGlobalLoad(DLXBasicBlock edb, PLIRInstruction usingInst, int refId, int regNum, int offset, boolean fixOffset)
 	{
 		if (globalOffset.containsKey(refId))
 		{
@@ -514,8 +512,7 @@ public class DLXGenerator
 			loadInst.ra = regNum; // save contents of ssaInst.regNum
 			loadInst.rb = GLOBAL_ADDRESS;
 
-			loadInst.rc = -4 * (globalOffset.get(globalRefMap.get(usingInst.origIdent)) + 1); // word
-																								// size
+			loadInst.rc = -4 * (globalOffset.get(globalRefMap.get(usingInst.origIdent)) + 1); // word size
 
 			if (fixOffset)
 			{
@@ -529,7 +526,7 @@ public class DLXGenerator
 
 	public boolean checkForGlobalStore(DLXBasicBlock edb, PLIRInstruction usingInst, boolean appendToStart)
 	{
-		// skip if arrays
+		// TODO: skip if arrays
 		if (globalOffset.containsKey(usingInst.id))
 		{
 			DLXInstruction storeInst = new DLXInstruction();
@@ -537,9 +534,9 @@ public class DLXGenerator
 			storeInst.format = formatMap.get(InstructionType.STW);
 			storeInst.ra = usingInst.regNum; // save contents of ssaInst.regNum
 			storeInst.rb = GLOBAL_ADDRESS;
-			storeInst.rc = -4 * (globalOffset.get(usingInst.id) + 1); // word
-																		// size
+			storeInst.rc = -4 * (globalOffset.get(usingInst.id) + 1); // word size
 
+			// Determine where in the block to place the store
 			if (appendToStart)
 			{
 				appendInstructionToBlock(edb, storeInst);
@@ -548,6 +545,8 @@ public class DLXGenerator
 			{
 				appendInstructionToEndBlock(edb, storeInst);
 			}
+			
+			// success
 			return true;
 		}
 		else if (usingInst.isGlobalVariable || this.globalRefMap.containsKey(usingInst.origIdent))
@@ -561,6 +560,7 @@ public class DLXGenerator
 			int ref = globalRefMap.get(usingInst.origIdent);
 			storeInst.rc = -4 * (globalOffset.get(ref) + 1); // word size
 
+			// Determine where in the block to place the store
 			if (appendToStart)
 			{
 				appendInstructionToBlock(edb, storeInst);
@@ -569,40 +569,19 @@ public class DLXGenerator
 			{
 				appendInstructionToEndBlock(edb, storeInst);
 			}
+			
+			// success
 			return true;
 		}
+		
 		return false;
 	}
 
-	public void generateBlockTreeInstructons(DLXBasicBlock edb, PLIRBasicBlock b, Function func, boolean isMain,
-			int branch, HashSet<Integer> visited)
-	{
-		// Handle the rest
+	public void generateBlockTreeInstructons(DLXBasicBlock edb, PLIRBasicBlock b, Function func, boolean isMain, HashSet<Integer> visited)
+	{	
+		// Be sure to visit each block at most once
 		if (visited.contains(b.id) == false)
 		{
-			// // Entry block - only visited once
-			// if (b.parents.size() == 0 && func != null)
-			// {
-			// // Load parameters from the stack
-			// for (int i = 0; i < func.params.size(); i++)
-			// {
-			// // // loadparam operand#
-			// // // i1 for ssaInst is the operand#
-			// // // load from stack
-			// // // LDW a, b, c R.a := Mem[R.b + c]
-			// // PLIRInstruction ssaInst = func.params.get(i);
-			// // DLXInstruction loadInst = new DLXInstruction();
-			// // loadInst.opcode = InstructionType.LDW;
-			// // loadInst.format = formatMap.get(InstructionType.LDW);
-			// // loadInst.ra = ssaInst.regNum;
-			// // loadInst.rb = SP;
-			// // loadInst.rc = -4 * (ssaInst.i1 + 1);
-			// // branchOffset++;
-			// // loadInst.encodedForm = encodeInstruction(loadInst);
-			// // appendInstructionToBlock(edb, loadInst);
-			// }
-			// }
-
 			visited.add(b.id);
 
 			for (int i = 0; i < b.instructions.size(); i++)
@@ -614,22 +593,15 @@ public class DLXGenerator
 				newInst.ra = ssaInst.regNum;
 
 				// Determine if the instruction contains an immediate value
-				boolean isImmediate = false;
 				boolean leftConst = false;
 				boolean rightConst = false;
 				boolean isArrayAdd = ssaInst.op1type == OperandType.FP || ssaInst.op1type == OperandType.BASEADDRESS;
-				if (ssaInst.kind == ResultKind.CONST)
-				{
-					isImmediate = true;
-				}
 				if (ssaInst.op1type == OperandType.CONST)
 				{
-					isImmediate = true;
 					leftConst = true;
 				}
 				if (ssaInst.op2type == OperandType.CONST)
 				{
-					isImmediate = true;
 					rightConst = true;
 				}
 
@@ -654,7 +626,6 @@ public class DLXGenerator
 							newInst.rb = ssaInst.regNum;
 							newInst.rc = ssaInst.i2;
 
-							branchOffset++;
 							fixOffset(ssaInst.id, preInst);
 							appendInstructionToBlock(edb, preInst);
 							appendInstructionToBlock(edb, newInst);
@@ -699,8 +670,7 @@ public class DLXGenerator
 
 							checkForGlobalStore(edb, ssaInst, true);
 						}
-						else
-						// addition for an array
+						else // addition for an array
 						{
 							newInst.opcode = InstructionType.ADD;
 							newInst.format = formatMap.get(InstructionType.ADD);
@@ -708,13 +678,7 @@ public class DLXGenerator
 
 							// Determine if this is a global thing or not...
 							String ident = ssaInst.op2address.substring(0, ssaInst.op2address.indexOf("_"));
-							if (globalArrayOffset.containsKey(ident)) // global
-																		// array
-																		// at
-																		// the
-																		// end
-																		// of
-																		// memory
+							if (globalArrayOffset.containsKey(ident)) 
 							{
 								newInst.rb = GLOBAL_ADDRESS;
 								newInst.rc = -4 * globalArrayOffset.get(ident);
@@ -757,7 +721,6 @@ public class DLXGenerator
 							newInst.rb = ssaInst.regNum;
 							newInst.rc = ssaInst.i2;
 
-							branchOffset++;
 							fixOffset(ssaInst.id, preInst);
 							appendInstructionToBlock(edb, preInst);
 							appendInstructionToBlock(edb, newInst);
@@ -815,7 +778,6 @@ public class DLXGenerator
 							newInst.rb = ssaInst.regNum;
 							newInst.rc = ssaInst.i2;
 
-							branchOffset++;
 							fixOffset(ssaInst.id, preInst1);
 							appendInstructionToBlock(edb, preInst1);
 							appendInstructionToBlock(edb, newInst);
@@ -880,7 +842,6 @@ public class DLXGenerator
 							newInst.rb = ssaInst.regNum;
 							newInst.rc = ssaInst.i2;
 
-							branchOffset++;
 							fixOffset(ssaInst.id, preInst);
 							appendInstructionToBlock(edb, preInst);
 							appendInstructionToBlock(edb, newInst);
@@ -991,7 +952,6 @@ public class DLXGenerator
 							popInst.rc = -4; // word size
 							popInst.encodedForm = encodeInstruction(popInst);
 
-							branchOffset += 3;
 							fixOffset(ssaInst.id, pushInst);
 							appendInstructionToBlock(edb, pushInst);
 							appendInstructionToBlock(edb, loadInst);
@@ -1031,7 +991,7 @@ public class DLXGenerator
 						newInst.rc = 0;
 
 						fixOffset(ssaInst.id, newInst);
-						appendInstructionToEndBlock(edb, newInst);
+						appendInstructionToBlock(edb, newInst);
 						break;
 					case CMP:
 						if (leftConst && rightConst)
@@ -1051,7 +1011,6 @@ public class DLXGenerator
 							newInst.rb = ssaInst.regNum;
 							newInst.rc = ssaInst.i2;
 
-							branchOffset++;
 							fixOffset(ssaInst.id, preInst);
 							appendInstructionToBlock(edb, preInst);
 							appendInstructionToBlock(edb, newInst);
@@ -1567,7 +1526,6 @@ public class DLXGenerator
 						loadInst.ra = ssaInst.regNum;
 						loadInst.rb = SP;
 						loadInst.rc = -4 * (ssaInst.i1 + 1);
-						branchOffset++;
 						appendInstructionToBlock(edb, loadInst);
 						break;
 
@@ -1685,7 +1643,6 @@ public class DLXGenerator
 								leftInst.rb = 0;
 								leftInst.rc = ssaInst.i1;
 
-//								branchOffset++;
 //								fixOffset(ssaInst.id, leftInst);
 //								leftOffsetMap.put(ssaInst.id, leftInst);
 								lastLeftJumps.add(ssaInst);
@@ -1699,7 +1656,6 @@ public class DLXGenerator
 								rightInst.rb = 0;
 								rightInst.rc = ssaInst.i2;
 
-//								branchOffset++;
 								rightOffsetMap.put(ssaInst.id, rightInst);
 								appendInstructionToEndBlock(insertBlock, rightInst);
 								checkForGlobalStore(insertBlock, ssaInst, false);
@@ -1713,7 +1669,6 @@ public class DLXGenerator
 								leftInst.rb = 0;
 								leftInst.rc = ssaInst.i1;
 
-								branchOffset++;
 //								fixOffset(ssaInst.id, leftInst);
 //								leftOffsetMap.put(ssaInst.id, leftInst);
 //								lastLeftJump = ssaInst.id;
@@ -1731,7 +1686,6 @@ public class DLXGenerator
 									rightInst.rb = 0;
 									rightInst.rc = ssaInst.op2.regNum;
 
-									branchOffset++;
 									rightOffsetMap.put(ssaInst.id, rightInst);
 									appendInstructionToEndBlock(insertBlock, rightInst);
 									checkForGlobalStore(insertBlock, ssaInst, false);
@@ -1749,7 +1703,6 @@ public class DLXGenerator
 									leftInst.rb = 0;
 									leftInst.rc = ssaInst.op1.regNum;
 
-									branchOffset++;
 //									fixOffset(ssaInst.id, leftInst);
 //									leftOffsetMap.put(ssaInst.id, leftInst);
 //									lastLeftJump = ssaInst.id;
@@ -1772,8 +1725,7 @@ public class DLXGenerator
 								{
 //									fixOffset(ssaInst.id, rightInst);
 									rightOffsetMap.put(ssaInst.id, rightInst);
-								}
-								branchOffset++;								
+								}						
 								appendInstructionToEndBlock(insertBlock, rightInst);
 								checkForGlobalStore(insertBlock, ssaInst, false);
 							}
@@ -1789,7 +1741,6 @@ public class DLXGenerator
 									leftInst.rb = 0;
 									leftInst.rc = ssaInst.op1.regNum;
 
-									branchOffset++;
 									fixedOffset = true;
 //									fixOffset(ssaInst.id, leftInst);
 //									leftOffsetMap.put(ssaInst.id, leftInst);
@@ -1808,7 +1759,6 @@ public class DLXGenerator
 									rightInst.rb = 0;
 									rightInst.rc = ssaInst.op2.regNum;
 
-									branchOffset++;
 									fixedOffset = true;
 									rightOffsetMap.put(ssaInst.id, rightInst);
 									appendInstructionToEndBlock(insertBlock, rightInst);
@@ -1823,7 +1773,7 @@ public class DLXGenerator
 								noops.add(ssaInst);
 							}
 						}
-						else // if PHI
+						else // PHI for an if-statement, contained in the join node
 						{
 							System.out.println("if phi encountered: " + ssaInst);
 							
@@ -1840,13 +1790,8 @@ public class DLXGenerator
 								leftInst.ra = ssaInst.regNum;
 								leftInst.rb = 0;
 								leftInst.rc = ssaInst.i1;
-
-								branchOffset++;
-//								fixOffset(ssaInst.id, leftInst);
-//								leftOffsetMap.put(ssaInst.id, leftInst);
-//								lastLeftJump = ssaInst.id;
+								
 								lastLeftJumps.add(ssaInst);
-//								appendInstructionToBlock(edb, leftInst);
 								appendInstructionToEndBlock(leftParent, leftInst);
 								checkForGlobalStore(leftParent, ssaInst, false);
 
@@ -1857,9 +1802,7 @@ public class DLXGenerator
 								rightInst.rb = 0;
 								rightInst.rc = ssaInst.i2;
 
-								branchOffset++;
 								rightOffsetMap.put(ssaInst.id, rightInst);
-//								appendInstructionToBlock(edb, rightInst);
 								appendInstructionToEndBlock(rightParent, rightInst);
 								checkForGlobalStore(rightParent, ssaInst, false);
 							}
@@ -1872,12 +1815,7 @@ public class DLXGenerator
 								leftInst.rb = 0;
 								leftInst.rc = ssaInst.i1;
 
-								branchOffset++;
-//								fixOffset(ssaInst.id, leftInst);
-//								leftOffsetMap.put(ssaInst.id, leftInst);
-//								lastLeftJump = ssaInst.id;
 								lastLeftJumps.add(ssaInst);
-//								appendInstructionToBlock(edb, leftInst);
 								appendInstructionToEndBlock(leftParent, leftInst);
 								checkForGlobalStore(leftParent, ssaInst, false);
 
@@ -1890,9 +1828,7 @@ public class DLXGenerator
 									rightInst.rb = 0;
 									rightInst.rc = ssaInst.op2.regNum;
 
-									branchOffset++;
 									rightOffsetMap.put(ssaInst.id, rightInst);
-//									appendInstructionToBlock(edb, rightInst);
 									appendInstructionToEndBlock(rightParent, rightInst);
 									checkForGlobalStore(rightParent, ssaInst, false);
 								}
@@ -1909,12 +1845,7 @@ public class DLXGenerator
 									leftInst.rb = 0;
 									leftInst.rc = ssaInst.op1.regNum;
 
-									branchOffset++;
-//									fixOffset(ssaInst.id, leftInst);
-//									leftOffsetMap.put(ssaInst.id, leftInst);
-//									lastLeftJump = ssaInst.id;
 									lastLeftJumps.add(ssaInst);
-//									appendInstructionToBlock(edb, leftInst);
 									appendInstructionToEndBlock(leftParent, leftInst);
 									checkForGlobalStore(leftParent, ssaInst, false);
 									fixedOffset = true;
@@ -1928,14 +1859,7 @@ public class DLXGenerator
 								rightInst.rb = 0;
 								rightInst.rc = ssaInst.i2;
 
-//								if (!fixedOffset)
-//								{
-//									fixOffset(ssaInst.id, rightInst);
-									
-//								}
 								rightOffsetMap.put(ssaInst.id, rightInst);
-								branchOffset++;
-//								appendInstructionToBlock(edb, rightInst);
 								appendInstructionToEndBlock(rightParent, rightInst);
 								checkForGlobalStore(rightParent, ssaInst, false);
 							}
@@ -1950,12 +1874,7 @@ public class DLXGenerator
 									leftInst.rb = 0;
 									leftInst.rc = ssaInst.op1.regNum;
 
-									branchOffset++;
-//									fixOffset(ssaInst.id, leftInst);
-//									leftOffsetMap.put(ssaInst.id, leftInst);
-//									lastLeftJump = ssaInst.id;
 									lastLeftJumps.add(ssaInst);
-//									appendInstructionToBlock(edb, leftInst);
 									appendInstructionToEndBlock(leftParent, leftInst);
 									checkForGlobalStore(leftParent, ssaInst, false);
 								}
@@ -1968,55 +1887,19 @@ public class DLXGenerator
 									rightInst.rb = 0;
 									rightInst.rc = ssaInst.op2.regNum;
 
-									branchOffset++;
 									rightOffsetMap.put(ssaInst.id, rightInst);
-//									appendInstructionToBlock(edb, rightInst);
 									appendInstructionToEndBlock(rightParent, rightInst);
 									checkForGlobalStore(rightParent, ssaInst, false);
 								}
 							}
 							
-							// both were in the same place...
+							// If both were in the same place then we have a noop, and the jump-to 
+							// offset for this PHI function needs to be fixed when the next instruction
+							// is generated
 							if (leftOffsetMap.get(ssaInst.id) == null || rightOffsetMap.get(ssaInst.id) == null)
 							{
 								noops.add(ssaInst);
 							}
-							
-							
-							
-//							System.out.println("Fixup: " + offsetMap.get(ssaInst.id));
-							
-//							// TODO: need to handle cascade of IFs
-//							if (ssaInst.regNum != ssaInst.op1.regNum)
-//							{
-//								DLXInstruction leftInst = new DLXInstruction();
-//								leftInst.opcode = InstructionType.ADD;
-//								leftInst.format = formatMap.get(InstructionType.ADD);
-//								leftInst.ra = ssaInst.regNum;
-//								leftInst.rb = 0;
-//								leftInst.rc = ssaInst.op1.regNum;
-//								insertBlock = edb.parents.get(branch);
-//
-//								branchOffset++;
-//								fixOffset(ssaInst.id, leftInst);
-//								appendInstructionToBlock(insertBlock, leftInst);
-//								checkForGlobalStore(insertBlock, ssaInst, true);
-//							}
-//							if (ssaInst.regNum != ssaInst.op2.regNum)
-//							{
-//								DLXInstruction rightInst = new DLXInstruction();
-//								rightInst.opcode = InstructionType.ADD;
-//								rightInst.format = formatMap.get(InstructionType.ADD);
-//								rightInst.ra = ssaInst.regNum;
-//								rightInst.rb = 0;
-//								rightInst.rc = ssaInst.op2.regNum;
-//								insertBlock = edb.parents.get(branch);
-//
-//								branchOffset++;
-//								fixOffset(ssaInst.id, rightInst);
-//								appendInstructionToBlock(insertBlock, rightInst);
-//								checkForGlobalStore(insertBlock, ssaInst, true);
-//							}
 						}
 						break;
 				}
@@ -2024,11 +1907,11 @@ public class DLXGenerator
 
 			if (b.leftChild != null)
 			{
-				generateBlockTreeInstructons(edb.left, b.leftChild, func, isMain, 0, visited);
+				generateBlockTreeInstructons(edb.left, b.leftChild, func, isMain, visited);
 			}
 			if (b.rightChild != null)
 			{
-				generateBlockTreeInstructons(edb.right, b.rightChild, func, isMain, 1, visited);
+				generateBlockTreeInstructons(edb.right, b.rightChild, func, isMain, visited);
 			}
 		}
 		else

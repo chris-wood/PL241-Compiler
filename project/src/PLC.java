@@ -204,10 +204,7 @@ public class PLC
 			
 			if (runAll || (runStep1 && runStep2 && runStep3))
 			{
-				// Add the constant instruction
-//				PLIRInstruction constInst = new PLIRInstruction(parser.scope);
-//				constInst.id = PLStaticSingleAssignment.globalSSAIndex;
-//				PLStaticSingleAssignment.addInstruction(parser.scope, constInst);
+				// Create the IG from the initial set of instructions
 				InterferenceGraph ig = new InterferenceGraph(PLStaticSingleAssignment.instructions);
 				
 				// Register allocation on each block
@@ -282,7 +279,7 @@ public class PLC
 					}
 					
 					DLXBasicBlock db = dlxGen.generateBlockTree(null, block, new HashSet<Integer>());
-					dlxGen.generateBlockTreeInstructons(db, block, func, isMain, 0, new HashSet<Integer>());
+					dlxGen.generateBlockTreeInstructons(db, block, func, isMain, new HashSet<Integer>());
 					ArrayList<DLXInstruction> dlxInstructions = dlxGen.convertToStraightLineCode(db, func, -1, new HashSet<Integer>());
 					dlxGen.fixup(dlxInstructions);
 					program.add(dlxInstructions);
