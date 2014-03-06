@@ -5,7 +5,12 @@ array[10] output;
 
 function getIndex();
 {
-  return 9
+  return (call InputNum())
+};
+
+function getValue();
+{
+  return (call InputNum())
 };
 
 procedure populate();
@@ -17,21 +22,35 @@ var a, i;
 };
 
 {
-  call populate();
-  let index <- call getIndex();
-  let output[index] <- 100;
-  call OutputNum(index);
-  call OutputNum(output[index]);
+  // fill in the array
+  let output[call getIndex()] <- call getValue();
+  call OutputNum(output[call getIndex()]);
+  call OutputNewLine();
+  call OutputNewLine();
+
+  // Populate
+  //call populate();
+
   let index <- 0;
   while index < 10 do
     call OutputNum(index);
     call OutputNum(output[index]);
     call OutputNewLine();
     let index <- index + 1
-  od;
-  call OutputNewLine();
-  call OutputNewLine();
-  call OutputNum(output[9])
+  od
+}.
+
+// enveloping phis inside while loops
+main
+var a, b, c;
+{
+  let a <- 1;
+  let b <- 2;
+  let c <- 3;
+  while (a + b) < c do
+    let b <- c + 1;
+    let a <- a + b + c + 1
+  od
 }.
   
   call OutputNewLine();

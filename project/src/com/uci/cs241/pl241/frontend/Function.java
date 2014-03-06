@@ -13,6 +13,7 @@ public class Function
 	public ArrayList<PLIRInstruction> vars;
 	public ArrayList<String> scope;
 	public HashMap<PLIRInstruction, PLIRInstruction> modifiedGlobals;
+	public HashMap<String, Integer> arraySizes;
 	public String name;
 	
 	public Function(String name, ArrayList<PLIRInstruction> parameters, boolean hasReturn)
@@ -23,6 +24,7 @@ public class Function
 		this.vars = new ArrayList<PLIRInstruction>();
 		this.modifiedGlobals = new HashMap<PLIRInstruction, PLIRInstruction>();
 		this.scope = new ArrayList<String>();
+		this.arraySizes = new HashMap<String, Integer>();
 		for (PLIRInstruction s : parameters)
 		{
 			this.params.add(s);
@@ -37,6 +39,7 @@ public class Function
 		this.vars = new ArrayList<PLIRInstruction>();
 		this.modifiedGlobals = new HashMap<PLIRInstruction, PLIRInstruction>();
 		this.scope = new ArrayList<String>();
+		this.arraySizes = new HashMap<String, Integer>();
 		for (PLIRInstruction s : parameters)
 		{
 			this.params.add(s);

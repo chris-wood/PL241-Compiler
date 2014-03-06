@@ -282,10 +282,11 @@ public class PLParser
 		if (parsingFunctionBody)
 		{	
 			PLIRInstruction inst = null;
+			
 			// Ensure this parameter is specified in the body of the function, else syntax error
 			Function func = scope.functions.get(funcName);
 			
-			if (this.parseVariableDeclaration)
+			if (parseVariableDeclaration)
 			{
 				// Initialize the variable to 0
 				inst = new PLIRInstruction(scope);
@@ -1041,6 +1042,7 @@ public class PLParser
 	private PLIRBasicBlock parse_relation(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRBasicBlock left = parse_expression(in);
+		PLIRInstruction leftInst = left.getLastInst();
 		if (PLToken.isRelationalToken(toksym) == false)
 		{
 			SyntaxError("Invalid relational character");
@@ -1055,70 +1057,10 @@ public class PLParser
 		// The BB to store the result
 		PLIRBasicBlock relation = new PLIRBasicBlock();
 		
-		// Parse the right-hand part of the relation expression
-		PLIRBasicBlock right = parse_expression(in);
-		
 		// Build the comparison instruction with the memorized condition
-		PLIRInstruction leftInst = left.instructions.get(left.instructions.size() - 1);
+		relation = PLIRBasicBlock.merge(relation, left);
 		if (leftInst.isArray)
 		{
-//			PLIRInstruction lastAddress = null;
-//			for (int i = 0; i < left.arrayOperands.size(); i++)
-//			{
-//				PLIRInstruction operand = left.arrayOperands.get(i);
-//				
-//				// Need to load from memory - insert the load
-//				PLIRInstruction inst1 = new PLIRInstruction(scope);
-//				inst1.opcode = InstructionType.MUL;
-//				inst1.op1type = OperandType.CONST;
-//				inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE!
-//				inst1.op2type = operand.type;
-//				inst1.op2 = operand;
-//				if (inst1.op2type == OperandType.CONST)
-//				{
-//					inst1.i2 = inst1.op2.tempVal;
-//				}
-//				inst1.forceGenerate(scope);
-//				relation.addInstruction(inst1);
-//				
-//				PLIRInstruction inst2 = new PLIRInstruction(scope);
-//				inst2.opcode = InstructionType.ADD;
-//				inst2.op1type = OperandType.FP;
-////				inst2.op2type = OperandType.BASEADDRESS;
-////				inst2.op2address = leftInst.origIdent + "_baseaddr";
-//				if (i == 0)
-//				{
-//					inst2.op2type = OperandType.BASEADDRESS;
-//					inst2.op2address = leftInst.origIdent + "_baseaddr";
-//				}
-//				else
-//				{
-//					inst2.op2type = OperandType.ADDRESS;
-//					inst2.op2 = lastAddress;
-//				}
-//				inst2.forceGenerate(scope);
-//				relation.addInstruction(inst2);
-//				
-//				PLIRInstruction inst3 = new PLIRInstruction(scope);
-//				inst3.opcode = InstructionType.ADDA;
-//				inst3.op1type = OperandType.INST;
-//				inst3.op1 = inst1;
-//				inst3.op2type = OperandType.INST;
-//				inst3.op2 = inst2;
-//				inst3.forceGenerate(scope);
-//				relation.addInstruction(inst3);
-//				
-//				
-//				PLIRInstruction load = new PLIRInstruction(scope);
-//				load.opcode = InstructionType.LOAD;
-//				load.op1type = OperandType.ADDRESS;
-//				load.op1 = inst3;
-//				load.forceGenerate(scope);
-//				relation.addInstruction(load);
-//				
-//				leftInst = load;
-//				lastAddress = load;
-//			}
 			
 			ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(left);
 			for (PLIRInstruction inst : offsetInstructions)
@@ -1137,65 +1079,14 @@ public class PLParser
 			relation.addInstruction(load);
 		}
 		
-		PLIRInstruction rightInst = right.instructions.get(right.instructions.size() - 1);
+		// Parse the right-hand part of the relation expression
+		PLIRBasicBlock right = parse_expression(in);
+		PLIRInstruction rightInst = right.getLastInst();
+		
+		// Add the result of all relations
+		relation = PLIRBasicBlock.merge(relation, right);
 		if (rightInst.isArray)
 		{
-//			PLIRInstruction lastAddress = null;
-//			for (int i = 0; i < right.arrayOperands.size(); i++)
-//			{
-//				PLIRInstruction operand = right.arrayOperands.get(i);
-//
-//				// Need to load from memory - insert the load
-//				PLIRInstruction inst1 = new PLIRInstruction(scope);
-//				inst1.opcode = InstructionType.MUL;
-//				inst1.op1type = OperandType.CONST;
-//				inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE!
-//				inst1.op2type = operand.type;
-//				inst1.op2 = operand;
-//				if (inst1.op2type == OperandType.CONST)
-//				{
-//					inst1.i2 = inst1.op2.tempVal;
-//				}
-//				inst1.forceGenerate(scope);
-//				relation.addInstruction(inst1);
-//				
-//				PLIRInstruction inst2 = new PLIRInstruction(scope);
-//				inst2.opcode = InstructionType.ADD;
-//				inst2.op1type = OperandType.FP;
-////				inst2.op2type = OperandType.BASEADDRESS;
-////				inst2.op2address = rightInst.origIdent + "_baseaddr";
-//				if (i == 0)
-//				{
-//					inst2.op2type = OperandType.BASEADDRESS;
-//					inst2.op2address = rightInst.origIdent + "_baseaddr";
-//				}
-//				else
-//				{
-//					inst2.op2type = OperandType.ADDRESS;
-//					inst2.op2 = lastAddress;
-//				}
-//				inst2.forceGenerate(scope);
-//				relation.addInstruction(inst2);
-//				
-//				PLIRInstruction inst3 = new PLIRInstruction(scope);
-//				inst3.opcode = InstructionType.ADDA;
-//				inst3.op1type = OperandType.INST;
-//				inst3.op1 = inst1;
-//				inst3.op2type = OperandType.INST;
-//				inst3.op2 = inst2;
-//				inst3.forceGenerate(scope);
-//				relation.addInstruction(inst3);
-//				
-//				PLIRInstruction load = new PLIRInstruction(scope);
-//				load.opcode = InstructionType.LOAD;
-//				load.op1type = OperandType.ADDRESS;
-//				load.op1 = inst3;
-//				load.forceGenerate(scope);
-//				relation.addInstruction(load);
-//				
-//				rightInst = load;
-//				lastAddress = load;
-//			}
 			
 			ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(right);
 			for (PLIRInstruction inst : offsetInstructions)
@@ -1273,6 +1164,7 @@ public class PLParser
 				{
 					advance(in);
 					result = parse_expression(in);
+					result = PLIRBasicBlock.merge(desigBlock, result);
 					
 					// Check if the result is an array, in which case we need to load it from memory
 					PLIRInstruction storeInst = result.getLastInst();
@@ -1537,6 +1429,10 @@ public class PLParser
 					if ((exprInst != null && exprInst.isArray && exprInst.opcode != InstructionType.LOAD) || callExprBlock.arrayOperands != null)
 					{	
 						ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(callExprBlock);
+						for (PLIRInstruction inst : callExprBlock.instructions)
+						{
+							result.addInstruction(inst);
+						}
 						for (PLIRInstruction inst : offsetInstructions)
 						{
 							result.addInstruction(inst);
@@ -2614,6 +2510,8 @@ public class PLParser
 			if (toksym != PLToken.semiToken)
 			{
 				result = parse_formalParam(in);
+				
+				// TODO: need to add arrays to the function so that space can be allocated on the stack later...
 			}
 			else
 			{
