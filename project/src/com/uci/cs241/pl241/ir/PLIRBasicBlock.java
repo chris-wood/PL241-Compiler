@@ -297,6 +297,8 @@ public class PLIRBasicBlock
 		int p1id = phi.op1 != null ? phi.op1.id : -1;
 		int p2id = phi.op2 != null ? phi.op2.id : -1;
 		
+		scopeMap.put(var, phi);
+		
 		// Propagate through the main instructions in this block's body
 		for (PLIRInstruction bInst : instructions)
 		{
@@ -312,7 +314,7 @@ public class PLIRBasicBlock
 			
 			if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
 			{
-				if (!(replaced && bInst.opcode == InstructionType.PHI))
+//				if (!(replaced && bInst.opcode == InstructionType.PHI))
 				{
 					bInst.replaceLeftOperand(scopeMap.get(var));
 					replaced = true;
@@ -320,7 +322,7 @@ public class PLIRBasicBlock
 			}
 			if (bInst.op1 != null && bInst.op1.equals(findPhi))
 			{
-				if (!(replaced && bInst.opcode == InstructionType.PHI))
+//				if (!(replaced && bInst.opcode == InstructionType.PHI))
 				{
 					bInst.replaceLeftOperand(scopeMap.get(var));
 					replaced = true;
@@ -334,7 +336,7 @@ public class PLIRBasicBlock
 			
 			if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
 			{
-				if (!(replaced && bInst.opcode == InstructionType.PHI))
+//				if (!(replaced && bInst.opcode == InstructionType.PHI))
 				{
 					bInst.replaceRightOperand(scopeMap.get(var));
 					replaced = true;
@@ -342,7 +344,7 @@ public class PLIRBasicBlock
 			}
 			if (bInst.op2 != null && bInst.op2.equals(findPhi))
 			{
-				if (!(replaced && bInst.opcode == InstructionType.PHI))
+//				if (!(replaced && bInst.opcode == InstructionType.PHI))
 				{
 					bInst.replaceRightOperand(scopeMap.get(var));
 					replaced = true;
@@ -366,6 +368,12 @@ public class PLIRBasicBlock
 			else if (replaced && bInst.origIdent.equals(phi.origIdent) && bInst.kind != ResultKind.CONST)
 			{
 				System.out.println("now replacing " + phi.origIdent + " with : " + bInst.toString());
+				scopeMap.put(var, bInst);
+			}
+			
+//			// If there is an assignment that matches this PHI variable, use its value...
+			if (bInst.id > 0 && bInst.generated && bInst.origIdent.equals(var))
+			{
 				scopeMap.put(var, bInst);
 			}
 		}

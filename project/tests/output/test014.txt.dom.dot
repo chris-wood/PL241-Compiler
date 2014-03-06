@@ -1,0 +1,7 @@
+digraph dom {
+BB4[shape = box, label = "BB(4)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := write #1\n" + "4 := write (2)\n" + "5 := wln\n" + "6 := phi (2) (10)\n" + "7 := phi #1 (11)\n" + "8 := cmp (7) (6)\n" + "9 := beq (8) #7\n"];
+BB17[shape = box, label = "BB(17)\n" + "10 := add (7) #1\n" + "11 := mul (7) #2\n" + "12 := write (11)\n" + "13 := write (6)\n" + "14 := wln\n" + "15 := beq #0 #-9\n"];
+BB30[shape = box, label = "BB(30)\n" + "16 := write (7)\n" + "17 := wln\n" + "18 := end\n"];
+BB4 -> BB17;
+BB4 -> BB30;
+}

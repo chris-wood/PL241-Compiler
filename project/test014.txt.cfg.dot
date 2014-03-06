@@ -1,0 +1,8 @@
+digraph cfg {
+BB4[shape = box, label = "BB(4)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := phi (2) (7)\n" + "4 := phi #1 (8)\n" + "5 := cmp (4) (3)\n" + "6 := beq (5) #4\n"];
+BB10[shape = box, label = "BB(10)\n" + "7 := add (4) #1\n" + "8 := mul (4) #2\n" + "9 := beq #0 #-6\n"];
+BB16[shape = box, label = "BB(16)\n" + "10 := write (4)\n" + "11 := wln\n" + "12 := end\n"];
+BB4 -> BB10;
+BB4 -> BB16;
+BB10 -> BB4;
+}

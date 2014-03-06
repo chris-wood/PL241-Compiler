@@ -1,0 +1,19 @@
+1 := global #0
+2 := global #0
+3 := write #1
+4 := write (2)
+5 := wln
+6 := phi (2) (10)
+7 := phi #1 (11)
+8 := cmp (7) (6)
+9 := beq (8) #7
+10 := add (7) #1
+11 := mul (7) #2
+12 := write (11)
+13 := write (6)
+14 := wln
+15 := beq #0 #-9
+16 := write (7)
+17 := wln
+18 := end
+

@@ -187,6 +187,14 @@ public class DLXGenerator
 						{
 							inst.rc++;
 						}
+//						else if (inst.ssaInst.jumpInst.op1.opcode == PLIRInstruction.InstructionType.PHI)
+//						{
+//							String name = inst.ssaInst.jumpInst.op1.op1name;
+//							if (globalRefMap.containsKey(name))
+//							{
+//								inst.rc++;
+//							}
+//						}
 					}
 					if (inst.ssaInst.jumpInst.op2 != null)
 					{
@@ -198,6 +206,14 @@ public class DLXGenerator
 						{
 							inst.rc++;
 						}
+//						else if (inst.ssaInst.jumpInst.op2.opcode == PLIRInstruction.InstructionType.PHI)
+//						{
+//							String name = inst.ssaInst.jumpInst.op2.op1name;
+//							if (globalRefMap.containsKey(name))
+//							{
+//								inst.rc++;
+//							}
+//						}
 					}
 				}
 				else // positive offset
@@ -636,7 +652,29 @@ public class DLXGenerator
 
 	public boolean checkForGlobalLoad(DLXBasicBlock edb, PLIRInstruction usingInst, int refId, int regNum, int offset, boolean fixOffset)
 	{
-		if (globalOffset.containsKey(refId))
+		boolean loaded = false;
+//		if (usingInst.opcode == PLIRInstruction.InstructionType.PHI)
+//		{
+//			String name = usingInst.op1name;
+//			if (globalRefMap.containsKey(name))
+//			{
+//				DLXInstruction loadInst = new DLXInstruction();
+//				loadInst.opcode = InstructionType.LDW;
+//				loadInst.format = formatMap.get(InstructionType.LDW);
+//				loadInst.ra = regNum; // save contents of ssaInst.regNum
+//				loadInst.rb = GLOBAL_ADDRESS;
+//				
+//				loadInst.rc = -4 * (globalOffset.get(globalRefMap.get(name)) + 1); // 
+//
+//				if (fixOffset)
+//				{
+//					fixOffset(offset, loadInst);
+//				}
+//				appendInstructionToBlock(edb, loadInst);
+//				loaded = true;
+//			}
+//		}
+		if (!loaded && globalOffset.containsKey(refId))
 		{
 			DLXInstruction loadInst = new DLXInstruction();
 			loadInst.opcode = InstructionType.LDW;
@@ -653,15 +691,15 @@ public class DLXGenerator
 			appendInstructionToBlock(edb, loadInst);
 			return true;
 		}
-		else if (usingInst.isGlobalVariable)
+		else if (!loaded && usingInst.isGlobalVariable)
 		{
 			DLXInstruction loadInst = new DLXInstruction();
 			loadInst.opcode = InstructionType.LDW;
 			loadInst.format = formatMap.get(InstructionType.LDW);
 			loadInst.ra = regNum; // save contents of ssaInst.regNum
 			loadInst.rb = GLOBAL_ADDRESS;
-
-			loadInst.rc = -4 * (globalOffset.get(globalRefMap.get(usingInst.origIdent)) + 1); // word size
+			
+			loadInst.rc = -4 * (globalOffset.get(globalRefMap.get(usingInst.origIdent)) + 1); // 
 
 			if (fixOffset)
 			{
@@ -675,8 +713,31 @@ public class DLXGenerator
 
 	public boolean checkForGlobalStore(DLXBasicBlock edb, PLIRInstruction usingInst, boolean appendToStart)
 	{
-		// TODO: skip if arrays
-		if (globalOffset.containsKey(usingInst.id))
+		boolean loaded = false;
+//		if (usingInst.opcode == PLIRInstruction.InstructionType.PHI)
+//		{
+//			String name = usingInst.op1name;
+//			if (globalRefMap.containsKey(name))
+//			{
+//				DLXInstruction storeInst = new DLXInstruction();
+//				storeInst.opcode = InstructionType.STW;
+//				storeInst.format = formatMap.get(InstructionType.STW);
+//				storeInst.ra = usingInst.regNum; // save contents of ssaInst.regNum
+//				storeInst.rb = GLOBAL_ADDRESS;
+//				storeInst.rc = -4 * (globalOffset.get(globalRefMap.get(name)) + 1); // 
+//
+//				if (appendToStart)
+//				{
+//					appendInstructionToBlock(edb, storeInst);
+//				}
+//				else
+//				{
+//					appendInstructionToEndBlock(edb, storeInst);
+//				}
+//				loaded = true;
+//			}
+//		}
+		if (!loaded && globalOffset.containsKey(usingInst.id))
 		{
 			DLXInstruction storeInst = new DLXInstruction();
 			storeInst.opcode = InstructionType.STW;
@@ -698,7 +759,7 @@ public class DLXGenerator
 			// success
 			return true;
 		}
-		else if (usingInst.isGlobalVariable || this.globalRefMap.containsKey(usingInst.origIdent))
+		else if (!loaded && (usingInst.isGlobalVariable || this.globalRefMap.containsKey(usingInst.origIdent)))
 		{
 			DLXInstruction storeInst = new DLXInstruction();
 			storeInst.opcode = InstructionType.STW;
