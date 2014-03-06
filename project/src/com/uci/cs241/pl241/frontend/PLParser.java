@@ -459,8 +459,8 @@ public class PLParser
 				// Memorize the ident we saw here
 				if (inst != null)
 				{
-//					inst.wasIdent = true;
-//					inst.origIdent = sym;
+					inst.wasIdent = true;
+					inst.origIdent = sym;
 				}
 				
 				// Eat the symbol, create the block with the single instruction, add the ident to the list
@@ -1042,6 +1042,12 @@ public class PLParser
 	private PLIRBasicBlock parse_relation(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRBasicBlock left = parse_expression(in);
+		for (PLIRInstruction li : left.instructions)
+		{
+			System.out.println(li.origIdent);
+			li.overrideGenerate = true;
+			li.forceGenerate(scope);
+		}
 		PLIRInstruction leftInst = left.getLastInst();
 		if (PLToken.isRelationalToken(toksym) == false)
 		{
@@ -1082,6 +1088,12 @@ public class PLParser
 		// Parse the right-hand part of the relation expression
 		PLIRBasicBlock right = parse_expression(in);
 		PLIRInstruction rightInst = right.getLastInst();
+		for (PLIRInstruction ri : right.instructions)
+		{
+			System.out.println(ri.origIdent);
+			ri.overrideGenerate = true;
+			ri.forceGenerate(scope);
+		}
 		
 		// Add the result of all relations
 		relation = PLIRBasicBlock.merge(relation, right);
@@ -1111,8 +1123,8 @@ public class PLParser
 		inst.fixupLocation = 0;
 		
 		// Create the relation block containing the instruction
-		if (leftInst.type != OperandType.CONST) relation.addInstruction(leftInst);
-		if (rightInst.type != OperandType.CONST) relation.addInstruction(rightInst);
+//		if (leftInst.type != OperandType.CONST) relation.addInstruction(leftInst);
+//		if (rightInst.type != OperandType.CONST) relation.addInstruction(rightInst);
 		relation.addInstruction(inst);
 		
 		// Save whatever values are used in these expressions
@@ -1210,7 +1222,48 @@ public class PLParser
 					if (desigBlock.arrayOperands == null)
 					{
 						// The last instruction added to the BB is the one that holds the value for this assignment
-						//storeInst.origIdent = varName;
+//						storeInst.origIdent = varName;
+						
+						for (PLIRInstruction strInst : result.instructions)
+						{
+							if (strInst.equals(storeInst)) continue;
+							
+							System.out.println(strInst.origIdent);
+							strInst.tempPosition = PLStaticSingleAssignment.globalSSAIndex;
+							
+							// If we aren't deferring generation because of a potential PHI usage, just replace with the current value in scope
+							if ((strInst.op1 != null && deferredPhiIdents.contains(strInst.op1.origIdent)) || 
+									(strInst.op2 != null && deferredPhiIdents.contains(strInst.op2.origIdent)))
+							{
+								strInst.kind = ResultKind.VAR;
+								strInst.overrideGenerate = true;
+								strInst.forceGenerate(scope);
+							}
+							else if (deferredPhiIdents.contains(varName)) // else, force the current instruction to be generated so it can be used in a phi later
+							{
+								strInst.kind = ResultKind.VAR;
+								strInst.overrideGenerate = true;
+								strInst.forceGenerate(scope);
+							}
+							else if (globalFunctionParsing && globalVariables.containsKey(varName))
+							{
+								strInst.kind = ResultKind.VAR;
+								strInst.overrideGenerate = true;
+								strInst.forceGenerate(scope);
+							}
+						}
+						
+//						// Scope gets the last result, storeInst
+//						scope.updateSymbol(varName, storeInst); // (SSA ID) := expr
+//						duChain.put(storeInst, new HashSet<PLIRInstruction>());
+//						
+//						result.addModifiedValue(varName, storeInst);
+//						
+//						if (markToSave)
+//						{
+//							scope.functions.get(funcName).addModifiedGlobal(globalVariables.get(desigBlock.getLastInst().origIdent), storeInst);
+//						}
+//							
 						storeInst.tempPosition = PLStaticSingleAssignment.globalSSAIndex;
 						
 						// If we aren't deferring generation because of a potential PHI usage, just replace with the current value in scope
@@ -1236,6 +1289,7 @@ public class PLParser
 						
 						scope.updateSymbol(varName, storeInst); // (SSA ID) := expr
 						duChain.put(storeInst, new HashSet<PLIRInstruction>());
+						
 						result.addModifiedValue(varName, storeInst);
 						
 						if (markToSave)

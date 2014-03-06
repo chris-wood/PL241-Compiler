@@ -1,3 +1,21 @@
+// enveloping phis inside while loops
+main
+var a, b, c;
+{
+  let a <- 1;
+  let b <- 2;
+  let c <- 3;
+  while (a + b) <= c do
+    let b <- c + 1;
+    let a <- a + b + c + 1
+  od;
+
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
+  call OutputNewLine()
+}.
+
 // dynamic array test
 main 
 var index;
@@ -40,19 +58,6 @@ var a, i;
   od
 }.
 
-// enveloping phis inside while loops
-main
-var a, b, c;
-{
-  let a <- 1;
-  let b <- 2;
-  let c <- 3;
-  while (a + b) < c do
-    let b <- c + 1;
-    let a <- a + b + c + 1
-  od
-}.
-  
   call OutputNewLine();
   call OutputNewLine();
   while i < 10 do

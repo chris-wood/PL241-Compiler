@@ -746,7 +746,7 @@ public class PLIRInstruction
 					s = "bgt";
 					break;
 				case PHI:
-					s = "phi";
+					s = "phi(" + origIdent + ")";
 					break;
 				case FUNC:
 					s = "func";
