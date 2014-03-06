@@ -3,6 +3,11 @@ main
 var index;
 array[10] output;
 
+function getIndex();
+{
+  return 9
+};
+
 procedure populate();
 var a, i;
 {
@@ -13,13 +18,20 @@ var a, i;
 
 {
   call populate();
+  let index <- call getIndex();
+  let output[index] <- 100;
+  call OutputNum(index);
+  call OutputNum(output[index]);
   let index <- 0;
   while index < 10 do
     call OutputNum(index);
     call OutputNum(output[index]);
     call OutputNewLine();
     let index <- index + 1
-  od
+  od;
+  call OutputNewLine();
+  call OutputNewLine();
+  call OutputNum(output[9])
 }.
   
   call OutputNewLine();

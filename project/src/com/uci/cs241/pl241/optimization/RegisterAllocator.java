@@ -142,11 +142,6 @@ public class RegisterAllocator
 					{
 //						if (inst.refInst != null) continue;
 						
-						if (inst.opcode == InstructionType.MUL)
-						{
-							System.err.println("asd'");
-						}
-						
 						while (inst.refInst != null)
 						{
 							inst = inst.refInst;

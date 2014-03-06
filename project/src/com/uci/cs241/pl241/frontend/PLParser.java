@@ -528,7 +528,8 @@ public class PLParser
 			advance(in);
 			debug(sym);
 			
-			result.arrayOperands.add(parse_expression(in).getLastInst());
+			result = PLIRBasicBlock.merge(result, parse_expression(in));
+			result.arrayOperands.add(result.getLastInst());
 			debug(sym);
 			
 			if (toksym != PLToken.closeBracketToken)
@@ -582,7 +583,7 @@ public class PLParser
 			{
 				// pass, this is a special case
 			}
-			else if (factor.hasReturn == false || funcFlagMap.get(funcName) == false)
+			else if (funcFlagMap.get(funcName) == false)
 			{
 				SyntaxError("Function that was invoked had no return value!");
 			}

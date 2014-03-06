@@ -61,6 +61,8 @@ public class DLXGenerator
 		this.globalOffset = globalOffset;
 		this.globalArrayOffset = globalArrayOffset;
 		this.globalRefMap = globalRefMap;
+		this.constants = constants;
+		this.arrays = arrays;
 
 		opcodeMap.put(InstructionType.ADD, 0);
 		formatMap.put(InstructionType.ADD, InstructionFormat.F2);
@@ -862,26 +864,46 @@ public class DLXGenerator
 					case ADD:
 						if (leftConst && rightConst)
 						{
-							// ra = 0, i1
-							DLXInstruction preInst = new DLXInstruction();
-							preInst.opcode = InstructionType.ADDI;
-							preInst.format = formatMap.get(InstructionType.ADDI);
-							preInst.ra = ssaInst.regNum;
-							preInst.rb = 0;
-							preInst.rc = ssaInst.i1;
+							if (ssaInst.i1 != 0)
+							{
+								// ra = 0, i1
+								DLXInstruction preInst = new DLXInstruction();
+								preInst.opcode = InstructionType.ADDI;
+								preInst.format = formatMap.get(InstructionType.ADDI);
+//								preInst.ra = ssaInst.regNum;
+								preInst.ra = constants.get(ssaInst.i1).regNum;
+								preInst.rb = 0;
+								preInst.rc = ssaInst.i1;
 
-							// ra = ra, i2 --> ra = i1 + i2
-							newInst.opcode = InstructionType.ADDI;
-							newInst.format = formatMap.get(InstructionType.ADDI);
-							newInst.ra = ssaInst.regNum;
-							newInst.rb = ssaInst.regNum;
-							newInst.rc = ssaInst.i2;
+								// ra = ra, i2 --> ra = i1 + i2
+								newInst.opcode = InstructionType.ADDI;
+								newInst.format = formatMap.get(InstructionType.ADDI);
+								newInst.ra = ssaInst.regNum;
+//								newInst.rb = ssaInst.regNum;
+								newInst.rb = constants.get(ssaInst.i1).regNum;
+								newInst.rc = ssaInst.i2;
 
-							fixOffset(ssaInst.id, preInst);
-							appendInstructionToBlock(edb, preInst);
-							appendInstructionToBlock(edb, newInst);
+								fixOffset(ssaInst.id, preInst);
+								appendInstructionToBlock(edb, preInst);
+								appendInstructionToBlock(edb, newInst);
 
-							checkForGlobalStore(edb, ssaInst, true);
+								checkForGlobalStore(edb, ssaInst, true);
+							}
+							else
+							{
+								// ra = ra, i2 --> ra = i1 + i2
+								newInst.opcode = InstructionType.ADDI;
+								newInst.format = formatMap.get(InstructionType.ADDI);
+								newInst.ra = ssaInst.regNum;
+//								newInst.rb = ssaInst.regNum;
+								newInst.rb = 0;
+								newInst.rc = ssaInst.i2;
+
+								fixOffset(ssaInst.id, newInst);
+								appendInstructionToBlock(edb, newInst);
+
+								checkForGlobalStore(edb, ssaInst, true);
+							}
 						}
 						else if (leftConst)
 						{
@@ -1876,13 +1898,13 @@ public class DLXGenerator
 
 					case STORE:
 						boolean addedToOffsetMap = false;
-						if (ssaInst.op2type == OperandType.CONST)
+						if (ssaInst.op2type == OperandType.CONST && ssaInst.i2 != 0)
 						{
 							// ra = 0, i1
 							DLXInstruction preInst = new DLXInstruction();
 							preInst.opcode = InstructionType.ADDI;
 							preInst.format = formatMap.get(InstructionType.ADDI);
-							preInst.ra = ssaInst.regNum;
+							preInst.ra = constants.get(ssaInst.i2).regNum;
 							preInst.rb = 0;
 							preInst.rc = ssaInst.i2;
 							fixOffset(ssaInst.id, preInst);
@@ -1893,9 +1915,9 @@ public class DLXGenerator
 						DLXInstruction stwInst = new DLXInstruction();
 						stwInst.opcode = InstructionType.STX;
 						stwInst.format = formatMap.get(InstructionType.STX);
-						if (ssaInst.op2type == OperandType.CONST)
+						if (ssaInst.op2type == OperandType.CONST && ssaInst.i2 != 0)
 						{
-							stwInst.ra = ssaInst.regNum;
+							stwInst.ra = constants.get(ssaInst.i2).regNum;
 						}
 						else
 						{

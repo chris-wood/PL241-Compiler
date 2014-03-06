@@ -1,8 +1,9 @@
 digraph dom {
-BB4[shape = box, label = "BB(4 [ populate ])\n" + "3 := add #0 #0\n" + "4 := (3)\n" + "5 := read\n" + "6 := read\n" + "7 := mul #4 (6)\n" + "8 := add FP output_baseaddr\n" + "9 := adda (7) (8)\n" + "10 := store (9) (5)\n" + "11 := return\n"];
-BB14[shape = box, label = "BB(14)\n" + "1 := global #0\n" + "2 := global #0\n" + "12 := proc populate\n" + "13 := phi #0 (23)\n" + "14 := cmp (13) #10\n" + "15 := bge (14) #10\n"];
-BB22[shape = box, label = "BB(22)\n" + "16 := write (13)\n" + "17 := mul #4 (13)\n" + "18 := add FP output_baseaddr\n" + "19 := adda (17) (18)\n" + "20 := load (19)\n" + "21 := write (20)\n" + "22 := wln\n" + "23 := add (13) #1\n" + "24 := beq #0 #-11\n"];
-BB32[shape = box, label = "BB(32)\n" + "25 := end\n"];
-BB14 -> BB22;
-BB14 -> BB32;
+BB4[shape = box, label = "BB(4 [ getIndex ])\n" + "3 := add #0 #9\n" + "4 := return (3)\n"];
+BB7[shape = box, label = "BB(7 [ populate ])\n" + "5 := add #0 #0\n" + "6 := (5)\n" + "7 := read\n" + "8 := read\n" + "9 := mul #4 (8)\n" + "10 := add FP output_baseaddr\n" + "11 := adda (9) (10)\n" + "12 := store (11) (7)\n" + "13 := return\n"];
+BB17[shape = box, label = "BB(17)\n" + "1 := global #0\n" + "2 := global #0\n" + "14 := proc populate\n" + "15 := func getIndex\n" + "16 := mul #4 (15)\n" + "17 := add FP output_baseaddr\n" + "18 := adda (16) (17)\n" + "19 := store (18) #100\n" + "20 := write (15)\n" + "21 := (16)\n" + "22 := add FP output_baseaddr\n" + "23 := adda (16) (22)\n" + "24 := load (23)\n" + "25 := write (24)\n" + "26 := phi #0 (36)\n" + "27 := cmp (26) #10\n" + "28 := bge (27) #10\n"];
+BB37[shape = box, label = "BB(37)\n" + "29 := write (26)\n" + "30 := (16)\n" + "31 := add FP output_baseaddr\n" + "32 := adda (16) (31)\n" + "33 := load (32)\n" + "34 := write (33)\n" + "35 := wln\n" + "36 := add (26) #1\n" + "37 := beq #0 #-11\n"];
+BB47[shape = box, label = "BB(47)\n" + "38 := wln\n" + "39 := wln\n" + "40 := mul #4 #9\n" + "41 := add FP output_baseaddr\n" + "42 := adda (40) (41)\n" + "43 := load (42)\n" + "44 := write (43)\n" + "45 := end\n"];
+BB17 -> BB37;
+BB17 -> BB47;
 }
