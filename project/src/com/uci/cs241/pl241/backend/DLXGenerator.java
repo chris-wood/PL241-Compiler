@@ -211,7 +211,7 @@ public class DLXGenerator
 					{
 						if (inst.ssaInst.branchDirection == 1)
 						{
-							if (leftOffsetMap.containsKey(refInst.id))
+							if (leftOffsetMap.containsKey(refInst.id) && false)
 							{
 								offset = leftOffsetMap.get(refInst.id).pc;
 							}
@@ -222,16 +222,45 @@ public class DLXGenerator
 								{
 									offset = inst.block.left.instructions.get(0).pc;
 								}
-								else
+								else if (inst.block.left.endInstructions.size() > 0)
 								{
 									offset = inst.block.left.endInstructions.get(0).pc;
+								}
+								else
+								{
+									ArrayList<DLXBasicBlock> queue = new ArrayList<DLXBasicBlock>();
+									queue.add(inst.block.left);
+									while (queue.isEmpty() == false)
+									{
+										DLXBasicBlock curr = queue.get(0);
+										queue.remove(0);
+										while (curr == null)
+										{
+											curr = queue.get(0);
+											queue.remove(0);
+										}
+										if (curr.instructions.size() > 0)
+										{
+											offset = curr.instructions.get(0).pc;
+										}
+										else if (curr.endInstructions.size() > 0)
+										{
+											offset = curr.endInstructions.get(0).pc;
+										}
+										else
+										{
+											queue.add(curr.left);
+											queue.add(curr.right);
+										}
+									}
+//									offset = inst.block.left.left.endInstructions.get(0).pc;
 								}
 							}
 //							offset = rightOffsetMap.get(refInst.id).pc;
 						}
 						else
 						{
-							if (rightOffsetMap.containsKey(refInst.id))
+							if (rightOffsetMap.containsKey(refInst.id) && false)
 							{
 								offset = rightOffsetMap.get(refInst.id).pc;
 							}
@@ -241,9 +270,38 @@ public class DLXGenerator
 								{
 									offset = inst.block.right.instructions.get(0).pc;
 								}
-								else
+								else if (inst.block.right.endInstructions.size() > 0)
 								{
 									offset = inst.block.right.endInstructions.get(0).pc;
+								}
+								else // DFS to find start of next non-empty block
+								{
+									ArrayList<DLXBasicBlock> queue = new ArrayList<DLXBasicBlock>();
+									queue.add(inst.block.right);
+									while (queue.isEmpty() == false)
+									{
+										DLXBasicBlock curr = queue.get(0);
+										queue.remove(0);
+										while (curr == null)
+										{
+											curr = queue.get(0);
+											queue.remove(0);
+										}
+										if (curr.instructions.size() > 0)
+										{
+											offset = curr.instructions.get(0).pc;
+										}
+										else if (curr.endInstructions.size() > 0)
+										{
+											offset = curr.endInstructions.get(0).pc;
+										}
+										else
+										{
+											queue.add(curr.left);
+											queue.add(curr.right);
+										}
+									}
+//									offset = inst.block.right.left.instructions.get(0).pc;
 								}
 							}
 //							offset = leftOffsetMap.get(refInst.id).pc;
@@ -1735,12 +1793,18 @@ public class DLXGenerator
 							seen.add(edb.id);
 							leftStack.add(edb.left);
 							DLXBasicBlock curr = null;
+							DLXBasicBlock prev = null;
 							while (leftStack.isEmpty() == false)
 							{
 								DLXBasicBlock tmp = leftStack.get(leftStack.size() - 1);
 								leftStack.remove(leftStack.size() - 1);
+								if (tmp.id == edb.id)
+								{
+									break;
+								}
 								if (seen.contains(tmp.id) == false)
 								{
+									prev = curr;
 									curr = tmp;
 									seen.add(tmp.id);
 									if (curr.right != null)

@@ -293,7 +293,7 @@ public class PLC
 					ArrayList<DLXInstruction> dlxInstructions = dlxGen.convertToStraightLineCode(db, func, new ArrayList<Integer>(), visited);
 					System.out.println(visited);
 					
-					if (!isMain)
+					if (!isMain && !func.hasReturn)
 					{
 						DLXInstruction retInst = new DLXInstruction();
 						retInst.opcode = InstructionType.RET;
