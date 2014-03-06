@@ -1,0 +1,16 @@
+graph ig {
+    node [shape = circle];
+    N1R2;
+    N2R2;
+    N3R2;
+    N4R1;
+    N5R1;
+    N6R1;
+    N7R1;
+    N1R2 -- N6R1;
+    N1R2 -- N7R1;
+    N2R2 -- N6R1;
+    N2R2 -- N7R1;
+    N3R2 -- N6R1;
+}
+

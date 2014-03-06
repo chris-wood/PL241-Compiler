@@ -40,6 +40,8 @@ public class DLXGenerator
 
 	// Global variable address table
 	public HashMap<String, Integer> functionAddressTable = new HashMap<String, Integer>();
+	
+	public DLXBasicBlock exitBlock;
 
 	// Metadata about each instruction
 	public HashMap<InstructionType, Integer> opcodeMap = new HashMap<InstructionType, Integer>();
@@ -173,16 +175,35 @@ public class DLXGenerator
 				{
 					int offset = offsetMap.get(inst.ssaInst.jumpInst.id).pc;
 					inst.rc = offset - inst.pc;
+					
+					// Handle global load/stores in the branch offset
+					if (inst.ssaInst.jumpInst.op1 != null)
+					{
+						if (inst.ssaInst.jumpInst.op1.isGlobalVariable)
+						{
+							inst.rc++;
+						}
+						else if (globalOffset.containsKey(inst.ssaInst.jumpInst.op1.id))
+						{
+							inst.rc++;
+						}
+					}
+					if (inst.ssaInst.jumpInst.op2 != null)
+					{
+						if (inst.ssaInst.jumpInst.op2.isGlobalVariable)
+						{
+							inst.rc++;
+						}
+						else if (globalOffset.containsKey(inst.ssaInst.jumpInst.op2.id))
+						{
+							inst.rc++;
+						}
+					}
 				}
 				else // positive offset
 				{
 					int refId = inst.ssaInst.id + inst.rc;
 					PLIRInstruction refInst = PLStaticSingleAssignment.getInstruction(refId);
-					
-					if (inst.pc == 34)
-					{
-						System.out.println("hrm");
-					}
 					
 					// If we branch forward to a PHI, then...
 					int offset = 0;
@@ -196,7 +217,15 @@ public class DLXGenerator
 							}
 							else
 							{
-								offset = inst.block.left.instructions.get(0).pc;
+//								offset = inst.block.left.instructions.get(0).pc;
+								if (inst.block.left.instructions.size() > 0)
+								{
+									offset = inst.block.left.instructions.get(0).pc;
+								}
+								else
+								{
+									offset = inst.block.left.endInstructions.get(0).pc;
+								}
 							}
 //							offset = rightOffsetMap.get(refInst.id).pc;
 						}
@@ -208,7 +237,14 @@ public class DLXGenerator
 							}
 							else
 							{
-								offset = inst.block.right.instructions.get(0).pc;
+								if (inst.block.right.instructions.size() > 0)
+								{
+									offset = inst.block.right.instructions.get(0).pc;
+								}
+								else
+								{
+									offset = inst.block.right.endInstructions.get(0).pc;
+								}
 							}
 //							offset = leftOffsetMap.get(refInst.id).pc;
 						}
@@ -219,7 +255,7 @@ public class DLXGenerator
 					}
 					
 					inst.rc = offset - inst.pc;
-					inst.rc = inst.rc < 0 ? inst.rc *= -1 : inst.rc;
+//					inst.rc = inst.rc < 0 ? inst.rc *= -1 : inst.rc;
 				}
 				inst.encodedForm = encodeInstruction(inst);
 			}
@@ -357,7 +393,7 @@ public class DLXGenerator
 		inst.block = block;
 	}
 	
-	public DLXBasicBlock findJoin(DLXBasicBlock left, DLXBasicBlock right)
+	public DLXBasicBlock findJoin(DLXBasicBlock parent, DLXBasicBlock left, DLXBasicBlock right)
 	{
 		DLXBasicBlock join = null;
 		if (left != null && right != null)
@@ -366,45 +402,66 @@ public class DLXGenerator
 			ArrayList<DLXBasicBlock> leftStack = new ArrayList<DLXBasicBlock>();
 			HashMap<Integer, DLXBasicBlock> joinSeen = new HashMap<Integer, DLXBasicBlock>();
 			leftStack.add(left);
-			while (leftStack.isEmpty() == false)
+			ArrayList<Integer> seen = new ArrayList<Integer>();
+			seen.add(parent.id);
+			boolean looped = false;
+			while (leftStack.isEmpty() == false && !looped)
 			{
 				DLXBasicBlock curr = leftStack.get(leftStack.size() - 1);
 				leftStack.remove(leftStack.size() - 1);
-				if (joinSeen.containsKey(curr.id) == false)
+				
+				if (seen.contains(curr.id))
 				{
+					looped = true;
+				}
+				else if (joinSeen.containsKey(curr.id) == false)
+				{
+					seen.add(curr.id);
 					joinSeen.put(curr.id, curr);
-					if (curr.right != null)
-					{
-						leftStack.add(curr.right);
-					}
 					if (curr.left != null)
 					{
 						leftStack.add(curr.left);
 					}
+					if (curr.right != null)
+					{
+						leftStack.add(curr.right);
+					}
 				}
+				
 			}
 
-			// Find common join point
+			// Find furthest common join point
 			ArrayList<DLXBasicBlock> rightStack = new ArrayList<DLXBasicBlock>();
 			rightStack.add(right);
+			seen.clear();
+			seen.add(parent.id);
+			join = null;
 			while (rightStack.isEmpty() == false)
 			{
 				DLXBasicBlock curr = rightStack.get(rightStack.size() - 1);
 				rightStack.remove(rightStack.size() - 1);
-				if (joinSeen.containsKey(curr.id))
+				
+				if (seen.contains(curr.id))
 				{
-					join = joinSeen.get(curr.id);
-					return join;
+					continue;
 				}
 				else
 				{
-					if (curr.right != null)
+					seen.add(curr.id);
+					if (joinSeen.containsKey(curr.id))
 					{
-						rightStack.add(curr.right);
+						join = joinSeen.get(curr.id);
 					}
-					if (curr.left != null)
+					else
 					{
-						rightStack.add(curr.left);
+						if (curr.right != null)
+						{
+							rightStack.add(curr.right);
+						}
+						if (curr.left != null)
+						{
+							rightStack.add(curr.left);
+						}
 					}
 				}
 			}
@@ -413,11 +470,12 @@ public class DLXGenerator
 		return join;
 	}
 
-	public ArrayList<DLXInstruction> convertToStraightLineCode(DLXBasicBlock entry, Function func, int stopBlock, HashSet<Integer> visited)
+	public ArrayList<DLXInstruction> convertToStraightLineCode(DLXBasicBlock entry, Function func, ArrayList<Integer> stopBlocks, HashSet<Integer> visited)
 	{
 		ArrayList<DLXInstruction> instructions = new ArrayList<DLXInstruction>();
 
-		if (entry.id == stopBlock)
+//		if (entry.id == stopBlock)
+		if (stopBlocks.contains(entry.id))
 		{
 			return instructions;
 		}
@@ -448,42 +506,52 @@ public class DLXGenerator
 			}
 
 			// Find the join node, which is the stopping block for straight line code generation
-			DLXBasicBlock join = findJoin(entry.left, entry.right);
+			if (entry.id == 66)
+				{
+				System.out.println("here");
+				}
+			
+			DLXBasicBlock join = findJoin(entry, entry.left, entry.right);
+			if (join != null && join.id == 70)
+				{
+				System.out.println("here)");
+				}
 			if (entry.left != null && entry.right != null)
 			{
 				// If the join is not null then we have encountered an if statement control flow
 				if (join != null) 
 				{
-					if (entry.left != null && entry.left.id != stopBlock)
+					stopBlocks.add(join.id);
+					if (entry.left != null)
 					{
-						instructions.addAll(convertToStraightLineCode(entry.left, func, join.id, visited));
+						instructions.addAll(convertToStraightLineCode(entry.left, func, stopBlocks, visited));
 					}
-					if (entry.right != null && entry.right.id != stopBlock)
+					if (entry.right != null)
 					{
-						instructions.addAll(convertToStraightLineCode(entry.right, func, -1, visited));
+						instructions.addAll(convertToStraightLineCode(entry.right, func, stopBlocks, visited));
 					}
 					
 					// After visiting the left and right, continue at the join node
-					instructions.addAll(convertToStraightLineCode(join, func, -1, visited));
+					instructions.addAll(convertToStraightLineCode(join, func, new ArrayList<Integer>(), visited));
 				}
 				
 				// if join == null (there is no common point), then left is a
 				// while body and right is the join... handle accordingly
 				else
 				{
-					if (entry.left != null && entry.left.id != stopBlock)
+					stopBlocks.add(entry.id);
+					if (entry.left != null)
 					{
-						instructions.addAll(convertToStraightLineCode(entry.left, func, entry.id, visited));
+						instructions.addAll(convertToStraightLineCode(entry.left, func, stopBlocks, visited));
 					}
-					if (entry.right != null && entry.right.id != stopBlock)
+					if (entry.right != null)
 					{
-						instructions.addAll(convertToStraightLineCode(entry.right, func, -1, visited));
+						instructions.addAll(convertToStraightLineCode(entry.right, func, new ArrayList<Integer>(), visited));
 					}
 				}
 			}
-			else
+			else // end.... add stack cleanup instructions if this is the end of a procedure or function
 			{
-				// end.... add stack cleanup instructions if this is the end of a procedure or function
 				if (func != null && func.hasReturn == false)
 				{
 					DLXInstruction retInst = new DLXInstruction();
@@ -493,8 +561,10 @@ public class DLXGenerator
 					retInst.rb = 0;
 					retInst.rc = RA; // jump to RA
 
-					appendInstructionToBlock(entry, retInst);
-					instructions.add(retInst);
+//					appendInstructionToBlock(entry, retInst);
+//					instructions.add(retInst);
+					
+					exitBlock = entry;
 				}
 				else if (func != null && func.hasReturn == true)
 				{
@@ -1657,10 +1727,6 @@ public class DLXGenerator
 
 					case PHI:
 						DLXBasicBlock insertBlock = null;
-						if (ssaInst.id == 18)
-						{
-							System.err.println("here");
-						}
 						if (ssaInst.whilePhi)
 						{
 							// Find the end of the while body

@@ -285,9 +285,26 @@ public class PLC
 						mainStart = dlxGen.pc; 
 					}
 					
+					dlxGen.exitBlock = null;
 					DLXBasicBlock db = dlxGen.generateBlockTree(null, block, new HashSet<Integer>());
 					dlxGen.generateBlockTreeInstructons(db, block, func, isMain, new HashSet<Integer>());
-					ArrayList<DLXInstruction> dlxInstructions = dlxGen.convertToStraightLineCode(db, func, -1, new HashSet<Integer>());
+					
+					HashSet<Integer> visited = new HashSet<Integer>();
+					ArrayList<DLXInstruction> dlxInstructions = dlxGen.convertToStraightLineCode(db, func, new ArrayList<Integer>(), visited);
+					System.out.println(visited);
+					
+					if (!isMain)
+					{
+						DLXInstruction retInst = new DLXInstruction();
+						retInst.opcode = InstructionType.RET;
+						retInst.format = dlxGen.formatMap.get(InstructionType.RET);
+						retInst.ra = 0;
+						retInst.rb = 0;
+						retInst.rc = dlxGen.RA; // jump to RA
+						dlxGen.appendInstructionToBlock(dlxGen.exitBlock, retInst);
+						dlxInstructions.add(retInst);
+					}
+					
 					dlxGen.fixup(dlxInstructions);
 					program.add(dlxInstructions);
 					

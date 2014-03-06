@@ -294,6 +294,9 @@ public class PLIRBasicBlock
 		PLIRInstruction findPhi = phi;
 		PLIRInstruction replacePhi = phi;
 		
+		int p1id = phi.op1 != null ? phi.op1.id : -1;
+		int p2id = phi.op2 != null ? phi.op2.id : -1;
+		
 		// Propagate through the main instructions in this block's body
 		for (PLIRInstruction bInst : instructions)
 		{
@@ -301,7 +304,10 @@ public class PLIRBasicBlock
 			
 			if (bInst.opcode == InstructionType.PHI)
 			{
-				System.err.println("HERE");
+				if ((bInst.id == p1id || bInst.id == p2id) && phi.id > bInst.id)
+				{
+					continue;
+				}
 			}
 			
 			if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
@@ -322,11 +328,8 @@ public class PLIRBasicBlock
 			}
 			if (bInst.op1name != null && bInst.op1name.equals(var))
 			{
-				if (!(replaced && bInst.opcode == InstructionType.PHI))
-				{
-					bInst.replaceLeftOperand(scopeMap.get(var));
-					replaced = true;
-				}
+				bInst.replaceLeftOperand(scopeMap.get(var));
+				replaced = true;
 			}
 			
 			if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
@@ -345,13 +348,10 @@ public class PLIRBasicBlock
 					replaced = true;
 				}
 			}
-			if (bInst.op2name != null && bInst.op2name.equals(var))
+			if (bInst.op2name != null && bInst.op2name.equals(var) && !replaced)
 			{
-				if (!(replaced && bInst.opcode == InstructionType.PHI))
-				{
-					bInst.replaceRightOperand(scopeMap.get(var));
-					replaced = true;
-				}
+				bInst.replaceRightOperand(scopeMap.get(var));
+				replaced = true;
 			}
 			
 			// Don't propagate past the phi, since it essentially replaces the current value

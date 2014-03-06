@@ -1,0 +1,7 @@
+1 := global #0
+2 := global #0
+3 := global #0
+4 := global #0
+5 := add (1) #1
+6 := end
+

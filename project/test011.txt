@@ -8,6 +8,7 @@ var a, b, c, d;
 	
 	if a< b then
 		let a <- a + 1;
+		call OutputNum(1337);
 		while c < d do
 			let c <- c + 2;
 			let d <- d + 1
@@ -19,6 +20,12 @@ var a, b, c, d;
 			let d <- d + 2
 		od
 	fi;
+
+	call OutputNum(a);
+	call OutputNum(b);
+	call OutputNum(c);
+	call OutputNum(d);
+	call OutputNewLine();
 	
 	while b < d do
 		if a > d then
@@ -26,5 +33,20 @@ var a, b, c, d;
 		else
 			let c <- b
 		fi
-	od
+	od;
+
+	call OutputNum(a);
+	call OutputNum(b);
+	call OutputNum(c);
+	call OutputNum(d)
 }.
+
+
+
+	while b < d do
+		if a > d then
+			let b <- c
+		else
+			let c <- b
+		fi
+	od;

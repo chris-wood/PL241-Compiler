@@ -1236,6 +1236,7 @@ public class PLParser
 			if (scope.isVarInScope(varName))
 			{
 				PLIRBasicBlock desigBlock = parse_designator(in);
+				desigBlock.getLastInst().origIdent = varName;
 				
 				// Check to see if this assignment needs to be saved at the end of the function
 				boolean markToSave = false;
@@ -2323,6 +2324,8 @@ public class PLParser
 			PLIRBasicBlock entry = parse_relation(in);
 			entry.isLoopHeader = true;
 			PLIRInstruction entryCmpInst = entry.instructions.get(entry.instructions.size() - 1);
+			entryCmpInst.op1name = entryCmpInst.op1.origIdent;
+			entryCmpInst.op2name = entryCmpInst.op2.origIdent;
 			PLIRInstruction bgeInst = CondNegBraFwd(entryCmpInst);
 			
 			// Determine which identifiers are used in the entry/join node so we can defer generation (if PHIs are needed)
@@ -2395,11 +2398,11 @@ public class PLParser
 				
 				// Now loop through the entry and fix instructions as needed
 				// Those fixed are replaced with the result of this phi if they have used or modified the sym...
-				if (cmpInst.op1 != null && cmpInst.op1.origIdent.equals(var))
+				if (cmpInst.op1name != null && cmpInst.op1name.equals(var))
 				{
 					cmpInst.replaceLeftOperand(phi);
 				}
-				if (cmpInst.op2 != null && cmpInst.op2.origIdent.equals(var))
+				if (cmpInst.op2name != null && cmpInst.op2name.equals(var))
 				{
 					cmpInst.replaceRightOperand(phi);
 				}

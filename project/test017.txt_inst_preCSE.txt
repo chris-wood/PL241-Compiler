@@ -1,0 +1,16 @@
+1 := global #0
+2 := global #0
+3 := global #0
+4 := global #0
+5 := global #0
+6 := cmp #4 #1
+7 := ble (6) #1
+8 := phi #3 (4)
+9 := write #1
+10 := write #1
+11 := write #4
+12 := write (8)
+13 := write #2
+14 := wln
+15 := end
+

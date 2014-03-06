@@ -1,0 +1,14 @@
+digraph dom {
+BB2[shape = box, label = "BB(2 [ foo ])\n" + "1 := add #0 #0\n" + "2 := (1)\n" + "3 := (1)\n" + "4 := (1)\n" + "5 := (1)\n" + "6 := (1)\n" + "7 := (1)\n" + "8 := (1)\n" + "9 := add (1) (1)\n" + "10 := (9)\n" + "11 := mul (9) (9)\n" + "12 := add (11) (9)\n" + "13 := write (1)\n" + "14 := wln\n" + "15 := cmp (12) (9)\n" + "16 := bge (15) #4\n"];
+BB40[shape = box, label = "BB(40)\n" + "17 := write #1337\n" + "18 := add (11) #1\n" + "19 := beq #0 #6\n"];
+BB48[shape = box, label = "BB(48)\n" + "20 := sub (9) (11)\n" + "21 := cmp (20) (12)\n" + "22 := ble (21) #1\n"];
+BB45[shape = box, label = "BB(45)\n" + "25 := phi (9) (20)\n" + "26 := phi (9) (23)\n" + "27 := phi (18) (1)\n" + "28 := mul (11) (12)\n" + "29 := write (12)\n" + "30 := write (28)\n" + "31 := write (26)\n" + "32 := write (9)\n" + "33 := write (25)\n" + "34 := write (11)\n" + "35 := write (27)\n"];
+BB54[shape = box, label = "BB(54)\n"];
+BB55[shape = box, label = "BB(55)\n" + "23 := phi #2 (9)\n" + "24 := write (1)\n"];
+BB2 -> BB40;
+BB2 -> BB48;
+BB2 -> BB45;
+BB48 -> BB54;
+BB48 -> BB55;
+BB84[shape = box, label = "BB(84)\n" + "36 := proc foo\n" + "37 := end\n"];
+}

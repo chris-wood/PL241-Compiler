@@ -138,17 +138,13 @@ public class RegisterAllocator
 				for (int i = b.instructions.size() - 1; i >= 0; i--)
 				{
 					PLIRInstruction inst = b.instructions.get(i);
-					if (inst.opcode == InstructionType.WRITE && inst.id == 8) 
-					{
-						System.err.println("write");
-					}
 					if (inst.opcode != InstructionType.PHI && inst.isNotLiveInstruction() == false)
 					{
 						
-						while (inst.refInst != null)
-						{
-							inst = inst.refInst;
-						}
+//						while (inst.refInst != null)
+//						{
+//							inst = inst.refInst;
+//						}
 
 						// live = live - {i}
 						live.remove(inst);

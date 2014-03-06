@@ -1,0 +1,7 @@
+1 := global #0
+2 := global #0
+3 := write #16
+4 := write #2
+5 := wln
+6 := end
+
