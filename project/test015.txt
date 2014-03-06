@@ -22,7 +22,7 @@ main
         let af <- 4;
 		return x
     };
-    function funcfoo(x);
+    function foo(x);
     var par, q;
     {
         let q <-9;

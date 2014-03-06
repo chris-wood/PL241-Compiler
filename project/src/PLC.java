@@ -209,13 +209,14 @@ public class PLC
 			domWriter.flush();
 			domWriter.close();
 			
+			RegisterAllocator ra = null;
 			if (runAll || (runStep1 && runStep2 && runStep3))
 			{
 				// Create the IG from the initial set of instructions
 				InterferenceGraph ig = new InterferenceGraph(PLStaticSingleAssignment.instructions);
 				
 				// Register allocation on each block
-				RegisterAllocator ra = new RegisterAllocator(ig, parser.scope);
+				ra = new RegisterAllocator(ig, parser.scope);
 				
 				// Compute live range of each function body, including main
 				for (PLIRBasicBlock block : blocks)
@@ -249,8 +250,8 @@ public class PLC
 						{
 							dimensions *= d;
 						}
-						globalArrayOffset.put(inst.origIdent, globalIndex);
 						globalIndex += dimensions;
+						globalArrayOffset.put(inst.origIdent, globalIndex);
 					}
 					else
 					{
@@ -259,7 +260,7 @@ public class PLC
 					globalRefMap.put(inst.origIdent, inst.id);
 				}
 				
-				DLXGenerator dlxGen = new DLXGenerator(globalOffset, globalArrayOffset, globalRefMap);
+				DLXGenerator dlxGen = new DLXGenerator(globalOffset, globalArrayOffset, globalRefMap, ra.constants, ra.arrays);
 				
 				ArrayList<ArrayList<DLXInstruction>> program = new ArrayList<ArrayList<DLXInstruction>>();
 				for (int i = 0; i < blocks.size(); i++)

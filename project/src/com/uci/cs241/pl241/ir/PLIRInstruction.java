@@ -71,6 +71,7 @@ public class PLIRInstruction
 	public boolean wasIdent = false;
 	public String origIdent = "";
 	public String funcName;
+	public String saveName = "";
 	
 	// Elimination information
 	public enum EliminationReason {CSE, DCR};

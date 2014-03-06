@@ -152,10 +152,12 @@ public class DLX {
 					break;
 				case LDW:
 				case LDX: // remember: c == R[origc] because of F2 format
+					// System.out.println("Loading: " + ((R[b]+c) / 4));
 					R[a] = M[(R[b]+c) / 4]; 
 					break;
 				case STW:
 				case STX: // remember: c == R[origc] because of F2 format
+					// System.out.println("Storing: " + ((R[b]+c) / 4));
 					M[(R[b]+c) / 4] = R[a]; 
 					break;
 				case POP:

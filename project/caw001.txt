@@ -1,3 +1,53 @@
+// dynamic array test
+main 
+var index;
+array[10] output;
+
+procedure populate();
+var a, i;
+{
+  let a <- call InputNum();
+  let i <- call InputNum();
+  let output[i] <- a
+};
+
+{
+  call populate();
+  let index <- 0;
+  while index < 10 do
+    call OutputNum(index);
+    call OutputNum(output[index]);
+    call OutputNewLine();
+    let index <- index + 1
+  od
+}.
+  
+  call OutputNewLine();
+  call OutputNewLine();
+  while i < 10 do
+    call OutputNum(i);
+    call OutputNum(output[i]);
+    call OutputNewLine();
+    let i <- i + 1
+  od
+
+// multidimensional array test
+main 
+var a, b, c;
+array[10][5] output;
+{
+  let a <- call InputNum();
+  let b <- call InputNum();
+  call OutputNum(a + b);
+  let output[0][1] <- a + b;
+  call OutputNum(output[0][0]);
+  call OutputNum(output[0][1]);
+  
+  let c <- output[0][1];
+  call OutputNum(c);
+  call OutputNewLine()
+}.
+
 // super hard
 main
 var a, b, c, d, e, f, g, h;

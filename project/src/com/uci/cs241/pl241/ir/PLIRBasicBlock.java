@@ -167,6 +167,11 @@ public class PLIRBasicBlock
 			leftJoin.isLoopHeader = true;
 		}
 		
+		if (newBlock.hasReturn)
+		{
+			oldBlock.hasReturn = true;
+		}
+		
 		// Propagate enclosed loop headers into the new block
 		for (PLIRBasicBlock wlh : oldBlock.wrappedLoopHeaders)
 		{

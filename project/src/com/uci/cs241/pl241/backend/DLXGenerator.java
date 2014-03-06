@@ -32,6 +32,9 @@ public class DLXGenerator
 	public HashMap<Integer, DLXInstruction> offsetMap = new HashMap<Integer, DLXInstruction>();
 	public HashMap<Integer, DLXInstruction> leftOffsetMap = new HashMap<Integer, DLXInstruction>();
 	public HashMap<Integer, DLXInstruction> rightOffsetMap = new HashMap<Integer, DLXInstruction>();
+	
+	public HashMap<Integer, PLIRInstruction> constants = new HashMap<Integer, PLIRInstruction>();
+	public HashMap<String, PLIRInstruction> arrays = new HashMap<String, PLIRInstruction>();
 
 	public ArrayList<PLIRInstruction> lastLeftJumps = new ArrayList<PLIRInstruction>();
 	public int lastLeftJump = -1;
@@ -53,7 +56,7 @@ public class DLXGenerator
 	public int pc = 3; // account for the initial jump and SP/FP initialization stuff
 
 	public DLXGenerator(HashMap<Integer, Integer> globalOffset, HashMap<String, Integer> globalArrayOffset,
-			HashMap<String, Integer> globalRefMap)
+			HashMap<String, Integer> globalRefMap, HashMap<Integer, PLIRInstruction> constants, HashMap<String, PLIRInstruction> arrays)
 	{
 		this.globalOffset = globalOffset;
 		this.globalArrayOffset = globalArrayOffset;
@@ -628,12 +631,12 @@ public class DLXGenerator
 			{
 				if (func != null && func.hasReturn == false)
 				{
-					DLXInstruction retInst = new DLXInstruction();
-					retInst.opcode = InstructionType.RET;
-					retInst.format = formatMap.get(InstructionType.RET);
-					retInst.ra = 0;
-					retInst.rb = 0;
-					retInst.rc = RA; // jump to RA
+//					DLXInstruction retInst = new DLXInstruction();
+//					retInst.opcode = InstructionType.RET;
+//					retInst.format = formatMap.get(InstructionType.RET);
+//					retInst.ra = 0;
+//					retInst.rb = 0;
+//					retInst.rc = RA; // jump to RA
 
 //					appendInstructionToBlock(entry, retInst);
 //					instructions.add(retInst);
@@ -652,6 +655,12 @@ public class DLXGenerator
 
 	public boolean checkForGlobalLoad(DLXBasicBlock edb, PLIRInstruction usingInst, int refId, int regNum, int offset, boolean fixOffset)
 	{
+		// Short circuit for arrays
+		if (globalArrayOffset.containsKey(usingInst.origIdent))
+		{
+			return false;
+		}
+		
 		boolean loaded = false;
 //		if (usingInst.opcode == PLIRInstruction.InstructionType.PHI)
 //		{
@@ -699,7 +708,16 @@ public class DLXGenerator
 			loadInst.ra = regNum; // save contents of ssaInst.regNum
 			loadInst.rb = GLOBAL_ADDRESS;
 			
-			loadInst.rc = -4 * (globalOffset.get(globalRefMap.get(usingInst.origIdent)) + 1); // 
+			int ref = 0;
+			if (usingInst.origIdent == null || usingInst.origIdent.length() == 0)
+			{
+				ref = globalRefMap.get(usingInst.saveName);
+			}
+			else
+			{
+				ref = globalRefMap.get(usingInst.origIdent);
+			}
+			loadInst.rc = -4 * (globalOffset.get(ref) + 1); // 
 
 			if (fixOffset)
 			{
@@ -713,7 +731,13 @@ public class DLXGenerator
 
 	public boolean checkForGlobalStore(DLXBasicBlock edb, PLIRInstruction usingInst, boolean appendToStart)
 	{
-		boolean loaded = false;
+		// Short circuit for arrays
+		if (globalArrayOffset.containsKey(usingInst.origIdent))
+		{
+			return false;
+		}
+		
+		boolean store = false;
 //		if (usingInst.opcode == PLIRInstruction.InstructionType.PHI)
 //		{
 //			String name = usingInst.op1name;
@@ -737,7 +761,7 @@ public class DLXGenerator
 //				loaded = true;
 //			}
 //		}
-		if (!loaded && globalOffset.containsKey(usingInst.id))
+		if (!store && globalOffset.containsKey(usingInst.id))
 		{
 			DLXInstruction storeInst = new DLXInstruction();
 			storeInst.opcode = InstructionType.STW;
@@ -759,7 +783,7 @@ public class DLXGenerator
 			// success
 			return true;
 		}
-		else if (!loaded && (usingInst.isGlobalVariable || this.globalRefMap.containsKey(usingInst.origIdent)))
+		else if (!store && (usingInst.isGlobalVariable || this.globalRefMap.containsKey(usingInst.origIdent)))
 		{
 			DLXInstruction storeInst = new DLXInstruction();
 			storeInst.opcode = InstructionType.STW;
@@ -767,7 +791,15 @@ public class DLXGenerator
 			storeInst.ra = usingInst.regNum; // save contents of ssaInst.regNum
 			storeInst.rb = GLOBAL_ADDRESS;
 			
-			int ref = globalRefMap.get(usingInst.origIdent);
+			int ref = 0;
+			if (usingInst.origIdent == null || usingInst.origIdent.length() == 0)
+			{
+				ref = globalRefMap.get(usingInst.saveName);
+			}
+			else
+			{
+				ref = globalRefMap.get(usingInst.origIdent);
+			}
 			storeInst.rc = -4 * (globalOffset.get(ref) + 1); // word size
 
 			// Determine where in the block to place the store
@@ -797,6 +829,15 @@ public class DLXGenerator
 			for (int i = 0; i < b.instructions.size(); i++)
 			{
 				PLIRInstruction ssaInst = b.instructions.get(i);
+				
+//				while (ssaInst.op1 != null && ssaInst.op1.refInst != null)
+//				{
+//					ssaInst.op1 = ssaInst.op1.refInst;
+//				}
+//				while (ssaInst.op2 != null && ssaInst.op2.refInst != null)
+//				{
+//					ssaInst.op2 = ssaInst.op2.refInst;
+//				}
 
 				// Dummy instruction to generate
 				DLXInstruction newInst = new DLXInstruction();
@@ -918,8 +959,8 @@ public class DLXGenerator
 						}
 						else // addition for an array
 						{
-							newInst.opcode = InstructionType.ADD;
-							newInst.format = formatMap.get(InstructionType.ADD);
+							newInst.opcode = InstructionType.ADDI;
+							newInst.format = formatMap.get(InstructionType.ADDI);
 							newInst.ra = ssaInst.regNum;
 
 							// Determine if this is a global thing or not...
@@ -927,15 +968,14 @@ public class DLXGenerator
 							if (globalArrayOffset.containsKey(ident)) 
 							{
 								newInst.rb = GLOBAL_ADDRESS;
-								newInst.rc = -4 * globalArrayOffset.get(ident);
+								newInst.rc = -4 * (globalArrayOffset.get(ident));
 							}
-							else
-							// local array on the stack
+							else // local array on the stack
 							{
 								newInst.rb = FP;
 
-								// TODO: this needs to be func.arrayOffset
-								newInst.rc = globalArrayOffset.get(ident);
+								// TODO: this needs to be func.arrayOffset, or something
+								newInst.rc = (globalArrayOffset.get(ident));
 							}
 
 							// Store the offset
@@ -1128,19 +1168,35 @@ public class DLXGenerator
 						break;
 
 					case ADDA:
-						newInst.opcode = InstructionType.ADD;
-						newInst.format = formatMap.get(InstructionType.ADD);
-						newInst.ra = ssaInst.regNum;
-						newInst.rb = ssaInst.op1.regNum;
-						newInst.rc = ssaInst.op2.regNum;
+//						if (leftConst)
+//						{
+//							newInst.opcode = InstructionType.ADDI;
+//							newInst.format = formatMap.get(InstructionType.ADDI);
+//							newInst.ra = ssaInst.regNum;
+//							newInst.rb = ssaInst.op2.regNum;
+//							newInst.rc = ssaInst.i1;
+//
+////							fixOffset(ssaInst.id, newInst);
+////							appendInstructionToBlock(edb, newInst);
+//
+//							checkForGlobalStore(edb, ssaInst, true);
+//						}
+//						else
+//						{
+							newInst.opcode = InstructionType.ADD;
+							newInst.format = formatMap.get(InstructionType.ADD);
+							newInst.ra = ssaInst.regNum;						
+							newInst.rb = ssaInst.op1.regNum;
+							newInst.rc = ssaInst.op2.regNum;
 
+							// TODO: why (or how?) would we ever store an offset in
+							// a global variable?
+							// checkForGlobalStore(edb, ssaInst, true);
+//						}
+						
 						// Store the offset
 						fixOffset(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
-
-						// TODO: why (or how?) would we ever store an offset in
-						// a global variable?
-						// checkForGlobalStore(edb, ssaInst, true);
 
 						System.err.println("TODO: ADDA");
 						break;
@@ -1418,16 +1474,44 @@ public class DLXGenerator
 						break;
 
 					case RETURN:
-						DLXInstruction retParamInst = new DLXInstruction();
-						retParamInst.opcode = InstructionType.PSH;
-						retParamInst.format = formatMap.get(InstructionType.PSH);
-						retParamInst.ra = ssaInst.op1.regNum;
-						retParamInst.rb = SP;
+						boolean savedReturn = false;
+						if (ssaInst.op1 != null)
+						{
+							DLXInstruction retParamInst = new DLXInstruction();
+							retParamInst.opcode = InstructionType.PSH;
+							retParamInst.format = formatMap.get(InstructionType.PSH);
+							retParamInst.ra = ssaInst.op1.regNum;
+							retParamInst.rb = SP;
 
-						// TODO: handle case of constant returns or nothing
-						// (control flow termination)
-						// retParamInst.rc = ssaInst.op1.regNum;
-						retParamInst.rc = 4;
+							// TODO: handle case of constant returns or nothing
+							// (control flow termination)
+							fixOffset(ssaInst.id, retParamInst);
+							retParamInst.rc = 4;
+							savedReturn = true;
+							appendInstructionToBlock(edb, retParamInst);
+						}
+						else if (ssaInst.op1 != null && ssaInst.op1type == OperandType.CONST)
+						{
+							DLXInstruction preInst = new DLXInstruction();
+							preInst.opcode = InstructionType.ADDI;
+							preInst.format = formatMap.get(InstructionType.ADDI);
+							preInst.ra = ssaInst.op1.regNum;
+							preInst.rb = 0;
+							preInst.rc = ssaInst.i1;
+							
+							DLXInstruction retParamInst = new DLXInstruction();
+							retParamInst.opcode = InstructionType.PSH;
+							retParamInst.format = formatMap.get(InstructionType.PSH);
+							retParamInst.ra = ssaInst.op1.regNum;
+							retParamInst.rb = SP;
+
+							// TODO: handle case of constant returns or nothing
+							// (control flow termination)
+							fixOffset(ssaInst.id, retParamInst);
+							retParamInst.rc = 4;
+							savedReturn = true;
+							appendInstructionToBlock(edb, retParamInst);
+						}
 
 						DLXInstruction retInst = new DLXInstruction();
 						retInst.opcode = InstructionType.RET;
@@ -1436,8 +1520,10 @@ public class DLXGenerator
 						retInst.rb = 0;
 						retInst.rc = RA; // jump to RA
 
-						fixOffset(ssaInst.id, retParamInst);
-						appendInstructionToBlock(edb, retParamInst);
+						if (!savedReturn)
+						{
+							fixOffset(ssaInst.id, retInst);
+						}
 						appendInstructionToBlock(edb, retInst);
 
 						break;
@@ -1776,11 +1862,11 @@ public class DLXGenerator
 
 					case LOAD:
 						DLXInstruction ldwInst = new DLXInstruction();
-						ldwInst.opcode = InstructionType.LDW;
-						ldwInst.format = formatMap.get(InstructionType.LDW);
+						ldwInst.opcode = InstructionType.LDX;
+						ldwInst.format = formatMap.get(InstructionType.LDX);
 						ldwInst.ra = ssaInst.regNum;
-						ldwInst.rb = ssaInst.op1.regNum;
-						ldwInst.rc = 0;
+						ldwInst.rb = 0;
+						ldwInst.rc = ssaInst.op1.regNum;
 
 						fixOffset(ssaInst.id, ldwInst);
 						appendInstructionToBlock(edb, ldwInst);
@@ -1805,8 +1891,8 @@ public class DLXGenerator
 						}
 
 						DLXInstruction stwInst = new DLXInstruction();
-						stwInst.opcode = InstructionType.STW;
-						stwInst.format = formatMap.get(InstructionType.STW);
+						stwInst.opcode = InstructionType.STX;
+						stwInst.format = formatMap.get(InstructionType.STX);
 						if (ssaInst.op2type == OperandType.CONST)
 						{
 							stwInst.ra = ssaInst.regNum;
@@ -1816,9 +1902,8 @@ public class DLXGenerator
 							stwInst.ra = ssaInst.op2.regNum;
 						}
 
-						// TODO: this won't always be a global variable...
-						stwInst.rb = GLOBAL_ADDRESS;
-						stwInst.rc = -4 * (ssaInst.op1.regNum); // word size
+						stwInst.rb = 0;
+						stwInst.rc = ssaInst.op1.regNum; // word size
 
 						if (!addedToOffsetMap)
 						{

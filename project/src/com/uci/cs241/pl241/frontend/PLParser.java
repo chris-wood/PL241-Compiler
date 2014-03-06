@@ -201,19 +201,19 @@ public class PLParser
 				Function func = scope.functions.get(funcName);
 				if (funcName.equals("OutputNum") == false && funcName.equals("OutputNewLine") == false && funcName.equals("InputNum") == false)
 				{
-					for (PLIRInstruction inst : func.modifiedGlobals.keySet())
-					{
-						PLIRInstruction saveInst = new PLIRInstruction(scope);
-						saveInst.opcode = InstructionType.SAVEGLOBAL;
-						saveInst.op1 = func.modifiedGlobals.get(inst);
-						saveInst.op1type = OperandType.ADDRESS;
-						saveInst.op2 = inst;
-						saveInst.op2type = OperandType.ADDRESS;
-						
-						saveInst.forceGenerate(scope);
-						
-						endBlock.instructions.add(saveInst);
-					}
+//					for (PLIRInstruction inst : func.modifiedGlobals.keySet())
+//					{
+//						PLIRInstruction saveInst = new PLIRInstruction(scope);
+//						saveInst.opcode = InstructionType.SAVEGLOBAL;
+//						saveInst.op1 = func.modifiedGlobals.get(inst);
+//						saveInst.op1type = OperandType.ADDRESS;
+//						saveInst.op2 = inst;
+//						saveInst.op2type = OperandType.ADDRESS;
+//						
+//						saveInst.forceGenerate(scope);
+//						
+//						endBlock.instructions.add(saveInst);
+//					}
 				}
 				
 				for (PLIRInstruction inst : func.vars)
@@ -1275,6 +1275,10 @@ public class PLParser
 					
 					// Check if the result is an array, in which case we need to load it from memory
 					PLIRInstruction storeInst = result.getLastInst();
+					if (storeInst!= null)
+					{
+						storeInst.saveName = varName;
+					}
 					if (storeInst == null || (storeInst != null && storeInst.isArray))
 					{
 						ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(result);
@@ -1371,19 +1375,20 @@ public class PLParser
 						store.forceGenerate(scope);
 						store.storedValue = store.op2;
 						store.isArray = true;
+						store.origIdent = varName;
 						result.addInstruction(store);
 						
 						// Tag the variable name with the dependent instructions so we can get unique accesses later on 
-						scope.updateSymbol(varName, inst4); // (SSA ID) := expr
+						scope.updateSymbol(varName, store); // (SSA ID) := expr
 						duChain.put(inst4, new HashSet<PLIRInstruction>());
-						result.addModifiedValue(varName, inst4);
+						result.addModifiedValue(varName, store);
 						
 						// Add the resulting set of instructions to the BB result
-						result.addModifiedValue(varName, inst4);
+						result.addModifiedValue(varName, store);
 						
 						if (markToSave)
 						{
-							scope.functions.get(funcName).addModifiedGlobal(globalVariables.get(inst4.origIdent), inst4);
+							scope.functions.get(funcName).addModifiedGlobal(globalVariables.get(store.origIdent), store);
 						}
 					}
 				}
@@ -1761,7 +1766,7 @@ public class PLParser
 						
 						PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, funcFlagMap.get(funcName), operands);
 						callInst.forceGenerate(scope);
-						result.hasReturn = funcFlagMap.get(funcName); 
+//						result.hasReturn = funcFlagMap.get(funcName); 
 						result.addInstruction(callInst);
 						result.isEntry = true;
 						
@@ -1781,7 +1786,7 @@ public class PLParser
 					PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.READ);
 					inst.type = OperandType.INST;
 					inst.forceGenerate(scope);
-					result.hasReturn = true; // special case... this is a machine instruction, not a user-defined function
+//					result.hasReturn = true; // special case... this is a machine instruction, not a user-defined function
 					result.addInstruction(inst);
 					result.isEntry = true;
 				}
@@ -1798,7 +1803,7 @@ public class PLParser
 					callInst.forceGenerate(scope);
 					result.addInstruction(callInst);
 					result.isEntry = true;
-					result.hasReturn = funcFlagMap.get(funcName);
+//					result.hasReturn = funcFlagMap.get(funcName);
 				}
 				
 				// Eat the last token and proceed
@@ -1808,7 +1813,7 @@ public class PLParser
 			{
 				ArrayList<PLIRInstruction> emptyList = new ArrayList<PLIRInstruction>();
 				PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, funcFlagMap.get(funcName), emptyList);
-				result.hasReturn = funcFlagMap.get(funcName); // special case... this is a machine instruction, not a user-defined function
+//				result.hasReturn = funcFlagMap.get(funcName); // special case... this is a machine instruction, not a user-defined function
 				result.addInstruction(callInst);
 				result.isEntry = true;
 			}
@@ -2404,6 +2409,7 @@ public class PLParser
 				finalRet.overrideGenerate = true;
 				finalRet.forceGenerate(scope);
 				result.addInstruction(finalRet);
+				result.hasReturn = true;
 				
 //				result.instructions.get(result.instructions.size() - 1).overrideGenerate = true;
 //				result.instructions.get(result.instructions.size() - 1).forceGenerate(scope);
@@ -2613,6 +2619,8 @@ public class PLParser
 				paramMap.put(funcName, 0); // no formal parameters specified
 			}
 			
+			scope.displayCurrentScopeSymbols();
+			
 			// Eat the semicolon and then parse the body
 			advance(in);  
 			if (result != null)
@@ -2637,6 +2645,24 @@ public class PLParser
 //			{
 //				result.instructions.get(i).forceGenerate(scope);
 //			}
+			
+			if (!result.hasReturn)
+			{
+				PLIRInstruction finalRet = new PLIRInstruction(scope);
+				finalRet.opcode = InstructionType.RETURN;
+				finalRet.overrideGenerate = true;
+				finalRet.forceGenerate(scope);
+				
+				PLIRBasicBlock joinNode = result;
+				while (joinNode.joinNode != null)
+				{
+					joinNode = joinNode.joinNode;
+				}
+				
+				joinNode.addInstruction(finalRet);
+				joinNode.hasReturn = true; // needed?
+				result.hasReturn = true;
+			}
 			
 			// Eat the semicolon terminating the body
 			if (toksym != PLToken.semiToken)
@@ -2731,6 +2757,18 @@ public class PLParser
 		else
 		{
 			scope.addProcedure(funcName, params);
+		}
+		
+		// All parameters passed in on the stack are local variables (in the local scope),
+		// so add them as such
+		Function func = scope.functions.get(funcName);
+		for (PLIRInstruction inst : result.instructions)
+		{
+//			scope.addVarToScope(inst.dummyName);
+			System.out.println("Adding stack parameter to scope: " + inst.dummyName);
+			scope.addVarToScope(funcName, inst.dummyName);
+			scope.updateSymbol(inst.dummyName, inst);
+			func.addLocalVariable(inst); 
 		}
 		
 		return result;

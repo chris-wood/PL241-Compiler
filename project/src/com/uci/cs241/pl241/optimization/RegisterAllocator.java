@@ -140,11 +140,17 @@ public class RegisterAllocator
 					PLIRInstruction inst = b.instructions.get(i);
 					if (inst.opcode != InstructionType.PHI && inst.isNotLiveInstruction() == false)
 					{
+//						if (inst.refInst != null) continue;
 						
-//						while (inst.refInst != null)
-//						{
-//							inst = inst.refInst;
-//						}
+						if (inst.opcode == InstructionType.MUL)
+						{
+							System.err.println("asd'");
+						}
+						
+						while (inst.refInst != null)
+						{
+							inst = inst.refInst;
+						}
 
 						// live = live - {i}
 						live.remove(inst);
@@ -153,11 +159,6 @@ public class RegisterAllocator
 						for (PLIRInstruction liveInst : live)
 						{
 							ig.addEdge(inst.id, liveInst.id);
-						}
-						
-						if (inst.id == 10)
-						{
-							System.err.println("here mk");
 						}
 
 						// live = live + {j,k}
@@ -187,7 +188,23 @@ public class RegisterAllocator
 							}
 						}
 						
-						if (inst.op2 != null && PLStaticSingleAssignment.isIncluded(inst.op2.id) && inst.op2.id != inst.id)
+						if (inst.op2type == OperandType.BASEADDRESS)
+						{
+							if (arrays.containsKey(inst.op2address))
+							{
+								live.add(arrays.get(inst.op2address));
+							}
+							else
+							{
+								PLIRInstruction addrInst = new PLIRInstruction(scope);
+								addrInst.id = PLStaticSingleAssignment.globalSSAIndex;
+								ig.addVertex(addrInst.id);
+								PLStaticSingleAssignment.addInstruction(scope, addrInst);
+								arrays.put(inst.op2address, addrInst);
+								live.add(addrInst);
+							}	
+						}
+						else if (inst.op2 != null && PLStaticSingleAssignment.isIncluded(inst.op2.id) && inst.op2.id != inst.id)
 						{
 							PLIRInstruction op = inst.op2;
 							while (op.refInst != null)
@@ -211,22 +228,6 @@ public class RegisterAllocator
 								constants.put(inst.i2, constInst);
 								live.add(constInst);
 							}
-						}
-						else if (inst.op2type == OperandType.BASEADDRESS)
-						{
-							if (arrays.containsKey(inst.op2address))
-							{
-								live.add(arrays.get(inst.op2address));
-							}
-							else
-							{
-								PLIRInstruction addrInst = new PLIRInstruction(scope);
-								addrInst.id = PLStaticSingleAssignment.globalSSAIndex;
-								ig.addVertex(addrInst.id);
-								PLStaticSingleAssignment.addInstruction(scope, addrInst);
-								arrays.put(inst.op2address, addrInst);
-								live.add(addrInst);
-							}	
 						}
 						
 						// All operands must live in some register (derp!)
