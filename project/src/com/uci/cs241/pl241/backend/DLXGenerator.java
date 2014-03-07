@@ -1052,18 +1052,12 @@ public class DLXGenerator
 							else // local array on the stack
 							{
 								newInst.rb = FP;
-
-								// TODO: this needs to be func.arrayOffset, or something
-								newInst.rc = (globalArrayOffset.get(ident));
+								newInst.rc = func.getStackOffset(ident);
 							}
 
 							// Store the offset
 							fixOffset(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
-
-							// TODO: why (or how?) would we ever store an offset
-							// in a global variable?
-							// checkForGlobalStore(edb, ssaInst, true);
 						}
 
 						break;
@@ -1665,8 +1659,7 @@ public class DLXGenerator
 							push3.opcode = InstructionType.PSH;
 							push3.format = formatMap.get(InstructionType.PSH);
 
-							// ***TODO: do check to see if this is a constant or
-							// global variable
+							// TODO: do check to see if this is a global variable
 
 							push3.ra = srcReg; // save contents of ssaInst.regNum
 							push3.rb = SP; //
@@ -1685,26 +1678,26 @@ public class DLXGenerator
 						push2.encodedForm = encodeInstruction(push2);
 						appendInstructionToBlock(edb, push2);
 
-						// Set FP = SP - FP
-						DLXInstruction push4 = new DLXInstruction();
-						push4.opcode = InstructionType.SUB;
-						push4.format = formatMap.get(InstructionType.ADDI);
-						push4.ra = FP;
-						push4.rb = SP;
-						push4.rc = FP;
-						push4.encodedForm = encodeInstruction(push4);
-						appendInstructionToBlock(edb, push4);
+						// Set FP = SP
+						DLXInstruction fpChange = new DLXInstruction();
+						fpChange.opcode = InstructionType.ADD;
+						fpChange.format = formatMap.get(InstructionType.ADD);
+						fpChange.ra = FP;
+						fpChange.rb = 0;
+						fpChange.rc = SP;
+						fpChange.encodedForm = encodeInstruction(fpChange);
+						appendInstructionToBlock(edb, fpChange);
 
-						// FP = FP - 2, equating to FP = SP - FP - 2
-						DLXInstruction push5 = new DLXInstruction();
-						push5.opcode = InstructionType.SUBI;
-						push5.format = formatMap.get(InstructionType.SUBI);
-						push5.ra = FP;
-						push5.rb = FP;
-						push5.rc = 2; // subtract 2, one for FP and one for RA
-										// register on the stack
-						push5.encodedForm = encodeInstruction(push5);
-						appendInstructionToBlock(edb, push5);
+//						// FP = FP - 2, equating to FP = SP - FP - 2
+//						DLXInstruction push5 = new DLXInstruction();
+//						push5.opcode = InstructionType.SUBI;
+//						push5.format = formatMap.get(InstructionType.SUBI);
+//						push5.ra = FP;
+//						push5.rb = FP;
+//						push5.rc = 2; // subtract 2, one for FP and one for RA
+//										// register on the stack
+//						push5.encodedForm = encodeInstruction(push5);
+//						appendInstructionToBlock(edb, push5);
 
 						// Add the JSR routine
 						DLXInstruction jsrInst = new DLXInstruction();
@@ -1832,19 +1825,34 @@ public class DLXGenerator
 						// Push all operands onto the stack (callee recovers the
 						// proper order)
 						for (int opIndex = ssaInst.callOperands.size() - 1; opIndex >= 0; opIndex--)
-						{
+						{							
 							PLIRInstruction operand = ssaInst.callOperands.get(opIndex);
-							System.out.println("pushing: " + operand);
+							
+							int srcReg = operand.regNum;
+							if (operand.kind == ResultKind.CONST)
+							{
+								DLXInstruction preInst = new DLXInstruction();
+								preInst.opcode = InstructionType.ADDI;
+								preInst.format = formatMap.get(InstructionType.ADDI);
+								
+								if (constants.containsKey(operand.tempVal))
+								{
+									srcReg = constants.get(operand.tempVal).regNum;	
+								}
+								preInst.ra = srcReg;
+								preInst.rb = 0;
+								preInst.rc = operand.tempVal;
+								preInst.encodedForm = encodeInstruction(preInst);
+								appendInstructionToBlock(edb, preInst);
+							}
 							DLXInstruction push3 = new DLXInstruction();
 							push3.opcode = InstructionType.PSH;
 							push3.format = formatMap.get(InstructionType.PSH);
 
-							// ***TODO: do check to see if this is a constant or
-							// global variable
+							// TODO: do check to see if this is a constant global variable
 
-							push3.ra = operand.regNum; // save contents of
-														// ssaInst.regNum
-							push3.rb = SP; //
+							push3.ra = srcReg; 
+							push3.rb = SP; 
 							push3.rc = 4; // word size
 							push3.encodedForm = encodeInstruction(push3);
 							appendInstructionToBlock(edb, push3);
@@ -1860,26 +1868,15 @@ public class DLXGenerator
 						push2.encodedForm = encodeInstruction(push2);
 						appendInstructionToBlock(edb, push2);
 
-						// Set FP = SP - FP
-						DLXInstruction push4 = new DLXInstruction();
-						push4.opcode = InstructionType.SUB;
-						push4.format = formatMap.get(InstructionType.ADDI);
-						push4.ra = FP;
-						push4.rb = SP;
-						push4.rc = FP;
-						push4.encodedForm = encodeInstruction(push4);
-						appendInstructionToBlock(edb, push4);
-
-						// FP = FP - 2, equating to FP = SP - FP - 2
-						DLXInstruction push5 = new DLXInstruction();
-						push5.opcode = InstructionType.SUBI;
-						push5.format = formatMap.get(InstructionType.SUBI);
-						push5.ra = FP;
-						push5.rb = FP;
-						push5.rc = 2; // subtract 2, one for FP and one for RA
-										// register on the stack
-						push5.encodedForm = encodeInstruction(push5);
-						appendInstructionToBlock(edb, push5);
+						// Set FP = SP
+						DLXInstruction fpChange = new DLXInstruction();
+						fpChange.opcode = InstructionType.ADD;
+						fpChange.format = formatMap.get(InstructionType.ADD);
+						fpChange.ra = FP;
+						fpChange.rb = 0;
+						fpChange.rc = SP;
+						fpChange.encodedForm = encodeInstruction(fpChange);
+						appendInstructionToBlock(edb, fpChange);
 
 						// Add the JSR routine
 						DLXInstruction jsrInst = new DLXInstruction();
@@ -1955,7 +1952,7 @@ public class DLXGenerator
 						loadInst.format = formatMap.get(InstructionType.LDW);
 						loadInst.ra = ssaInst.regNum;
 						loadInst.rb = SP;
-						loadInst.rc = -4 * (ssaInst.i1 + 1 + func.getStackOffset());
+						loadInst.rc = -4 * (ssaInst.paramNumber + 1 + func.getTotalStackOffset());
 						appendInstructionToBlock(edb, loadInst);
 						break;
 

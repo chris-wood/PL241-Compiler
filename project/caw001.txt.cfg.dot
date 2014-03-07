@@ -1,10 +1,10 @@
 digraph cfg {
-BB4[shape = box, label = "BB(4 [ populate ])\n" + "3 := loadparam 0\n" + "4 := add #0 #0\n" + "5 := add #0 #0\n" + "6 := add #0 #0\n" + "7 := write (3)\n" + "8 := phi(localArray) (6) (15)\n" + "9 := add #0 #5\n" + "10 := cmp (8) #5\n" + "11 := bge (10) #11\n"];
-BB16[shape = box, label = "BB(16)\n" + "12 := mul #4 (8)\n" + "13 := add FP localArray_baseaddr\n" + "14 := adda (12) (13)\n" + "15 := store (14) (8)\n" + "16 := mul #4 (15)\n" + "17 := add FP localArray_baseaddr\n" + "18 := adda (16) (17)\n" + "19 := load (18)\n" + "20 := write (19)\n" + "21 := beq #0 #-13\n"];
-BB23[shape = box, label = "BB(23)\n" + "22 := add #0 #10\n" + "23 := return (22)\n"];
-BB4 -> BB16;
-BB4 -> BB23;
-BB16 -> BB4;
+BB4[shape = box, label = "BB(4 [ populate ])\n" + "3 := loadparam 0\n" + "4 := loadparam 1\n" + "5 := add #0 #0\n" + "6 := add #0 #0\n" + "7 := phi(localArray) (6) (16)\n" + "8 := phi(i) #0 (23)\n" + "9 := add #0 #5\n" + "10 := cmp (8) #5\n" + "11 := bge (10) #14\n"];
+BB12[shape = box, label = "BB(12)\n" + "12 := add (8) (4)\n" + "13 := mul #4 (8)\n" + "14 := add FP localArray_baseaddr\n" + "15 := adda (13) (14)\n" + "16 := store (15) (12)\n" + "17 := mul #4 (8)\n" + "18 := add FP localArray_baseaddr\n" + "19 := adda (17) (18)\n" + "20 := load (19)\n" + "21 := write (20)\n" + "22 := wln\n" + "23 := add (8) #1\n" + "24 := beq #0 #-17\n"];
+BB26[shape = box, label = "BB(26)\n" + "25 := add #0 #10\n" + "26 := return (25)\n"];
+BB4 -> BB12;
+BB4 -> BB26;
+BB12 -> BB4;
 
-BB29[shape = box, label = "BB(29)\n" + "1 := global #0\n" + "2 := global #0\n" + "24 := func populate #5\n" + "25 := write (24)\n" + "26 := end\n"];
+BB33[shape = box, label = "BB(33)\n" + "1 := global #0\n" + "2 := global #0\n" + "27 := func populate #5 #10\n" + "28 := write (27)\n" + "29 := wln\n" + "30 := end\n"];
 }

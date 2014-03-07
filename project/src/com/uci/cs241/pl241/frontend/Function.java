@@ -50,7 +50,28 @@ public class Function
 		}
 	}
 	
-	public int getStackOffset()
+	public int getStackOffset(String var)
+	{
+		int offset = 0;
+		
+		for (String array : arraySizes.keySet())
+		{
+			if (array.equals(var))
+			{
+				return offset;
+			}
+			int dimension = 1;
+			for (Integer d : arraySizes.get(array))
+			{
+				dimension *= d;
+			}
+			offset += dimension;
+		}
+		
+		return -1;
+	}
+	
+	public int getTotalStackOffset()
 	{
 		int offset = 0;
 		

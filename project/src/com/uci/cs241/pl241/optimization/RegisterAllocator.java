@@ -53,6 +53,8 @@ public class RegisterAllocator
 
 		// Add x and its edges back to G
 		ig.addVertex(x, neighbors);
+		
+		System.out.println("Coloring: " + x);
 
 		// choose a color for x that is different from its neighbors
 		HashSet<Integer> neighborColors = new HashSet<Integer>();
@@ -61,8 +63,7 @@ public class RegisterAllocator
 			neighborColors.add(regMap.get(n));
 		}
 		boolean colored = false;
-		int color = 1; // register 0, for DLX, is always reserved to be a
-						// constant zero
+		int color = 1; // register 0, for DLX, is always reserved to be a constant zero
 		while (!colored)
 		{
 			if (neighborColors.contains(color) == false)
@@ -75,14 +76,15 @@ public class RegisterAllocator
 			// Try the next color
 			color++;
 
-			// // We can't use reserved registers... only R1-R27 are general
-			// purpose
-			// // See DLX spec for R0, R28, R29, R30, R31 roles
-			// while (color == 28 || color == 29 || color == 30)
-			// {
-			// color++;
-			// }
+			 // We can't use reserved registers... only R1-R26 are general purpose (27 is our return reg)
+			 // See DLX spec for R0, R28, R29, R30, R31 roles
+			 while (color == 27 || color == 28 || color == 29 || color == 30)
+			 {
+				 color++;
+			 }
 		}
+		
+		System.out.println("REG ASSIGNMENT: " + PLStaticSingleAssignment.getInstruction(x).toString() + " => " + color);
 		regMap.put(x, color);
 		PLStaticSingleAssignment.getInstruction(x).regNum = color;
 	}
@@ -140,8 +142,22 @@ public class RegisterAllocator
 					PLIRInstruction inst = b.instructions.get(i);
 					if (inst.opcode != InstructionType.PHI && inst.isNotLiveInstruction() == false)
 					{
-//						if (inst.refInst != null) continue;
+						if (inst.opcode == InstructionType.LOADPARAM)
+						{
+							System.err.println("follow me");
+						}
 						
+						if (live.contains(4))
+						{
+							System.err.println("last inst added LOADPARAM 1");
+						}
+						
+						if (inst.id == 12)
+						{
+							System.out.println("using param v");
+						}
+						
+						// Use CSE-generated referencing instruction
 						while (inst.refInst != null)
 						{
 							inst = inst.refInst;
@@ -220,6 +236,8 @@ public class RegisterAllocator
 								constInst.id = PLStaticSingleAssignment.globalSSAIndex;
 								ig.addVertex(constInst.id);
 								PLStaticSingleAssignment.addInstruction(scope, constInst);
+								
+//								System.out.println("New constant: " + inst.i2 + " -> " + constInst.id);
 								constants.put(inst.i2, constInst);
 								live.add(constInst);
 							}
@@ -243,6 +261,8 @@ public class RegisterAllocator
 										constInst.id = PLStaticSingleAssignment.globalSSAIndex;
 										ig.addVertex(constInst.id);
 										PLStaticSingleAssignment.addInstruction(scope, constInst);
+										
+//										System.out.println("New constant: " + op.i1 + " -> " + constInst.id);
 										constants.put(op.i1, constInst);
 										live.add(constInst);
 									}
@@ -257,6 +277,8 @@ public class RegisterAllocator
 										constInst.id = PLStaticSingleAssignment.globalSSAIndex;
 										ig.addVertex(constInst.id);
 										PLStaticSingleAssignment.addInstruction(scope, constInst);
+										
+//										System.out.println("New constant: " + op.i2 + " -> " + constInst.id);
 										constants.put(op.i2, constInst);
 										live.add(constInst);
 									}
@@ -271,6 +293,8 @@ public class RegisterAllocator
 										constInst.id = PLStaticSingleAssignment.globalSSAIndex;
 										ig.addVertex(constInst.id);
 										PLStaticSingleAssignment.addInstruction(scope, constInst);
+										
+//										System.out.println("New constant: " + op.tempVal + " -> " + constInst.id);
 										constants.put(op.tempVal, constInst);
 										live.add(constInst);
 									}
@@ -314,6 +338,25 @@ public class RegisterAllocator
 						}
 						live.add(op);
 					}
+					else if (branch == 1 && inst.op1type == OperandType.CONST)
+					{
+						if (constants.containsKey(inst.i1))
+						{
+							live.add(constants.get(inst.i1));
+						}
+						else 
+						{
+							PLIRInstruction constInst = new PLIRInstruction(scope);
+							constInst.id = PLStaticSingleAssignment.globalSSAIndex;
+							ig.addVertex(constInst.id);
+							PLStaticSingleAssignment.addInstruction(scope, constInst);
+							
+//							System.out.println("New constant: " + op.tempVal + " -> " + constInst.id);
+							constants.put(inst.i1, constInst);
+							live.add(constInst);
+						}
+					}
+					
 					if (branch == 2 && inst.op2 != null && PLStaticSingleAssignment.isIncluded(inst.op2.id))
 					{
 						PLIRInstruction op = inst.op2;
@@ -322,6 +365,24 @@ public class RegisterAllocator
 							op = op.refInst;
 						}
 						live.add(op);
+					}
+					else if (branch == 2 && inst.op2type == OperandType.CONST)
+					{
+						if (constants.containsKey(inst.i2))
+						{
+							live.add(constants.get(inst.i2));
+						}
+						else 
+						{
+							PLIRInstruction constInst = new PLIRInstruction(scope);
+							constInst.id = PLStaticSingleAssignment.globalSSAIndex;
+							ig.addVertex(constInst.id);
+							PLStaticSingleAssignment.addInstruction(scope, constInst);
+							
+//							System.out.println("New constant: " + op.tempVal + " -> " + constInst.id);
+							constants.put(inst.i2, constInst);
+							live.add(constInst);
+						}
 					}
 				}
 			}

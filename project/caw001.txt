@@ -3,21 +3,25 @@ main
 var index;
 array[10] output;
 
-function populate(n);
-var a, i;
+function populate(n, v);
+var i;
 array[5] localArray;
 {
-  call OutputNum(n);
+  //call OutputNum(n);
+  //call OutputNum(v);
   let i <- 0;
   while i < 5 do
-    let localArray[i] <- i;
-    call OutputNum(localArray[i])
+    let localArray[i] <- i + v;
+    call OutputNum(localArray[i]);
+    call OutputNewLine();
+    let i <- i + 1
   od;
   return 10
 };
 
 {
-  call OutputNum(call populate(5))
+  call OutputNum(call populate(5, 10));
+  call OutputNewLine()
 }.
 
 // dynamic array test

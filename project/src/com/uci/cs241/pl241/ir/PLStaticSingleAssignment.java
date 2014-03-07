@@ -14,23 +14,24 @@ public class PLStaticSingleAssignment
 	{
 	}
 	
-	public static void endInstructions()
-	{
-		boolean remove = false;
-		ArrayList<Integer> toRemove = new ArrayList<Integer>(); 
-		for (int i = 0; i < instructions.size(); i++)
-		{
-			if (remove) toRemove.add(i);
-			if (instructions.get(i).opcode == InstructionType.END)
-			{
-				remove = true;
-			}
-		}
-		for (Integer i : toRemove)
-		{
-			instructions.remove(i);
-		}
-	}
+//	public static void endInstructions()
+//	{
+//		boolean remove = false;
+//		ArrayList<Integer> toRemove = new ArrayList<Integer>(); 
+//		for (int i = 0; i < instructions.size(); i++)
+//		{
+//			if (remove) toRemove.add(i);
+//			if (instructions.get(i).opcode == InstructionType.END)
+//			{
+//				remove = true;
+//			}
+//		}
+//		for (Integer i : toRemove)
+//		{
+//			System.out.println("Removing: " + instructions.get(i));
+//			instructions.remove(i);
+//		}
+//	}
 	
 	public static void finish()
 	{

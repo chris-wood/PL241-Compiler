@@ -234,7 +234,7 @@ public class PLParser
 					result = result.joinNode;
 				}
 				
-				// parse the close of the computation
+				// Parse the close of the computation
 				if (toksym == PLToken.closeBraceToken)
 				{
 					advance(in);
@@ -242,9 +242,10 @@ public class PLParser
 					{
 						PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.END);
 						result.addInstruction(inst);
+						PLStaticSingleAssignment.globalSSAIndex++; // skip over dummy END instruction
 						blocks.add(root);
-						PLStaticSingleAssignment.endInstructions();
 						
+						// Insert globals into the root so the code generator knows what to allocate space for
 						for (PLIRInstruction glob : globalVariables.values())
 						{
 							root.insertInstruction(glob, 0);
