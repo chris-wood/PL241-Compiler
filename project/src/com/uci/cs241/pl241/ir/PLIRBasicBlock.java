@@ -309,6 +309,11 @@ public class PLIRBasicBlock
 		{
 			boolean replaced = false;
 			
+			if (phi.id > bInst.id)
+			{
+				continue;
+			}
+			
 			if (bInst.opcode == InstructionType.PHI)
 			{
 				if ((bInst.id == p1id || bInst.id == p2id) && phi.id > bInst.id)

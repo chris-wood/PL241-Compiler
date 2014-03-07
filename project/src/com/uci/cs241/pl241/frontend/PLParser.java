@@ -1042,13 +1042,14 @@ public class PLParser
 	private PLIRBasicBlock parse_relation(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRBasicBlock left = parse_expression(in);
+		PLIRInstruction leftInst = left.getLastInst();
 		for (PLIRInstruction li : left.instructions)
 		{
-			System.out.println(li.origIdent);
-			li.overrideGenerate = true;
-			li.forceGenerate(scope);
+//			System.out.println(li.origIdent);
+//			li.overrideGenerate = true;
+//			li.forceGenerate(scope);
+			leftInst.dependents.add(li);
 		}
-		PLIRInstruction leftInst = left.getLastInst();
 		if (PLToken.isRelationalToken(toksym) == false)
 		{
 			SyntaxError("Invalid relational character");
@@ -1090,9 +1091,10 @@ public class PLParser
 		PLIRInstruction rightInst = right.getLastInst();
 		for (PLIRInstruction ri : right.instructions)
 		{
-			System.out.println(ri.origIdent);
-			ri.overrideGenerate = true;
-			ri.forceGenerate(scope);
+//			System.out.println(ri.origIdent);
+//			ri.overrideGenerate = true;
+//			ri.forceGenerate(scope);
+			rightInst.dependents.add(ri);
 		}
 		
 		// Add the result of all relations
@@ -1224,34 +1226,34 @@ public class PLParser
 						// The last instruction added to the BB is the one that holds the value for this assignment
 //						storeInst.origIdent = varName;
 						
-						for (PLIRInstruction strInst : result.instructions)
-						{
-							if (strInst.equals(storeInst)) continue;
-							
-							System.out.println(strInst.origIdent);
-							strInst.tempPosition = PLStaticSingleAssignment.globalSSAIndex;
-							
-							// If we aren't deferring generation because of a potential PHI usage, just replace with the current value in scope
-							if ((strInst.op1 != null && deferredPhiIdents.contains(strInst.op1.origIdent)) || 
-									(strInst.op2 != null && deferredPhiIdents.contains(strInst.op2.origIdent)))
-							{
-								strInst.kind = ResultKind.VAR;
-								strInst.overrideGenerate = true;
-								strInst.forceGenerate(scope);
-							}
-							else if (deferredPhiIdents.contains(varName)) // else, force the current instruction to be generated so it can be used in a phi later
-							{
-								strInst.kind = ResultKind.VAR;
-								strInst.overrideGenerate = true;
-								strInst.forceGenerate(scope);
-							}
-							else if (globalFunctionParsing && globalVariables.containsKey(varName))
-							{
-								strInst.kind = ResultKind.VAR;
-								strInst.overrideGenerate = true;
-								strInst.forceGenerate(scope);
-							}
-						}
+//						for (PLIRInstruction strInst : result.instructions)
+//						{
+//							if (strInst.equals(storeInst)) continue;
+//							
+//							System.out.println(strInst.origIdent);
+//							strInst.tempPosition = PLStaticSingleAssignment.globalSSAIndex;
+//							
+//							// If we aren't deferring generation because of a potential PHI usage, just replace with the current value in scope
+//							if ((strInst.op1 != null && deferredPhiIdents.contains(strInst.op1.origIdent)) || 
+//									(strInst.op2 != null && deferredPhiIdents.contains(strInst.op2.origIdent)))
+//							{
+//								strInst.kind = ResultKind.VAR;
+//								strInst.overrideGenerate = true;
+//								strInst.forceGenerate(scope);
+//							}
+//							else if (deferredPhiIdents.contains(varName)) // else, force the current instruction to be generated so it can be used in a phi later
+//							{
+//								strInst.kind = ResultKind.VAR;
+//								strInst.overrideGenerate = true;
+//								strInst.forceGenerate(scope);
+//							}
+//							else if (globalFunctionParsing && globalVariables.containsKey(varName))
+//							{
+//								strInst.kind = ResultKind.VAR;
+//								strInst.overrideGenerate = true;
+//								strInst.forceGenerate(scope);
+//							}
+//						}
 						
 //						// Scope gets the last result, storeInst
 //						scope.updateSymbol(varName, storeInst); // (SSA ID) := expr
@@ -2224,22 +2226,57 @@ public class PLParser
 				
 				// Now loop through the entry and fix instructions as needed
 				// Those fixed are replaced with the result of this phi if they have used or modified the sym...
-				if (cmpInst.op1name != null && cmpInst.op1name.equals(var))
+				
+				if (cmpInst.op1 != null)
 				{
-					cmpInst.replaceLeftOperand(phi);
+//					for (PLIRInstruction dependent : cmpInst.op1.dependents)
+					boolean replaced = false;
+					for (int i = 0; i < cmpInst.op1.dependents.size(); i++)
+					{
+						PLIRInstruction dependent = cmpInst.op1.dependents.get(i);
+						if (dependent.origIdent.equals(var))
+						{
+							// OK, we need to unfold cmpInst.op1, but how?...
+							replaced = true;
+						}
+					}
+					if (replaced)
+					{
+						cmpInst.evaluate(phi, scope);
+					}
 				}
-				else if (cmpInst.op1 != null && cmpInst.op1.origIdent.equals(var))
+				if (cmpInst.op2 != null)
 				{
-					cmpInst.replaceLeftOperand(phi);
+					boolean replaced = false;
+					for (PLIRInstruction dependent : cmpInst.op2.dependents)
+					{
+						if (dependent.origIdent.equals(var))
+						{
+							replaced = true;
+						}
+					}
+					if (replaced)
+					{
+						cmpInst.evaluate(phi, scope);
+					}
 				}
-				if (cmpInst.op2name != null && cmpInst.op2name.equals(var))
-				{
-					cmpInst.replaceRightOperand(phi);
-				}
-				else if (cmpInst.op2 != null && cmpInst.op2.origIdent.equals(var))
-				{
-					cmpInst.replaceRightOperand(phi);
-				}
+				
+//				if (cmpInst.op1name != null && cmpInst.op1name.equals(var))
+//				{
+//					cmpInst.replaceLeftOperand(phi);
+//				}
+//				else if (cmpInst.op1 != null && cmpInst.op1.origIdent.equals(var))
+//				{
+//					cmpInst.replaceLeftOperand(phi);
+//				}
+//				if (cmpInst.op2name != null && cmpInst.op2name.equals(var))
+//				{
+//					cmpInst.replaceRightOperand(phi);
+//				}
+//				else if (cmpInst.op2 != null && cmpInst.op2.origIdent.equals(var))
+//				{
+//					cmpInst.replaceRightOperand(phi);
+//				}
 				
 				ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
 				visited.add(entry);

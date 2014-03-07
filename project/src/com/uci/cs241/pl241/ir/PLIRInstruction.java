@@ -27,6 +27,8 @@ public class PLIRInstruction
 	public String op2address;
 	public String op2name;
 	
+	public ArrayList<PLIRInstruction> dependents = new ArrayList<PLIRInstruction>();
+	
 	// used to indicate if this instruction is part of a designator
 //	public boolean isDesig = false;
 	
@@ -415,6 +417,123 @@ public class PLIRInstruction
 			generated = true;
 			id = PLStaticSingleAssignment.injectInstruction(this, table, loc);
 		}
+	}
+	
+	public PLIRInstruction evaluate(PLIRInstruction newOp, PLSymbolTable table)
+	{
+		if (op1 != null)
+		{
+			if (op1.origIdent.equals(newOp.origIdent))
+			{
+				op1type = OperandType.INST;
+				op1 = newOp;
+			}
+			else
+			{
+				op1 = op1.evaluate(newOp, table);
+				op1type = op1.type;
+			}
+//			for (PLIRInstruction dependent : op1.dependents)
+//			{
+//				if (dependent.origIdent.equals(newOp.origIdent))
+//				{
+//					op1.evaluate(newOp, table);
+//				}
+//			}
+		}
+		
+		if (op2 != null)
+		{
+			if (op2.origIdent.equals(newOp.origIdent))
+			{
+				op2type = OperandType.INST;
+				op2 = newOp;
+			}
+			else
+			{
+				op2 = op2.evaluate(newOp, table);
+				op2type = op2.type;
+			}
+//			for (PLIRInstruction dependent : op2.dependents)
+//			{
+//				if (dependent.origIdent.equals(newOp.origIdent))
+//				{
+//					op2.evaluate(newOp, table);
+//				}
+//			}
+		}
+		
+		// re-evaluate the node
+		if (op1 != null)
+		{
+			if (op1.kind == ResultKind.CONST)
+			{
+				op1type = OperandType.CONST;
+				i1 = op1.tempVal;
+			}
+		}
+		if (op2 != null)
+		{
+			if (op2.kind == ResultKind.CONST)
+			{
+				op2type = OperandType.CONST;
+				i2 = op2.tempVal;
+			}
+		}
+		
+		// handle computation...
+		if (op1 != null && op2 != null)
+		{
+			if (op1.kind == ResultKind.CONST && op2.kind == ResultKind.CONST)
+			{
+				i1 = op1.tempVal;
+				i2 = op2.tempVal;
+				kind = ResultKind.CONST;
+				switch (opcode)
+				{
+				case ADD:
+					tempVal = i1 + i2;
+					kind = ResultKind.CONST;
+					break;
+				case SUB:
+					tempVal = i1 - i2;
+					kind = ResultKind.CONST;
+					break;
+				case MUL:
+					tempVal = i1 * i2;
+					kind = ResultKind.CONST;
+					break;
+				case DIV:
+					tempVal = i1 / i2;
+					kind = ResultKind.CONST;
+					break;
+				}
+			}
+			else
+			{
+				type = OperandType.INST;
+				kind = ResultKind.VAR;
+				op1.tempPosition = this.id - 1;
+				op1.overrideGenerate = true;
+				op1.forceGenerate(table);
+				op2.tempPosition = this.id - 1;
+				op2.overrideGenerate = true;
+				op2.forceGenerate(table);
+			}
+		}
+		
+		if (opcode == InstructionType.CMP)
+		{
+			kind = ResultKind.COND;
+			forceGenerate(table);
+		}
+		
+		if (kind == ResultKind.CONST)
+		{
+			forceGenerate(table);
+		}
+		
+		return this;
 	}
 	
 	public void forceGenerate(PLSymbolTable table)

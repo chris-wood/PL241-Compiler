@@ -1,7 +1,11 @@
 digraph dom {
-BB4[shape = box, label = "BB(4)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := global #0\n" + "4 := phi(b) (7) (12)\n" + "5 := phi(a) (8) (9)\n" + "6 := add #0 #3\n" + "7 := add #0 #2\n" + "8 := add #0 #1\n" + "9 := add #1 #2\n" + "10 := cmp (9) (6)\n" + "11 := bgt (10) #6\n"];
-BB15[shape = box, label = "BB(15)\n" + "12 := add (6) #1\n" + "13 := (12)\n" + "14 := add (12) (12)\n" + "15 := (9)\n" + "16 := beq #0 #-12\n"];
-BB27[shape = box, label = "BB(27)\n" + "17 := write (5)\n" + "18 := write (4)\n" + "19 := write (6)\n" + "20 := wln\n" + "21 := end\n"];
-BB4 -> BB15;
-BB4 -> BB27;
+BB5[shape = box, label = "BB(5)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := global #0\n" + "4 := global #0\n" + "5 := phi(d) (4) (15)\n" + "6 := phi(b) #2 (12)\n" + "7 := phi(a) (27) (16)\n" + "8 := add (7) (6)\n" + "9 := add #0 #3\n" + "10 := cmp (8) #3\n" + "11 := bgt (10) #18\n" + "27 := add #0 #1\n"];
+BB16[shape = box, label = "BB(16)\n" + "12 := add #3 #1\n" + "13 := add (12) #4\n" + "14 := add (27) (13)\n" + "15 := phi(d) (5) (25)\n" + "16 := phi(a) (14) (24)\n" + "17 := cmp (15) (12)\n" + "18 := bge (17) #9\n"];
+BB55[shape = box, label = "BB(55)\n" + "29 := write (7)\n" + "30 := write (6)\n" + "31 := write (9)\n" + "32 := wln\n" + "33 := end\n"];
+BB35[shape = box, label = "BB(35)\n" + "19 := write (16)\n" + "20 := write (12)\n" + "21 := write #3\n" + "22 := write (15)\n" + "23 := wln\n" + "24 := add (16) #1\n" + "25 := add (15) #1\n" + "26 := beq #0 #-11\n"];
+BB54[shape = box, label = "BB(54)\n" + "28 := beq #0 #-23\n"];
+BB5 -> BB16;
+BB5 -> BB55;
+BB16 -> BB35;
+BB16 -> BB54;
 }

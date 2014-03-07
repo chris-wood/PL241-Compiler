@@ -1351,7 +1351,7 @@ public class DLXGenerator
 
 							// ra = ra - i2 --> ra = i1 - i2
 							newInst.opcode = InstructionType.CMP;
-							newInst.format = formatMap.get(InstructionType.CMP);
+							newInst.format = formatMap.get(InstructionType.CMPI);
 							newInst.ra = ssaInst.regNum;
 							newInst.rb = ssaInst.regNum;
 							newInst.rc = ssaInst.op2.regNum;
