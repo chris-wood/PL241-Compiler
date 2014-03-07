@@ -301,7 +301,7 @@ public class PLParser
 				inst.forceGenerate(scope);
 				inst.origIdent = symName;
 				
-				func.addLocalVariable(inst);
+				func.addParameter(inst);
 				
 				// Eat the symbol, create the block with the single instruction, add the ident to the list
 				// of used identifiers, and return
@@ -1160,7 +1160,8 @@ public class PLParser
 			if (scope.isVarInScope(varName))
 			{
 				PLIRBasicBlock desigBlock = parse_designator(in);
-				desigBlock.getLastInst().origIdent = varName;
+				PLIRInstruction desigInst = desigBlock.getLastInst();
+				desigInst.origIdent = varName;
 				
 				// Check to see if this assignment needs to be saved at the end of the function
 				boolean markToSave = false;
@@ -1171,7 +1172,7 @@ public class PLParser
 				
 				if (globalVariables.containsKey(desigBlock.getLastInst().origIdent))
 				{
-					desigBlock.getLastInst().isGlobalVariable = true;
+					desigInst.isGlobalVariable = true;
 				}
 				
 				if (toksym == PLToken.becomesToken)
@@ -1209,7 +1210,7 @@ public class PLParser
 					}
 					else
 					{
-						storeInst.isGlobalVariable = desigBlock.getLastInst().isGlobalVariable;
+						storeInst.isGlobalVariable = desigInst.isGlobalVariable;
 						if (desigBlock.arrayName != null)
 						{
 							storeInst.origIdent = desigBlock.arrayName;
@@ -1296,7 +1297,7 @@ public class PLParser
 						
 						if (markToSave)
 						{
-							scope.functions.get(funcName).addModifiedGlobal(globalVariables.get(desigBlock.getLastInst().origIdent), storeInst);
+							scope.functions.get(funcName).addModifiedGlobal(globalVariables.get(desigInst.origIdent), storeInst);
 						}
 					}
 					else // array!
@@ -2195,9 +2196,18 @@ public class PLParser
 			}
 			debug("(while loop) Inserting " + modded.size() + " phis");
 			int offset = 0;
-			ArrayList<PLIRInstruction> phisGenerated = new ArrayList<PLIRInstruction>(); 
+			ArrayList<PLIRInstruction> phisGenerated = new ArrayList<PLIRInstruction>();
+			
+			
+			
 			for (String var : modded)
 			{
+				scope.displayCurrentScopeSymbols();
+				for (String inst : scope.symTable.get(scope.getCurrentScope()).keySet())
+				{
+					System.out.println(inst + " - " + scope.symTable.get(scope.getCurrentScope()).get(inst).kind);
+				}
+				
 				PLIRInstruction bodyInst = body.modifiedIdents.get(var);
 				bodyInst.forceGenerate(scope, bodyInst.tempPosition);
 				
@@ -2227,6 +2237,12 @@ public class PLParser
 				// Now loop through the entry and fix instructions as needed
 				// Those fixed are replaced with the result of this phi if they have used or modified the sym...
 				
+				for (String inst : scope.symTable.get(scope.getCurrentScope()).keySet())
+				{
+					System.out.println(inst + " - " + scope.symTable.get(scope.getCurrentScope()).get(inst).kind);
+				}
+				System.out.println("---");
+				
 				if (cmpInst.op1 != null)
 				{
 //					for (PLIRInstruction dependent : cmpInst.op1.dependents)
@@ -2245,6 +2261,12 @@ public class PLParser
 						cmpInst.evaluate(phi, scope);
 					}
 				}
+				
+				for (String inst : scope.symTable.get(scope.getCurrentScope()).keySet())
+				{
+					System.out.println(inst + " - " + scope.symTable.get(scope.getCurrentScope()).get(inst).kind);
+				}
+				
 				if (cmpInst.op2 != null)
 				{
 					boolean replaced = false;
@@ -2514,6 +2536,9 @@ public class PLParser
 					identTypeMap.put(sym, type);
 					scope.addVarToScope(sym);
 					arrayDimensionMap.put(sym, dimensions);
+					
+//					Function func = scope.functions.get(funcName);
+//					func.arraySizes.put(sym, dimensions);
 				}
 				else
 				{
@@ -2536,6 +2561,8 @@ public class PLParser
 	public boolean parseVariableDeclaration = false;
 	private PLIRBasicBlock parse_varDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{	
+		Function func = scope.functions.get(funcName);
+		
 		IdentType type = IdentType.VAR;
 		if (toksym == PLToken.varToken)
 		{
@@ -2551,10 +2578,22 @@ public class PLParser
 		PLIRBasicBlock result = parse_typeDecl(in);
 		result = parse_ident(in);
 		
+		String symName = result.getLastInst().origIdent;
+		if (!globalVariableParsing && this.arrayDimensionMap.containsKey(symName))
+		{
+			func.arraySizes.put(symName, arrayDimensionMap.get(symName));
+		}
+		
 		while (toksym == PLToken.commaToken)
 		{
 			advance(in);
 			scope.addVarToScope(sym);
+			
+			if (!globalVariableParsing && this.arrayDimensionMap.containsKey(sym))
+			{
+				func.arraySizes.put(sym, arrayDimensionMap.get(sym));
+			}
+			
 			identTypeMap.put(sym, type);
 			result = parse_ident(in);
 		}
@@ -2758,7 +2797,7 @@ public class PLParser
 			System.out.println("Adding stack parameter to scope: " + inst.dummyName);
 			scope.addVarToScope(funcName, inst.dummyName);
 			scope.updateSymbol(inst.dummyName, inst);
-			func.addLocalVariable(inst); 
+//			func.addParameter(inst); 
 		}
 		
 		return result;
@@ -2776,24 +2815,15 @@ public class PLParser
 		variables = new ArrayList<PLIRInstruction>();
 		while (toksym == PLToken.varToken || toksym == PLToken.arrToken)
 		{
-			result = parse_varDecl(in); // TODO: not sure what we really want to do here...
+			result = parse_varDecl(in); 
 		}
-		
-//		// Actually make the function now..
-//		paramMap.put(funcName, params.size());
-//		if (isFunction)
-//		{
-//			scope.addFunction(funcName, params, variables);
-//		}
-//		else
-//		{
-//			scope.addProcedure(funcName, params, variables);
-//		}
 		
 		if (toksym != PLToken.openBraceToken)
 		{
 			SyntaxError("'{' missing from funcBody non-terminal.");
 		}
+		
+		Function func = scope.functions.get(funcName);
 		
 		// eat the open brace '{'
 		advance(in);

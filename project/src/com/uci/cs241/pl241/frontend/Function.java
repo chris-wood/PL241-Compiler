@@ -13,7 +13,7 @@ public class Function
 	public ArrayList<PLIRInstruction> vars;
 	public ArrayList<String> scope;
 	public HashMap<PLIRInstruction, PLIRInstruction> modifiedGlobals;
-	public HashMap<String, Integer> arraySizes;
+	public HashMap<String, ArrayList<Integer>> arraySizes;
 	public String name;
 	
 	public Function(String name, ArrayList<PLIRInstruction> parameters, boolean hasReturn)
@@ -24,7 +24,7 @@ public class Function
 		this.vars = new ArrayList<PLIRInstruction>();
 		this.modifiedGlobals = new HashMap<PLIRInstruction, PLIRInstruction>();
 		this.scope = new ArrayList<String>();
-		this.arraySizes = new HashMap<String, Integer>();
+		this.arraySizes = new HashMap<String, ArrayList<Integer>>();
 		for (PLIRInstruction s : parameters)
 		{
 			this.params.add(s);
@@ -39,7 +39,7 @@ public class Function
 		this.vars = new ArrayList<PLIRInstruction>();
 		this.modifiedGlobals = new HashMap<PLIRInstruction, PLIRInstruction>();
 		this.scope = new ArrayList<String>();
-		this.arraySizes = new HashMap<String, Integer>();
+		this.arraySizes = new HashMap<String, ArrayList<Integer>>();
 		for (PLIRInstruction s : parameters)
 		{
 			this.params.add(s);
@@ -50,12 +50,29 @@ public class Function
 		}
 	}
 	
+	public int getStackOffset()
+	{
+		int offset = 0;
+		
+		for (String array : arraySizes.keySet())
+		{
+			int dimension = 1;
+			for (Integer d : arraySizes.get(array))
+			{
+				dimension *= d;
+			}
+			offset += dimension;
+		}
+		
+		return offset;
+	}
+	
 	public void addModifiedGlobal(PLIRInstruction glob, PLIRInstruction inst)
 	{
 		modifiedGlobals.put(glob, inst);
 	}
 	
-	public void addLocalVariable(PLIRInstruction inst)
+	public void addParameter(PLIRInstruction inst)
 	{
 		vars.add(inst);
 	}

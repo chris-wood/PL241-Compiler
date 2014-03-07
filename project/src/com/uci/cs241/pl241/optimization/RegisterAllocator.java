@@ -157,7 +157,7 @@ public class RegisterAllocator
 						}
 
 						// live = live + {j,k}
-						if (inst.op1 != null && PLStaticSingleAssignment.isIncluded(inst.op1.id) && inst.op1.id != inst.id)
+						if (inst.op1 != null && PLStaticSingleAssignment.isIncluded(inst.op1.id) && inst.op1.id != inst.id && inst.op1.id != 0)
 						{
 							PLIRInstruction op = inst.op1;
 							while (op.refInst != null)
@@ -199,7 +199,7 @@ public class RegisterAllocator
 								live.add(addrInst);
 							}	
 						}
-						else if (inst.op2 != null && PLStaticSingleAssignment.isIncluded(inst.op2.id) && inst.op2.id != inst.id)
+						else if (inst.op2 != null && PLStaticSingleAssignment.isIncluded(inst.op2.id) && inst.op2.id != inst.id && inst.op2.id != 0)
 						{
 							PLIRInstruction op = inst.op2;
 							while (op.refInst != null)
@@ -230,7 +230,55 @@ public class RegisterAllocator
 						{
 							for (PLIRInstruction op : inst.callOperands)
 							{
-								live.add(op);
+//								live.add(op);
+								if (op.kind == ResultKind.CONST)
+								{
+									if (constants.containsKey(op.i1) && op.i1 != 0)
+									{
+										live.add(constants.get(op.i1));
+									}
+									else if (op.i1 != 0)
+									{
+										PLIRInstruction constInst = new PLIRInstruction(scope);
+										constInst.id = PLStaticSingleAssignment.globalSSAIndex;
+										ig.addVertex(constInst.id);
+										PLStaticSingleAssignment.addInstruction(scope, constInst);
+										constants.put(op.i1, constInst);
+										live.add(constInst);
+									}
+									
+									if (constants.containsKey(op.i2) && op.i2 != 0)
+									{
+										live.add(constants.get(op.i2));
+									}
+									else if (op.i2 != 0)
+									{
+										PLIRInstruction constInst = new PLIRInstruction(scope);
+										constInst.id = PLStaticSingleAssignment.globalSSAIndex;
+										ig.addVertex(constInst.id);
+										PLStaticSingleAssignment.addInstruction(scope, constInst);
+										constants.put(op.i2, constInst);
+										live.add(constInst);
+									}
+									
+									if (constants.containsKey(op.tempVal))
+									{
+										live.add(constants.get(op.tempVal));
+									}
+									else 
+									{
+										PLIRInstruction constInst = new PLIRInstruction(scope);
+										constInst.id = PLStaticSingleAssignment.globalSSAIndex;
+										ig.addVertex(constInst.id);
+										PLStaticSingleAssignment.addInstruction(scope, constInst);
+										constants.put(op.tempVal, constInst);
+										live.add(constInst);
+									}
+								}
+								else
+								{
+									live.add(op);
+								}
 							}
 						}
 					}

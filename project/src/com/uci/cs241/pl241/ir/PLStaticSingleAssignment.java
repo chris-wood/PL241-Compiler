@@ -68,6 +68,7 @@ public class PLStaticSingleAssignment
 	
 	public static int addInstruction(PLSymbolTable table, PLIRInstruction inst)
 	{
+		System.out.println("Adding " + inst);
 		inst.depth = table.scopeDepth();
 		boolean success = instructions.add(inst);
 		if (!success) return -1;

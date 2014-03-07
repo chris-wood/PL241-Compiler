@@ -1,29 +1,23 @@
-// enveloping phis inside while loops
-main
-var a, b, c, d;
-{
-  let a <- 1;
-  let b <- 2;
-  let c <- 3;
-  while (a + b) <= c do
-    let b <- c + 1;
-    let a <- a + b + c + 1;
-    let d <- 0;
-    while d < b do
-      call OutputNum(a);
-      call OutputNum(b);
-      call OutputNum(c);
-      call OutputNum(d);
-      call OutputNewLine();
-      let a <- a + 1;
-      let d <- d + 1
-    od
-  od;
+// dynamic array test
+main 
+var index;
+array[10] output;
 
-  call OutputNum(a);
-  call OutputNum(b);
-  call OutputNum(c);
-  call OutputNewLine()
+function populate(n);
+var a, i;
+array[5] localArray;
+{
+  call OutputNum(n);
+  let i <- 0;
+  while i < 5 do
+    let localArray[i] <- i;
+    call OutputNum(localArray[i])
+  od;
+  return 10
+};
+
+{
+  call OutputNum(call populate(5))
 }.
 
 // dynamic array test
@@ -66,6 +60,34 @@ var a, i;
     call OutputNewLine();
     let index <- index + 1
   od
+}.
+
+// enveloping phis inside while loops
+main
+var a, b, c, d;
+{
+  let a <- 1;
+  let b <- 2;
+  let c <- 3;
+  while (a + b) <= c do
+    let b <- c + 1;
+    let a <- a + b + c + 1;
+    let d <- 0;
+    while d < b do
+      call OutputNum(a);
+      call OutputNum(b);
+      call OutputNum(c);
+      call OutputNum(d);
+      call OutputNewLine();
+      let a <- a + 1;
+      let d <- d + 1
+    od
+  od;
+
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
+  call OutputNewLine()
 }.
 
   call OutputNewLine();

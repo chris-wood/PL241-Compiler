@@ -1,11 +1,8 @@
 digraph dom {
-BB5[shape = box, label = "BB(5)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := global #0\n" + "4 := global #0\n" + "5 := phi(d) (4) (15)\n" + "6 := phi(b) #2 (12)\n" + "7 := phi(a) (27) (16)\n" + "8 := add (7) (6)\n" + "9 := add #0 #3\n" + "10 := cmp (8) #3\n" + "11 := bgt (10) #18\n" + "27 := add #0 #1\n"];
-BB16[shape = box, label = "BB(16)\n" + "12 := add #3 #1\n" + "13 := add (12) #4\n" + "14 := add (27) (13)\n" + "15 := phi(d) (5) (25)\n" + "16 := phi(a) (14) (24)\n" + "17 := cmp (15) (12)\n" + "18 := bge (17) #9\n"];
-BB55[shape = box, label = "BB(55)\n" + "29 := write (7)\n" + "30 := write (6)\n" + "31 := write (9)\n" + "32 := wln\n" + "33 := end\n"];
-BB35[shape = box, label = "BB(35)\n" + "19 := write (16)\n" + "20 := write (12)\n" + "21 := write #3\n" + "22 := write (15)\n" + "23 := wln\n" + "24 := add (16) #1\n" + "25 := add (15) #1\n" + "26 := beq #0 #-11\n"];
-BB54[shape = box, label = "BB(54)\n" + "28 := beq #0 #-23\n"];
-BB5 -> BB16;
-BB5 -> BB55;
-BB16 -> BB35;
-BB16 -> BB54;
+BB4[shape = box, label = "BB(4 [ populate ])\n" + "3 := loadparam 0\n" + "4 := add #0 #0\n" + "5 := add #0 #0\n" + "6 := add #0 #0\n" + "7 := write (3)\n" + "8 := phi(localArray) (6) (15)\n" + "9 := add #0 #5\n" + "10 := cmp (8) #5\n" + "11 := bge (10) #11\n"];
+BB16[shape = box, label = "BB(16)\n" + "12 := mul #4 (8)\n" + "13 := add FP localArray_baseaddr\n" + "14 := adda (12) (13)\n" + "15 := store (14) (8)\n" + "16 := mul #4 (15)\n" + "17 := add FP localArray_baseaddr\n" + "18 := adda (16) (17)\n" + "19 := load (18)\n" + "20 := write (19)\n" + "21 := beq #0 #-13\n"];
+BB23[shape = box, label = "BB(23)\n" + "22 := add #0 #10\n" + "23 := return (22)\n"];
+BB4 -> BB16;
+BB4 -> BB23;
+BB29[shape = box, label = "BB(29)\n" + "1 := global #0\n" + "2 := global #0\n" + "24 := func populate #5\n" + "25 := write (24)\n" + "26 := end\n"];
 }

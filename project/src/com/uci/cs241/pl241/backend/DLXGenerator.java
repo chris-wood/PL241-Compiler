@@ -820,6 +820,63 @@ public class DLXGenerator
 		
 		return false;
 	}
+	
+	public void setupStack(DLXBasicBlock edb, PLIRBasicBlock b, Function func)
+	{
+		// Push local variable space onto the stack
+		
+		
+		// Push array space onto the stack
+		for (String array : func.arraySizes.keySet())
+		{
+			int dimension = 1;
+			for (Integer d : func.arraySizes.get(array))
+			{
+				dimension *= d;
+			}
+			
+			// Push the arrays onto the stack
+			for (int d = 0; d < dimension; d++)
+			{
+				DLXInstruction pushInst = new DLXInstruction();
+				pushInst.opcode = InstructionType.PSH;
+				pushInst.format = formatMap.get(InstructionType.PSH);
+				pushInst.ra = 0; // save contents of ssaInst.regNum
+				pushInst.rb = SP;
+				pushInst.rc = 4; // word size
+				pushInst.encodedForm = encodeInstruction(pushInst);
+				appendInstructionToBlock(edb, pushInst);
+			}
+		}
+	}
+	
+	public void tearDownStack(DLXBasicBlock edb, PLIRBasicBlock b, Function func)
+	{
+		// Pop local variables off the stack
+		
+		// Push array space onto the stack
+		for (String array : func.arraySizes.keySet())
+		{
+			int dimension = 1;
+			for (Integer d : func.arraySizes.get(array))
+			{
+				dimension *= d;
+			}
+			
+			// Push the arrays onto the stack
+			for (int d = 0; d < dimension; d++)
+			{
+				DLXInstruction popInst = new DLXInstruction();
+				popInst.opcode = InstructionType.POP;
+				popInst.format = formatMap.get(InstructionType.POP);
+				popInst.ra = 0; // save contents of ssaInst.regNum
+				popInst.rb = SP;
+				popInst.rc = -4; // word size
+				popInst.encodedForm = encodeInstruction(popInst);
+				appendInstructionToBlock(edb, popInst);
+			}
+		}
+	}
 
 	public void generateBlockTreeInstructons(DLXBasicBlock edb, PLIRBasicBlock b, Function func, boolean isMain, HashSet<Integer> visited)
 	{	
@@ -1249,8 +1306,7 @@ public class DLXGenerator
 							DLXInstruction pushInst = new DLXInstruction();
 							pushInst.opcode = InstructionType.PSH;
 							pushInst.format = formatMap.get(InstructionType.PSH);
-							pushInst.ra = ssaInst.regNum; // save contents of
-															// ssaInst.regNum
+							pushInst.ra = ssaInst.regNum; // save contents of ssaInst.regNum
 							pushInst.rb = SP;
 							pushInst.rc = 4; // word size
 							pushInst.encodedForm = encodeInstruction(pushInst);
@@ -1496,6 +1552,9 @@ public class DLXGenerator
 						break;
 
 					case RETURN:
+						// Clean up the stack
+						tearDownStack(edb, b, func);
+						
 						boolean savedReturn = false;
 						if (ssaInst.op1 != null)
 						{
@@ -1580,8 +1639,27 @@ public class DLXGenerator
 						// Push all operands onto the stack (callee recovers the
 						// proper order)
 						for (int opIndex = ssaInst.callOperands.size() - 1; opIndex >= 0; opIndex--)
-						{
+						{	
 							PLIRInstruction operand = ssaInst.callOperands.get(opIndex);
+							
+							int srcReg = operand.regNum;
+							if (operand.kind == ResultKind.CONST)
+							{
+								DLXInstruction preInst = new DLXInstruction();
+								preInst.opcode = InstructionType.ADDI;
+								preInst.format = formatMap.get(InstructionType.ADDI);
+								
+								if (constants.containsKey(operand.tempVal))
+								{
+									srcReg = constants.get(operand.tempVal).regNum;	
+								}
+								preInst.ra = srcReg;
+								preInst.rb = 0;
+								preInst.rc = operand.tempVal;
+								preInst.encodedForm = encodeInstruction(preInst);
+								appendInstructionToBlock(edb, preInst);
+							}
+							
 							System.out.println("pushing: " + operand);
 							DLXInstruction push3 = new DLXInstruction();
 							push3.opcode = InstructionType.PSH;
@@ -1590,8 +1668,7 @@ public class DLXGenerator
 							// ***TODO: do check to see if this is a constant or
 							// global variable
 
-							push3.ra = operand.regNum; // save contents of
-														// ssaInst.regNum
+							push3.ra = srcReg; // save contents of ssaInst.regNum
 							push3.rb = SP; //
 							push3.rc = 4; // word size
 							push3.encodedForm = encodeInstruction(push3);
@@ -1878,7 +1955,7 @@ public class DLXGenerator
 						loadInst.format = formatMap.get(InstructionType.LDW);
 						loadInst.ra = ssaInst.regNum;
 						loadInst.rb = SP;
-						loadInst.rc = -4 * (ssaInst.i1 + 1);
+						loadInst.rc = -4 * (ssaInst.i1 + 1 + func.getStackOffset());
 						appendInstructionToBlock(edb, loadInst);
 						break;
 

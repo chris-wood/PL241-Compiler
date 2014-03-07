@@ -288,7 +288,15 @@ public class PLC
 					
 					dlxGen.exitBlock = null;
 					DLXBasicBlock db = dlxGen.generateBlockTree(null, block, new HashSet<Integer>());
+					if (!isMain)
+					{
+						dlxGen.setupStack(db, block, func);
+					}
 					dlxGen.generateBlockTreeInstructons(db, block, func, isMain, new HashSet<Integer>());
+					if (!isMain && !func.hasReturn)
+					{
+						dlxGen.tearDownStack(db, block, func);
+					}
 					
 					HashSet<Integer> visited = new HashSet<Integer>();
 					ArrayList<DLXInstruction> dlxInstructions = dlxGen.convertToStraightLineCode(db, func, new ArrayList<Integer>(), visited);

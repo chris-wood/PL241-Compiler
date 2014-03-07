@@ -309,7 +309,7 @@ public class PLIRBasicBlock
 		{
 			boolean replaced = false;
 			
-			if (phi.id > bInst.id)
+			if (bInst.id != 0 && phi.id > bInst.id)
 			{
 				continue;
 			}
@@ -344,9 +344,9 @@ public class PLIRBasicBlock
 				replaced = true;
 			}
 			
-			if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
+			if (!replaced && bInst.op2 != null && bInst.op2.origIdent.equals(var))
 			{
-//				if (!(replaced && bInst.opcode == InstructionType.PHI))
+				if (!(replaced && bInst.opcode == InstructionType.PHI))
 				{
 					bInst.replaceRightOperand(scopeMap.get(var));
 					replaced = true;
@@ -354,7 +354,7 @@ public class PLIRBasicBlock
 			}
 			if (bInst.op2 != null && bInst.op2.equals(findPhi))
 			{
-//				if (!(replaced && bInst.opcode == InstructionType.PHI))
+				if (!(replaced && bInst.opcode == InstructionType.PHI))
 				{
 					bInst.replaceRightOperand(scopeMap.get(var));
 					replaced = true;

@@ -431,7 +431,8 @@ public class PLIRInstruction
 			else
 			{
 				op1 = op1.evaluate(newOp, table);
-				op1type = op1.type;
+				op1type = op1.type == OperandType.FUNC_PARAM ? OperandType.INST : op1.type;
+//				op1type = op1.type;
 			}
 //			for (PLIRInstruction dependent : op1.dependents)
 //			{
@@ -452,7 +453,7 @@ public class PLIRInstruction
 			else
 			{
 				op2 = op2.evaluate(newOp, table);
-				op2type = op2.type;
+				op2type = op2.type == OperandType.FUNC_PARAM ? OperandType.INST : op2.type;
 			}
 //			for (PLIRInstruction dependent : op2.dependents)
 //			{
@@ -508,6 +509,15 @@ public class PLIRInstruction
 					kind = ResultKind.CONST;
 					break;
 				}
+			}
+			else if (op1.kind == ResultKind.CONST) // right is not constant
+			{
+				type = OperandType.INST;
+				kind = ResultKind.VAR;
+				
+				op2.tempPosition = this.id - 1;
+				op2.overrideGenerate = true;
+				op2.forceGenerate(table);
 			}
 			else
 			{
