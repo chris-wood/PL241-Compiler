@@ -92,11 +92,11 @@ public class RegisterAllocator
 	public void ComputeLiveRange(PLIRBasicBlock entryBlock)
 	{
 		HashSet<PLIRInstruction> live = new HashSet<PLIRInstruction>();
-		live.addAll(CalcLiveRange(entryBlock, 1, 1));
-		live.addAll(CalcLiveRange(entryBlock, 1, 2));
+		live.addAll(CalcLiveRange(entryBlock, 1, 1, new HashSet<Integer>()));
+		live.addAll(CalcLiveRange(entryBlock, 1, 2, new HashSet<Integer>()));
 	}
 
-	public HashSet<PLIRInstruction> CalcLiveRange(PLIRBasicBlock b, int branch, int pass)
+	public HashSet<PLIRInstruction> CalcLiveRange(PLIRBasicBlock b, int branch, int pass, HashSet<Integer> visited)
 	{
 		HashSet<PLIRInstruction> live = new HashSet<PLIRInstruction>();
 
@@ -104,8 +104,9 @@ public class RegisterAllocator
 		{
 			return live;
 		}
-		else
+		else if (visited.contains(b.id) == false)
 		{
+			visited.add(b.id);
 			if (b.visitNumber >= pass)
 			{
 				live.addAll(b.liveAtEnd);
@@ -122,19 +123,21 @@ public class RegisterAllocator
 					for (PLIRBasicBlock h : b.wrappedLoopHeaders)
 					{
 						b.liveAtEnd.addAll(h.liveAtEnd);
-//						live.addAll(h.liveAtEnd);
+						live.addAll(h.liveAtEnd);
 					}
 				}
 
 				// recursively add children to the live set
 				if (b.leftChild != null)
 				{
-					live.addAll(CalcLiveRange(b.leftChild, 1, pass));
+					live.addAll(CalcLiveRange(b.leftChild, 1, pass, visited));
 				}
 				if (b.rightChild != null)
 				{
-					live.addAll(CalcLiveRange(b.rightChild, 2, pass));
+					live.addAll(CalcLiveRange(b.rightChild, 2, pass, visited));
 				}
+				
+				live.addAll(b.liveAtEnd);
 
 				// for all non-phis
 				for (int i = b.instructions.size() - 1; i >= 0; i--)
@@ -153,6 +156,10 @@ public class RegisterAllocator
 						}
 						
 						if (inst.id == 12)
+						{
+							System.out.println("using param v");
+						}
+						if (inst.id == 13)
 						{
 							System.out.println("using param v");
 						}
