@@ -106,7 +106,7 @@ public class RegisterAllocator
 		}
 		else if (visited.contains(b.id) == false)
 		{
-			visited.add(b.id);
+//			visited.add(b.id);
 			if (b.visitNumber >= pass)
 			{
 				live.addAll(b.liveAtEnd);
@@ -149,6 +149,10 @@ public class RegisterAllocator
 						{
 							System.err.println("follow me");
 						}
+						if (inst.opcode == InstructionType.CMP)
+						{
+							System.err.println("follow me");
+						}
 						
 						if (live.contains(4))
 						{
@@ -171,12 +175,18 @@ public class RegisterAllocator
 						}
 
 						// live = live - {i}
-						live.remove(inst);
+						if (inst.opcode != InstructionType.LOADPARAM)
+						{
+							live.remove(inst);
+						}
 
 						// Add edge between new var and all live variables
 						for (PLIRInstruction liveInst : live)
 						{
-							ig.addEdge(inst.id, liveInst.id);
+							if (inst.id != liveInst.id)
+							{
+								ig.addEdge(inst.id, liveInst.id);
+							}
 						}
 
 						// live = live + {j,k}

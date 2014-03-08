@@ -1,8 +1,11 @@
 digraph dom {
-BB4[shape = box, label = "BB(4 [ populate ])\n" + "3 := loadparam 0\n" + "4 := loadparam 1\n" + "5 := add #0 #0\n" + "6 := add #0 #0\n" + "7 := phi(localArray) (6) (16)\n" + "8 := phi(i) #0 (23)\n" + "9 := add #0 #5\n" + "10 := cmp (8) #5\n" + "11 := bge (10) #14\n"];
-BB12[shape = box, label = "BB(12)\n" + "12 := add (8) (4)\n" + "13 := mul #4 (8)\n" + "14 := add FP localArray_baseaddr\n" + "15 := adda (13) (14)\n" + "16 := store (15) (12)\n" + "17 := mul #4 (8)\n" + "18 := add FP localArray_baseaddr\n" + "19 := adda (17) (18)\n" + "20 := load (19)\n" + "21 := write (20)\n" + "22 := wln\n" + "23 := add (8) #1\n" + "24 := beq #0 #-17\n"];
-BB26[shape = box, label = "BB(26)\n" + "25 := add #0 #10\n" + "26 := return (25)\n"];
-BB4 -> BB12;
-BB4 -> BB26;
-BB33[shape = box, label = "BB(33)\n" + "1 := global #0\n" + "2 := global #0\n" + "27 := func populate #5 #10\n" + "28 := write (27)\n" + "29 := wln\n" + "30 := end\n"];
+BB9[shape = box, label = "BB(9)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := global #0\n" + "4 := global #0\n" + "5 := global #0\n" + "13 := read\n" + "14 := read\n" + "15 := read\n" + "16 := read\n" + "17 := add (13) (14)\n" + "18 := write (17)\n" + "19 := add (13) (14)\n" + "20 := mul #4 (16)\n" + "21 := add FP output_baseaddr\n" + "22 := adda\n" + "23 := mul #4 (15)\n" + "24 := mul\n" + "25 := adda\n" + "26 := store (25) (26)\n" + "27 := mul #4 (16)\n" + "28 := add FP output_baseaddr\n" + "29 := adda (27) (28)\n" + "30 := mul #4 (15)\n" + "31 := mul (30) #10\n" + "32 := adda (31) (29)\n" + "33 := load (32)\n" + "34 := write (33)\n" + "35 := phi(j) (16) (16)\n" + "36 := phi(i) (15) (15)\n" + "37 := cmp (36) #10\n" + "38 := bge (37) #17\n"];
+BB41[shape = box, label = "BB(41)\n" + "39 := phi(j) (35) (50)\n" + "40 := cmp (39) #10\n" + "41 := bge (40) #11\n"];
+BB58[shape = box, label = "BB(58)\n" + "55 := beq #0 #-49\n"];
+BB47[shape = box, label = "BB(47)\n" + "42 := mul #4 (39)\n" + "43 := add FP output_baseaddr\n" + "44 := adda (42) (43)\n" + "45 := mul #4 (36)\n" + "46 := mul (45) #10\n" + "47 := adda (46) (44)\n" + "48 := load (47)\n" + "49 := write (48)\n" + "50 := add (39) #1\n" + "52 := beq #0 #-12\n"];
+BB52[shape = box, label = "BB(52)\n" + "51 := add (36) #1\n" + "53 := wln\n" + "54 := beq #0 #-19\n"];
+BB9 -> BB41;
+BB9 -> BB58;
+BB41 -> BB47;
+BB41 -> BB52;
 }

@@ -29,6 +29,8 @@ public class PLIRInstruction
 	
 	public ArrayList<PLIRInstruction> dependents = new ArrayList<PLIRInstruction>();
 	
+	public ArrayList<PLIRInstruction> loadInstructions = new ArrayList<PLIRInstruction>();
+	
 	// used to indicate if this instruction is part of a designator
 //	public boolean isDesig = false;
 	
@@ -419,8 +421,10 @@ public class PLIRInstruction
 		}
 	}
 	
-	public PLIRInstruction evaluate(PLIRInstruction newOp, PLSymbolTable table)
+	public PLIRInstruction evaluate(PLIRInstruction newOp, PLSymbolTable table, ArrayList<PLIRInstruction> visitedInsts)
 	{
+		System.out.println("Reevaluation " + this);
+//		if (op1 != null && op1.equals(newOp) == false && op1.opcode != InstructionType.PHI)
 		if (op1 != null)
 		{
 			if (op1.origIdent.equals(newOp.origIdent))
@@ -428,40 +432,30 @@ public class PLIRInstruction
 				op1type = OperandType.INST;
 				op1 = newOp;
 			}
-			else
+			else if (visitedInsts.contains(op1) == false)
 			{
-				op1 = op1.evaluate(newOp, table);
+				visitedInsts.add(op1);
+				System.out.println("left: " + op1);
+				op1 = op1.evaluate(newOp, table, visitedInsts);
 				op1type = op1.type == OperandType.FUNC_PARAM ? OperandType.INST : op1.type;
-//				op1type = op1.type;
 			}
-//			for (PLIRInstruction dependent : op1.dependents)
-//			{
-//				if (dependent.origIdent.equals(newOp.origIdent))
-//				{
-//					op1.evaluate(newOp, table);
-//				}
-//			}
 		}
 		
-		if (op2 != null)
+//		if (op2 != null && op2.equals(newOp) == false && op2.opcode != InstructionType.PHI)
+		if (op2 != null && !(newOp.opcode == InstructionType.PHI && opcode == InstructionType.PHI))
 		{
 			if (op2.origIdent.equals(newOp.origIdent))
 			{
 				op2type = OperandType.INST;
 				op2 = newOp;
 			}
-			else
+			else if (visitedInsts.contains(op2) == false)
 			{
-				op2 = op2.evaluate(newOp, table);
+				visitedInsts.add(op2);
+				System.out.println("right: " + op2);
+				op2 = op2.evaluate(newOp, table, visitedInsts);
 				op2type = op2.type == OperandType.FUNC_PARAM ? OperandType.INST : op2.type;
 			}
-//			for (PLIRInstruction dependent : op2.dependents)
-//			{
-//				if (dependent.origIdent.equals(newOp.origIdent))
-//				{
-//					op2.evaluate(newOp, table);
-//				}
-//			}
 		}
 		
 		// re-evaluate the node
@@ -519,10 +513,20 @@ public class PLIRInstruction
 				op2.overrideGenerate = true;
 				op2.forceGenerate(table);
 			}
-			else
+			else if (op2.kind == ResultKind.CONST)
 			{
 				type = OperandType.INST;
 				kind = ResultKind.VAR;
+				
+				op1.tempPosition = this.id - 1;
+				op1.overrideGenerate = true;
+				op1.forceGenerate(table);
+			}
+			else // both constants
+			{
+				type = OperandType.INST;
+				kind = ResultKind.VAR;
+				
 				op1.tempPosition = this.id - 1;
 				op1.overrideGenerate = true;
 				op1.forceGenerate(table);

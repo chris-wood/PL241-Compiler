@@ -700,6 +700,7 @@ public class PLParser
 				
 				PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
 				PLIRInstruction load = new PLIRInstruction(scope);
+				load.loadInstructions = offsetInstructions;
 				load.opcode = InstructionType.LOAD;
 				load.op1type = OperandType.ADDRESS;
 				load.op1 = offset;
@@ -776,6 +777,7 @@ public class PLParser
 				
 				PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
 				PLIRInstruction load = new PLIRInstruction(scope);
+				load.loadInstructions = offsetInstructions;
 				load.opcode = InstructionType.LOAD;
 				load.op1type = OperandType.ADDRESS;
 				load.op1 = offset;
@@ -807,6 +809,17 @@ public class PLParser
 				termNode.addInstruction(inst);
 			}
 			termNode.addInstruction(termInst);
+			
+			// Save whatever values are used in these expressions
+			for (String sym : factor.usedIdents.keySet())
+			{
+//				debug("adding " + sym + " with " + left.usedIdents.get(sym).toString());
+				termNode.addUsedValue(sym, factor.usedIdents.get(sym));
+			}
+			for (String sym : rightNode.usedIdents.keySet())
+			{
+				termNode.addUsedValue(sym, rightNode.usedIdents.get(sym));
+			}
 			
 			// Update DU chain
 			if (duChain.containsKey(leftInst))
@@ -910,6 +923,7 @@ public class PLParser
 				
 				PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
 				PLIRInstruction load = new PLIRInstruction(scope);
+				load.loadInstructions = offsetInstructions;
 				load.opcode = InstructionType.LOAD;
 				load.op1type = OperandType.ADDRESS;
 				load.op1 = offset;
@@ -988,6 +1002,7 @@ public class PLParser
 				
 				PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
 				PLIRInstruction load = new PLIRInstruction(scope);
+				load.loadInstructions = offsetInstructions;
 				load.opcode = InstructionType.LOAD;
 				load.op1type = OperandType.ADDRESS;
 				load.op1 = offset;
@@ -1019,6 +1034,17 @@ public class PLParser
 				exprNode.addInstruction(inst);
 			}
 			exprNode.addInstruction(exprInst);
+			
+			// Save whatever values are used in these expressions
+			for (String sym : term.usedIdents.keySet())
+			{
+//				debug("adding " + sym + " with " + left.usedIdents.get(sym).toString());
+				exprNode.addUsedValue(sym, term.usedIdents.get(sym));
+			}
+			for (String sym : rightNode.usedIdents.keySet())
+			{
+				exprNode.addUsedValue(sym, rightNode.usedIdents.get(sym));
+			}
 			
 			// Update DU chain
 			if (duChain.containsKey(leftInst))
@@ -1066,11 +1092,19 @@ public class PLParser
 		PLIRBasicBlock relation = new PLIRBasicBlock();
 		
 		// Build the comparison instruction with the memorized condition
-		relation = PLIRBasicBlock.merge(relation, left);
 		if (leftInst.isArray)
 		{
+			ArrayList<PLIRInstruction> offsetInstructions = null;
+			if (leftInst.opcode == InstructionType.LOAD)
+			{
+				offsetInstructions = leftInst.loadInstructions;
+			}
+			else
+			{
+				offsetInstructions = arrayOffsetCalculation(left);
+			}
 			
-			ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(left);
+			
 			for (PLIRInstruction inst : offsetInstructions)
 			{
 				relation.addInstruction(inst);
@@ -1086,6 +1120,8 @@ public class PLParser
 			load.isArray = true;
 			relation.addInstruction(load);
 		}
+		
+		relation = PLIRBasicBlock.merge(relation, left);
 		
 		// Parse the right-hand part of the relation expression
 		PLIRBasicBlock right = parse_expression(in);
@@ -1099,11 +1135,20 @@ public class PLParser
 		}
 		
 		// Add the result of all relations
-		relation = PLIRBasicBlock.merge(relation, right);
 		if (rightInst.isArray)
 		{
+//			ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(right);
 			
-			ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(right);
+			ArrayList<PLIRInstruction> offsetInstructions = null;
+			if (rightInst.opcode == InstructionType.LOAD)
+			{
+				offsetInstructions = rightInst.loadInstructions;
+			}
+			else
+			{
+				offsetInstructions = arrayOffsetCalculation(right);
+			}
+			
 			for (PLIRInstruction inst : offsetInstructions)
 			{
 				relation.addInstruction(inst);
@@ -1119,6 +1164,8 @@ public class PLParser
 			load.isArray = true;
 			relation.addInstruction(load);
 		}
+		
+		relation = PLIRBasicBlock.merge(relation, right);
 		
 		// Create the comparison instruction that joins the two together
 		PLIRInstruction inst = PLIRInstruction.create_cmp(scope, leftInst, rightInst);
@@ -1180,17 +1227,21 @@ public class PLParser
 				{
 					advance(in);
 					result = parse_expression(in);
-					result = PLIRBasicBlock.merge(desigBlock, result);
+					PLIRInstruction storeInst = result.getLastInst();
 					
 					// Check if the result is an array, in which case we need to load it from memory
-					PLIRInstruction storeInst = result.getLastInst();
 					if (storeInst!= null)
 					{
 						storeInst.saveName = varName;
 					}
-					if (storeInst == null || (storeInst != null && storeInst.isArray))
+					if (storeInst == null || (storeInst != null && storeInst.isArray) || result.arrayName != null)
 					{
-						ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(result);
+						ArrayList<PLIRInstruction> offsetInstructions = null;
+						if (result.instructions.get(0).opcode == InstructionType.STORE)
+						{
+							result.instructions.remove(0);
+						}
+						offsetInstructions = arrayOffsetCalculation(result);
 						for (PLIRInstruction inst : offsetInstructions)
 						{
 							result.addInstruction(inst);
@@ -1198,6 +1249,7 @@ public class PLParser
 						
 						PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
 						PLIRInstruction load = new PLIRInstruction(scope);
+						load.loadInstructions = offsetInstructions;
 						load.opcode = InstructionType.LOAD;
 						load.op1type = OperandType.ADDRESS;
 						load.op1 = offset;
@@ -1222,6 +1274,17 @@ public class PLParser
 							storeInst.origIdent = varName;
 						}
 					}
+					
+					result = PLIRBasicBlock.merge(desigBlock, result);
+//					ArrayList<PLIRInstruction> newInsts = new ArrayList<PLIRInstruction>(); 
+//					for (int i = 0; i < result.instructions.size(); i++)
+//					{
+//						if (result.instructions.get(i).kind != ResultKind.CONST)
+//						{
+//							newInsts.add(result.instructions.get(i));
+//						}
+//					}
+//					result.instructions = newInsts;
 					
 					if (desigBlock.arrayOperands == null)
 					{
@@ -1270,15 +1333,16 @@ public class PLParser
 //							
 						storeInst.tempPosition = PLStaticSingleAssignment.globalSSAIndex;
 						
-						// If we aren't deferring generation because of a potential PHI usage, just replace with the current value in scope
-						if ((storeInst.op1 != null && deferredPhiIdents.contains(storeInst.op1.origIdent)) || 
-								(storeInst.op2 != null && deferredPhiIdents.contains(storeInst.op2.origIdent)))
-						{
-							storeInst.kind = ResultKind.VAR;
-							storeInst.overrideGenerate = true;
-							storeInst.forceGenerate(scope);
-						}
-						else if (deferredPhiIdents.contains(varName)) // else, force the current instruction to be generated so it can be used in a phi later
+//						// If we aren't deferring generation because of a potential PHI usage, just replace with the current value in scope
+//						if ((storeInst.op1 != null && deferredPhiIdents.contains(storeInst.op1.origIdent)) || 
+//								(storeInst.op2 != null && deferredPhiIdents.contains(storeInst.op2.origIdent)))
+//						{
+//							storeInst.kind = ResultKind.VAR;
+//							storeInst.overrideGenerate = true;
+//							storeInst.forceGenerate(scope);
+//						}
+//						else 
+						if (deferredPhiIdents.contains(varName)) 
 						{
 							storeInst.kind = ResultKind.VAR;
 							storeInst.overrideGenerate = true;
@@ -1498,6 +1562,7 @@ public class PLParser
 						
 						PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
 						PLIRInstruction load = new PLIRInstruction(scope);
+						load.loadInstructions = offsetInstructions;
 						load.opcode = InstructionType.LOAD;
 						load.op1type = OperandType.ADDRESS;
 						load.op1 = offset;
@@ -1634,6 +1699,7 @@ public class PLParser
 								
 								PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
 								PLIRInstruction load = new PLIRInstruction(scope);
+								load.loadInstructions = offsetInstructions;
 								load.opcode = InstructionType.LOAD;
 								load.op1type = OperandType.ADDRESS;
 								load.op1 = offset;
@@ -2154,8 +2220,8 @@ public class PLParser
 			PLIRBasicBlock entry = parse_relation(in);
 			entry.isLoopHeader = true;
 			PLIRInstruction entryCmpInst = entry.instructions.get(entry.instructions.size() - 1);
-			entryCmpInst.op1name = entryCmpInst.op1.origIdent;
-			entryCmpInst.op2name = entryCmpInst.op2.origIdent;
+//			entryCmpInst.op1name = entryCmpInst.op1.origIdent;
+//			entryCmpInst.op2name = entryCmpInst.op2.origIdent;
 			PLIRInstruction bgeInst = CondNegBraFwd(entryCmpInst);
 			
 			// Determine which identifiers are used in the entry/join node so we can defer generation (if PHIs are needed)
@@ -2183,7 +2249,6 @@ public class PLParser
 			entry.addInstruction(bgeInst);
 			
 			scope.popScope();
-//			blockDepth--;
 			
 			////////////////////////////////////////////
 			// We've passed through the body and know what variables are updated, now we need to insert phis
@@ -2198,9 +2263,6 @@ public class PLParser
 			debug("(while loop) Inserting " + modded.size() + " phis");
 			int offset = 0;
 			ArrayList<PLIRInstruction> phisGenerated = new ArrayList<PLIRInstruction>();
-			
-			
-			
 			for (String var : modded)
 			{
 				scope.displayCurrentScopeSymbols();
@@ -2210,10 +2272,12 @@ public class PLParser
 				}
 				
 				PLIRInstruction bodyInst = body.modifiedIdents.get(var);
-				bodyInst.forceGenerate(scope, bodyInst.tempPosition);
+//				bodyInst.forceGenerate(scope, bodyInst.tempPosition);
+				bodyInst.forceGenerate(scope);
 				
 				PLIRInstruction preInst = scope.getCurrentValue(var);
-				preInst.forceGenerate(scope, preInst.tempPosition);
+//				preInst.forceGenerate(scope, preInst.tempPosition);
+				preInst.forceGenerate(scope);
 				
 				// Inject the phi at the appropriate spot in the join node...
 				PLIRInstruction phi = PLIRInstruction.create_phi(scope, preInst, bodyInst, loopLocation + offset);
@@ -2259,7 +2323,7 @@ public class PLParser
 					}
 					if (replaced)
 					{
-						cmpInst.evaluate(phi, scope);
+						cmpInst.evaluate(phi, scope, new ArrayList<PLIRInstruction>());
 					}
 				}
 				
@@ -2280,7 +2344,7 @@ public class PLParser
 					}
 					if (replaced)
 					{
-						cmpInst.evaluate(phi, scope);
+						cmpInst.evaluate(phi, scope, new ArrayList<PLIRInstruction>());
 					}
 				}
 				
@@ -2306,7 +2370,7 @@ public class PLParser
 				HashMap<String, PLIRInstruction> scopeMap = new HashMap<String, PLIRInstruction>(); 
 				scopeMap.put(var, phi);
 				
-				body.propagatePhi(var, phi, visited, scopeMap);
+				body.propagatePhi(var, phi, visited, scopeMap, scope);
 			}
 			
 			// Go through the phis and make sure we adjusted the values accordingly
@@ -2359,6 +2423,7 @@ public class PLParser
 			// Insert the unconditional branch at (location - pc)
 			PLIRInstruction beqInst = PLIRInstruction.create_BEQ(scope, loopLocation - PLStaticSingleAssignment.globalSSAIndex);
 			beqInst.jumpInst = cmpInst;
+			
 			if (body.joinNode != null)
 			{
 				PLIRBasicBlock join = body.joinNode;
@@ -2367,10 +2432,12 @@ public class PLParser
 					join = join.joinNode;
 				}
 				join.addInstruction(beqInst);
+				bgeInst.jumpInst = join.getLastInst();
 			}
 			else
 			{
 				body.addInstruction(beqInst);
+				bgeInst.jumpInst = body.getLastInst();
 			}
 			
 			// Fixup the conditional branch at the appropriate location

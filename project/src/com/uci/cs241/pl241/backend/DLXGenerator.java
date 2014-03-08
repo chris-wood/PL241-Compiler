@@ -178,56 +178,85 @@ public class DLXGenerator
 			{
 				if (inst.rc < 0) // jump to the exact compare instruction that was saved during the parsing stage
 				{
-					int offset = offsetMap.get(inst.ssaInst.jumpInst.id).pc;
-					inst.rc = offset - inst.pc;
-					
-					// Handle global load/stores in the branch offset
-					if (inst.ssaInst.jumpInst.op1 != null)
-					{
-						if (inst.ssaInst.jumpInst.op1.isGlobalVariable)
-						{
-							inst.rc++;
-						}
-						else if (globalOffset.containsKey(inst.ssaInst.jumpInst.op1.id))
-						{
-							inst.rc++;
-						}
-//						else if (inst.ssaInst.jumpInst.op1.opcode == PLIRInstruction.InstructionType.PHI)
-//						{
-//							String name = inst.ssaInst.jumpInst.op1.op1name;
-//							if (globalRefMap.containsKey(name))
-//							{
-//								inst.rc++;
-//							}
-//						}
-					}
-					if (inst.ssaInst.jumpInst.op2 != null)
-					{
-						if (inst.ssaInst.jumpInst.op2.isGlobalVariable)
-						{
-							inst.rc++;
-						}
-						else if (globalOffset.containsKey(inst.ssaInst.jumpInst.op2.id))
-						{
-							inst.rc++;
-						}
-//						else if (inst.ssaInst.jumpInst.op2.opcode == PLIRInstruction.InstructionType.PHI)
-//						{
-//							String name = inst.ssaInst.jumpInst.op2.op1name;
-//							if (globalRefMap.containsKey(name))
-//							{
-//								inst.rc++;
-//							}
-//						}
-					}
-				}
-				else // positive offset
-				{
 					int refId = inst.ssaInst.id + inst.rc;
 					PLIRInstruction refInst = PLStaticSingleAssignment.getInstruction(refId);
 					
 					// If we branch forward to a PHI, then...
 					int offset = 0;
+					DLXBasicBlock jumpToBlock = null;
+					if (refInst.opcode == PLIRInstruction.InstructionType.PHI)
+					{
+						// Find pc of the first non-phi, since that's where we really want to 
+						// jump because all of the PHI moves have already been taken care of
+						int loc = -1;
+						for (int i = refInst.id + 1; i < PLStaticSingleAssignment.instructions.size(); i++)
+						{
+							if (PLStaticSingleAssignment.getInstruction(i).opcode != PLIRInstruction.InstructionType.PHI)
+							{
+								loc = i;
+								break;
+							}
+						}
+						
+						// Use this offset instead
+						offset = offsetMap.get(loc).pc;
+						inst.rc = offset - inst.pc;
+					}
+					else
+					{
+						offset = offsetMap.get(refInst.id).pc;
+						inst.rc = offset - inst.pc;
+					}
+
+//					int offset = offsetMap.get(refInst.id).pc;
+//					inst.rc = offset - inst.pc;
+					
+//					int offset = offsetMap.get(inst.ssaInst.jumpInst.id).pc;
+//					inst.rc = offset - inst.pc;
+					
+////					// Handle global load/stores in the branch offset
+//					if (inst.ssaInst.jumpInst.op1 != null)
+//					{
+//						if (inst.ssaInst.jumpInst.op1.isGlobalVariable)
+//						{
+//							inst.rc--;
+//						}
+//						else if (globalOffset.containsKey(inst.ssaInst.jumpInst.op1.id))
+//						{
+//							inst.rc--;
+//						}
+//					}
+//					if (inst.ssaInst.jumpInst.op2 != null)
+//					{
+//						if (inst.ssaInst.jumpInst.op2.isGlobalVariable)
+//						{
+//							inst.rc--;
+//						}
+//						else if (globalOffset.containsKey(inst.ssaInst.jumpInst.op2.id))
+//						{
+//							inst.rc--;
+//						}
+//					}
+				}
+				else // positive offset
+				{
+					int refId = inst.ssaInst.id + inst.rc;
+					PLIRInstruction refInst = null;
+					
+//					if (inst.ssaInst.jumpInst != null)
+//					{
+//						refInst = PLStaticSingleAssignment.getInstruction(inst.ssaInst.jumpInst.id + 1);
+//					}
+//					else
+//					{
+						refInst = PLStaticSingleAssignment.getInstruction(refId);
+//					}
+					
+					
+					
+					// If we branch forward to a PHI, then...
+					int offset = 0;
+					DLXBasicBlock jumpToBlock = null;
 					if (refInst.opcode == PLIRInstruction.InstructionType.PHI)
 					{
 						if (inst.ssaInst.branchDirection == 1)
@@ -235,6 +264,7 @@ public class DLXGenerator
 							if (leftOffsetMap.containsKey(refInst.id) && false)
 							{
 								offset = leftOffsetMap.get(refInst.id).pc;
+								jumpToBlock = leftOffsetMap.get(refInst.id).block;
 							}
 							else
 							{
@@ -242,10 +272,12 @@ public class DLXGenerator
 								if (inst.block.left.instructions.size() > 0)
 								{
 									offset = inst.block.left.instructions.get(0).pc;
+									jumpToBlock = inst.block.left;
 								}
 								else if (inst.block.left.endInstructions.size() > 0)
 								{
 									offset = inst.block.left.endInstructions.get(0).pc;
+									jumpToBlock = inst.block.left;
 								}
 								else
 								{
@@ -263,10 +295,12 @@ public class DLXGenerator
 										if (curr.instructions.size() > 0)
 										{
 											offset = curr.instructions.get(0).pc;
+											jumpToBlock = curr;
 										}
 										else if (curr.endInstructions.size() > 0)
 										{
 											offset = curr.endInstructions.get(0).pc;
+											jumpToBlock = curr;
 										}
 										else
 										{
@@ -284,16 +318,19 @@ public class DLXGenerator
 							if (rightOffsetMap.containsKey(refInst.id) && false)
 							{
 								offset = rightOffsetMap.get(refInst.id).pc;
+								jumpToBlock = rightOffsetMap.get(refInst.id).block;
 							}
 							else
 							{
 								if (inst.block.right.instructions.size() > 0)
 								{
 									offset = inst.block.right.instructions.get(0).pc;
+									jumpToBlock = inst.block.right;
 								}
 								else if (inst.block.right.endInstructions.size() > 0)
 								{
 									offset = inst.block.right.endInstructions.get(0).pc;
+									jumpToBlock = inst.block.right;
 								}
 								else // DFS to find start of next non-empty block
 								{
@@ -311,10 +348,12 @@ public class DLXGenerator
 										if (curr.instructions.size() > 0)
 										{
 											offset = curr.instructions.get(0).pc;
+											jumpToBlock = curr;
 										}
 										else if (curr.endInstructions.size() > 0)
 										{
 											offset = curr.endInstructions.get(0).pc;
+											jumpToBlock = curr;
 										}
 										else
 										{
@@ -331,7 +370,26 @@ public class DLXGenerator
 					else
 					{
 						offset = offsetMap.get(refInst.id).pc;
+						jumpToBlock = offsetMap.get(refInst.id).block;
 					}
+					
+					if (jumpToBlock.endInstructions.size() > 0)
+					{
+						offset -= jumpToBlock.endInstructions.size();
+					}
+					
+//					if (jumpToBlock.startInstructions.size() > 0)
+//					{
+//						offset = jumpToBlock.startInstructions.get(0).pc;
+//					}
+//					else if (jumpToBlock.instructions.size() > 0)
+//					{
+//						offset = jumpToBlock.instructions.get(0).pc;
+//					}
+//					else
+//					{
+//						offset = jumpToBlock.endInstructions.get(0).pc;
+//					}
 					
 					inst.rc = offset - inst.pc;
 //					inst.rc = inst.rc < 0 ? inst.rc *= -1 : inst.rc;
@@ -455,6 +513,14 @@ public class DLXGenerator
 			lastLeftJumps.clear();
 		}
 	}
+	
+	public void appendInstructionToStartBlock(DLXBasicBlock block, DLXInstruction inst)
+	{
+		inst.encodedForm = encodeInstruction(inst);
+		block.startInstructions.add(inst);
+		inst.pc = pc++;
+		inst.block = block;
+	}
 
 	public void appendInstructionToEndBlock(DLXBasicBlock block, DLXInstruction inst)
 	{
@@ -562,6 +628,10 @@ public class DLXGenerator
 		if (visited.contains(entry.id) == false)
 		{
 			visited.add(entry.id);
+			for (DLXInstruction inst : entry.startInstructions)
+			{
+				instructions.add(inst);
+			}
 			for (DLXInstruction inst : entry.instructions)
 			{
 				instructions.add(inst);
@@ -731,7 +801,7 @@ public class DLXGenerator
 		return false;
 	}
 
-	public boolean checkForGlobalStore(DLXBasicBlock edb, PLIRInstruction usingInst, boolean appendToStart)
+	public boolean checkForGlobalStore(DLXBasicBlock edb, PLIRInstruction usingInst, boolean appendToStart, boolean reallyStart)
 	{
 		// Short circuit for arrays
 		if (globalArrayOffset.containsKey(usingInst.origIdent))
@@ -805,7 +875,11 @@ public class DLXGenerator
 			storeInst.rc = -4 * (globalOffset.get(ref) + 1); // word size
 
 			// Determine where in the block to place the store
-			if (appendToStart)
+			if (reallyStart)
+			{
+				appendInstructionToStartBlock(edb, storeInst);
+			}
+			else if (appendToStart)
 			{
 				appendInstructionToBlock(edb, storeInst);
 			}
@@ -944,7 +1018,7 @@ public class DLXGenerator
 								appendInstructionToBlock(edb, preInst);
 								appendInstructionToBlock(edb, newInst);
 
-								checkForGlobalStore(edb, ssaInst, true);
+								checkForGlobalStore(edb, ssaInst, true, false);
 							}
 							else
 							{
@@ -959,7 +1033,7 @@ public class DLXGenerator
 								fixOffset(ssaInst.id, newInst);
 								appendInstructionToBlock(edb, newInst);
 
-								checkForGlobalStore(edb, ssaInst, true);
+								checkForGlobalStore(edb, ssaInst, true, false);
 							}
 						}
 						else if (leftConst)
@@ -983,7 +1057,7 @@ public class DLXGenerator
 //							fixOffset(ssaInst.id, newInst);
 //							appendInstructionToBlock(edb, newInst);
 
-							checkForGlobalStore(edb, ssaInst, true);
+							checkForGlobalStore(edb, ssaInst, true, false);
 						}
 						else if (rightConst)
 						{
@@ -1006,7 +1080,7 @@ public class DLXGenerator
 //							fixOffset(ssaInst.id, newInst);
 //							appendInstructionToBlock(edb, newInst);
 
-							checkForGlobalStore(edb, ssaInst, true);
+							checkForGlobalStore(edb, ssaInst, true, false);
 						}
 						else if (!isArrayAdd)
 						{
@@ -1034,7 +1108,7 @@ public class DLXGenerator
 //							fixOffset(ssaInst.id, newInst);
 //							appendInstructionToBlock(edb, newInst);
 
-							checkForGlobalStore(edb, ssaInst, true);
+							checkForGlobalStore(edb, ssaInst, true, false);
 						}
 						else // addition for an array
 						{
@@ -1084,7 +1158,7 @@ public class DLXGenerator
 							appendInstructionToBlock(edb, preInst);
 							appendInstructionToBlock(edb, newInst);
 
-							checkForGlobalStore(edb, ssaInst, true);
+							checkForGlobalStore(edb, ssaInst, true, false);
 						}
 						else if (leftConst)
 						{
@@ -1102,7 +1176,7 @@ public class DLXGenerator
 							fixOffset(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 
-							checkForGlobalStore(edb, ssaInst, true);
+							checkForGlobalStore(edb, ssaInst, true, false);
 						}
 						else
 						{
@@ -1115,7 +1189,7 @@ public class DLXGenerator
 							fixOffset(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 
-							checkForGlobalStore(edb, ssaInst, true);
+							checkForGlobalStore(edb, ssaInst, true, false);
 						}
 						break;
 
@@ -1141,7 +1215,7 @@ public class DLXGenerator
 							appendInstructionToBlock(edb, preInst1);
 							appendInstructionToBlock(edb, newInst);
 
-							checkForGlobalStore(edb, ssaInst, true);
+							checkForGlobalStore(edb, ssaInst, true, false);
 						}
 						else if (leftConst)
 						{
@@ -1154,7 +1228,7 @@ public class DLXGenerator
 							fixOffset(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 
-							checkForGlobalStore(edb, ssaInst, true);
+							checkForGlobalStore(edb, ssaInst, true, false);
 						}
 						else if (rightConst)
 						{
@@ -1167,7 +1241,7 @@ public class DLXGenerator
 							fixOffset(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 
-							checkForGlobalStore(edb, ssaInst, true);
+							checkForGlobalStore(edb, ssaInst, true, false);
 						}
 						else
 						{
@@ -1179,7 +1253,7 @@ public class DLXGenerator
 							fixOffset(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 
-							checkForGlobalStore(edb, ssaInst, true);
+							checkForGlobalStore(edb, ssaInst, true, false);
 						}
 						break;
 
@@ -1205,7 +1279,7 @@ public class DLXGenerator
 							appendInstructionToBlock(edb, preInst);
 							appendInstructionToBlock(edb, newInst);
 
-							checkForGlobalStore(edb, ssaInst, true);
+							checkForGlobalStore(edb, ssaInst, true, false);
 						}
 						else if (leftConst)
 						{
@@ -1223,7 +1297,7 @@ public class DLXGenerator
 							fixOffset(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 
-							checkForGlobalStore(edb, ssaInst, true);
+							checkForGlobalStore(edb, ssaInst, true, false);
 						}
 						else
 						{
@@ -1236,7 +1310,7 @@ public class DLXGenerator
 							fixOffset(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
 
-							checkForGlobalStore(edb, ssaInst, true);
+							checkForGlobalStore(edb, ssaInst, true, false);
 						}
 						break;
 
@@ -1343,7 +1417,7 @@ public class DLXGenerator
 
 						// Check to see if the value needs to be stored at the
 						// global address
-						checkForGlobalStore(edb, ssaInst, true);
+						checkForGlobalStore(edb, ssaInst, true, false);
 
 						break;
 					case WLN:
@@ -1474,8 +1548,7 @@ public class DLXGenerator
 					case BEQ:
 						newInst.opcode = InstructionType.BEQ;
 						newInst.format = formatMap.get(InstructionType.BEQ);
-						if (ssaInst.op1type == OperandType.CONST) // unconditional
-																	// branch...
+						if (ssaInst.op1type == OperandType.CONST) // unconditional branch
 						{
 							newInst.ra = 0; // e.g. BEQ #0 #4
 						}
@@ -1791,7 +1864,7 @@ public class DLXGenerator
 						appendInstructionToBlock(edb, moveInst);
 
 						// Check for store here...
-						checkForGlobalStore(edb, ssaInst, true);
+						checkForGlobalStore(edb, ssaInst, true, false);
 
 						break;
 					}
@@ -2075,7 +2148,7 @@ public class DLXGenerator
 								leftOffsetMap.put(ssaInst.id, leftInst);
 //								lastLeftJumps.add(ssaInst);
 								appendInstructionToBlock(edb, leftInst);
-								checkForGlobalStore(edb, ssaInst, true);
+								checkForGlobalStore(edb, ssaInst, true, false);
 
 								DLXInstruction rightInst = new DLXInstruction();
 								rightInst.opcode = InstructionType.ADDI;
@@ -2086,7 +2159,10 @@ public class DLXGenerator
 
 								rightOffsetMap.put(ssaInst.id, rightInst);
 								appendInstructionToEndBlock(insertBlock, rightInst);
-								checkForGlobalStore(insertBlock, ssaInst, false);
+								checkForGlobalStore(insertBlock, ssaInst, false, false);
+								
+//								appendInstructionToStartBlock(edb.right, rightInst);
+//								checkForGlobalStore(edb.right, ssaInst, false, true);
 							}
 							else if (ssaInst.op1type == OperandType.CONST) // left side is a constant
 							{
@@ -2102,7 +2178,7 @@ public class DLXGenerator
 //								lastLeftJump = ssaInst.id;
 //								lastLeftJumps.add(ssaInst);
 								appendInstructionToBlock(edb, leftInst);
-								checkForGlobalStore(edb, ssaInst, true);
+								checkForGlobalStore(edb, ssaInst, true, false);
 
 								if (ssaInst.regNum != ssaInst.op2.regNum)
 								{
@@ -2116,7 +2192,10 @@ public class DLXGenerator
 
 									rightOffsetMap.put(ssaInst.id, rightInst);
 									appendInstructionToEndBlock(insertBlock, rightInst);
-									checkForGlobalStore(insertBlock, ssaInst, false);
+									checkForGlobalStore(insertBlock, ssaInst, false, false);
+									
+//									appendInstructionToStartBlock(edb.right, rightInst);
+//									checkForGlobalStore(edb.right, ssaInst, false, true);
 								}
 							}
 							else if (ssaInst.op2type == OperandType.CONST) // right side is a constant
@@ -2137,7 +2216,7 @@ public class DLXGenerator
 //									lastLeftJumps.add(ssaInst);
 									
 									appendInstructionToBlock(edb, leftInst);
-									checkForGlobalStore(edb, ssaInst, true);
+									checkForGlobalStore(edb, ssaInst, true, false);
 									fixedOffset = true;
 									edb.skipped++;
 								}
@@ -2155,7 +2234,10 @@ public class DLXGenerator
 									rightOffsetMap.put(ssaInst.id, rightInst);
 								}						
 								appendInstructionToEndBlock(insertBlock, rightInst);
-								checkForGlobalStore(insertBlock, ssaInst, false);
+								checkForGlobalStore(insertBlock, ssaInst, false, false);
+								
+//								appendInstructionToStartBlock(edb.right, rightInst);
+//								checkForGlobalStore(edb.right, ssaInst, false, true);
 							}
 							else // both sides are registers.
 							{
@@ -2175,7 +2257,7 @@ public class DLXGenerator
 //									lastLeftJump = ssaInst.id;
 //									lastLeftJumps.add(ssaInst);
 									appendInstructionToBlock(edb, leftInst);
-									checkForGlobalStore(edb, ssaInst, true);
+									checkForGlobalStore(edb, ssaInst, true, false);
 									insertBlock.skipped++;
 								}
 								if (ssaInst.regNum != ssaInst.op2.regNum)
@@ -2190,7 +2272,11 @@ public class DLXGenerator
 									fixedOffset = true;
 									rightOffsetMap.put(ssaInst.id, rightInst);
 									appendInstructionToEndBlock(insertBlock, rightInst);
-									checkForGlobalStore(insertBlock, ssaInst, false);
+									checkForGlobalStore(insertBlock, ssaInst, false, false);
+									
+//									appendInstructionToStartBlock(edb.right, rightInst);
+//									checkForGlobalStore(edb.right, ssaInst, false, true);
+									
 									insertBlock.skipped++;
 								}
 							}
@@ -2216,7 +2302,7 @@ public class DLXGenerator
 //								lastLeftJumps.add(ssaInst);
 								leftOffsetMap.put(ssaInst.id, leftInst);
 								appendInstructionToEndBlock(leftParent, leftInst);
-								checkForGlobalStore(leftParent, ssaInst, false);
+								checkForGlobalStore(leftParent, ssaInst, false, false);
 
 								DLXInstruction rightInst = new DLXInstruction();
 								rightInst.opcode = InstructionType.ADDI;
@@ -2227,7 +2313,7 @@ public class DLXGenerator
 
 								rightOffsetMap.put(ssaInst.id, rightInst);
 								appendInstructionToEndBlock(rightParent, rightInst);
-								checkForGlobalStore(rightParent, ssaInst, false);
+								checkForGlobalStore(rightParent, ssaInst, false, false);
 							}
 							else if (ssaInst.op1type == OperandType.CONST) // left side is a constant
 							{
@@ -2241,7 +2327,7 @@ public class DLXGenerator
 //								lastLeftJumps.add(ssaInst);
 								leftOffsetMap.put(ssaInst.id, leftInst);
 								appendInstructionToEndBlock(leftParent, leftInst);
-								checkForGlobalStore(leftParent, ssaInst, false);
+								checkForGlobalStore(leftParent, ssaInst, false, false);
 
 								if (ssaInst.regNum != ssaInst.op2.regNum)
 								{
@@ -2254,7 +2340,7 @@ public class DLXGenerator
 
 									rightOffsetMap.put(ssaInst.id, rightInst);
 									appendInstructionToEndBlock(rightParent, rightInst);
-									checkForGlobalStore(rightParent, ssaInst, false);
+									checkForGlobalStore(rightParent, ssaInst, false, false);
 								}
 							}
 							else if (ssaInst.op2type == OperandType.CONST) // right side is a constant
@@ -2272,7 +2358,7 @@ public class DLXGenerator
 //									lastLeftJumps.add(ssaInst);
 									leftOffsetMap.put(ssaInst.id, leftInst);
 									appendInstructionToEndBlock(leftParent, leftInst);
-									checkForGlobalStore(leftParent, ssaInst, false);
+									checkForGlobalStore(leftParent, ssaInst, false, false);
 									fixedOffset = true;
 									edb.skipped++;
 								}
@@ -2286,7 +2372,7 @@ public class DLXGenerator
 
 								rightOffsetMap.put(ssaInst.id, rightInst);
 								appendInstructionToEndBlock(rightParent, rightInst);
-								checkForGlobalStore(rightParent, ssaInst, false);
+								checkForGlobalStore(rightParent, ssaInst, false, false);
 							}
 							else // both sides are registers.
 							{
@@ -2302,7 +2388,7 @@ public class DLXGenerator
 //									lastLeftJumps.add(ssaInst);
 									leftOffsetMap.put(ssaInst.id, leftInst);
 									appendInstructionToEndBlock(leftParent, leftInst);
-									checkForGlobalStore(leftParent, ssaInst, false);
+									checkForGlobalStore(leftParent, ssaInst, false, false);
 								}
 								if (ssaInst.regNum != ssaInst.op2.regNum)
 								{
@@ -2315,7 +2401,7 @@ public class DLXGenerator
 
 									rightOffsetMap.put(ssaInst.id, rightInst);
 									appendInstructionToEndBlock(rightParent, rightInst);
-									checkForGlobalStore(rightParent, ssaInst, false);
+									checkForGlobalStore(rightParent, ssaInst, false, false);
 								}
 							}
 						}

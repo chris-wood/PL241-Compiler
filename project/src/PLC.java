@@ -377,11 +377,15 @@ public class PLC
 				// Write the DLX machine code
 				System.out.println("\n\n--FINAL PROGARM--\n");
 				PrintWriter dlxWriter = new PrintWriter(new BufferedWriter(new FileWriter(outPath + "/" + sourceFile + ".dlx")));
+				PrintWriter mnemonicDlxWriter = new PrintWriter(new BufferedWriter(new FileWriter(outPath + "/" + sourceFile + ".dlxm")));
 				for (DLXInstruction inst : slp)
 				{
 					dlxWriter.println(inst.encodedForm);
 					System.out.println(inst);// + ", " + Long.toHexString(inst.encodedForm));
+					mnemonicDlxWriter.println(inst);
 				}
+				mnemonicDlxWriter.flush();
+				mnemonicDlxWriter.close();
 				dlxWriter.flush();
 				dlxWriter.close();
 				

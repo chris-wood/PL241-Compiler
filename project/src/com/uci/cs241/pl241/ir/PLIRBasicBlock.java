@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import com.uci.cs241.pl241.frontend.PLSymbolTable;
 import com.uci.cs241.pl241.ir.PLIRInstruction.OperandType;
 import com.uci.cs241.pl241.ir.PLIRInstruction.InstructionType;
 import com.uci.cs241.pl241.ir.PLIRInstruction.ResultKind;
@@ -294,130 +295,149 @@ public class PLIRBasicBlock
 		}
 	}
 	
-	public void propagatePhi(String var, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited, HashMap<String, PLIRInstruction> scopeMap)
+	public void propagatePhi(String var, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited, HashMap<String, PLIRInstruction> scopeMap, PLSymbolTable scope)
 	{
-		PLIRInstruction findPhi = phi;
-		PLIRInstruction replacePhi = phi;
-		
-		int p1id = phi.op1 != null ? phi.op1.id : -1;
-		int p2id = phi.op2 != null ? phi.op2.id : -1;
-		
-		scopeMap.put(var, phi);
-		
-		// Propagate through the main instructions in this block's body
-		for (PLIRInstruction bInst : instructions)
+//		if (visited.contains(this) == false)
 		{
-			boolean replaced = false;
+//			visited.add(this);
 			
-			if (bInst.id != 0 && phi.id > bInst.id)
-			{
-				continue;
-			}
+			PLIRInstruction findPhi = phi;
+			PLIRInstruction replacePhi = phi;
 			
-			if (bInst.opcode == InstructionType.PHI)
+			int p1id = phi.op1 != null ? phi.op1.id : -1;
+			int p2id = phi.op2 != null ? phi.op2.id : -1;
+			
+			scopeMap.put(var, phi);
+			
+			// Propagate through the main instructions in this block's body
+			for (PLIRInstruction bInst : instructions)
 			{
-				if ((bInst.id == p1id || bInst.id == p2id) && phi.id > bInst.id)
+				boolean replaced = false;
+				
+				if (bInst.id != 0 && phi.id > bInst.id)
 				{
 					continue;
 				}
-			}
-			
-			if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
-			{
-//				if (!(replaced && bInst.opcode == InstructionType.PHI))
+				
+				if (bInst.opcode == InstructionType.PHI)
+				{
+					System.err.println("asd");
+				}
+				
+				if (bInst.opcode == InstructionType.PHI)
+				{
+					if ((bInst.id == p1id || bInst.id == p2id) && phi.id > bInst.id)
+					{
+						continue;
+					}
+				}
+				
+				if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
+				{
+//					if (!(replaced && bInst.opcode == InstructionType.PHI))
+					{
+						bInst.replaceLeftOperand(scopeMap.get(var));
+						replaced = true;
+					}
+				}
+				if (bInst.op1 != null && bInst.op1.equals(findPhi))
+				{
+//					if (!(replaced && bInst.opcode == InstructionType.PHI))
+					{
+						bInst.replaceLeftOperand(scopeMap.get(var));
+						replaced = true;
+					}
+				}
+				if (bInst.op1name != null && bInst.op1name.equals(var))
 				{
 					bInst.replaceLeftOperand(scopeMap.get(var));
 					replaced = true;
 				}
-			}
-			if (bInst.op1 != null && bInst.op1.equals(findPhi))
-			{
-//				if (!(replaced && bInst.opcode == InstructionType.PHI))
+				
+				if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
 				{
-					bInst.replaceLeftOperand(scopeMap.get(var));
-					replaced = true;
+					if (!(replaced && bInst.opcode == InstructionType.PHI))
+					{
+						bInst.replaceRightOperand(scopeMap.get(var));
+						replaced = true;
+					}
+				}
+				if (bInst.op2 != null && bInst.op2.equals(findPhi))
+				{
+					if (!(replaced && bInst.opcode == InstructionType.PHI))
+					{
+						bInst.replaceRightOperand(scopeMap.get(var));
+						replaced = true;
+					}
+				}
+				if (bInst.op2name != null && bInst.op2name.equals(var))
+				{
+					if (!(replaced && bInst.opcode == InstructionType.PHI))
+					{
+						bInst.replaceRightOperand(scopeMap.get(var));
+						replaced = true;
+					}
+				}
+				
+				if (replaced)
+				{
+					ArrayList<PLIRInstruction> visitedInsts = new ArrayList<PLIRInstruction>();
+					bInst.evaluate(scopeMap.get(var), scope, visitedInsts);
+				}
+				
+				// Don't propagate past the phi, since it essentially replaces the current value
+				if (replaced && bInst.opcode == InstructionType.PHI)
+				{
+					findPhi = bInst; 
+					scopeMap.put(var, bInst);
+				}
+				
+				// If the phi value was used to replace some operand, and this same expression was used to save a result, replace
+				// with the newly generated result
+				else if (replaced && (bInst.origIdent.equals(phi.origIdent) || bInst.saveName.equals(phi.origIdent)) && bInst.kind != ResultKind.CONST)
+				{
+					System.out.println("now replacing " + phi.origIdent + " with : " + bInst.toString());
+					scopeMap.put(var, bInst);
+				}
+				
+//				// If there is an assignment that matches this PHI variable, use its value...
+				if (bInst.id > 0 && bInst.generated && (bInst.origIdent != null && bInst.origIdent.equals(var)))
+				{
+					scopeMap.put(var, bInst);
 				}
 			}
-			if (bInst.op1name != null && bInst.op1name.equals(var))
-			{
-				bInst.replaceLeftOperand(scopeMap.get(var));
-				replaced = true;
-			}
-			
-			if (!replaced && bInst.op2 != null && bInst.op2.origIdent.equals(var))
-			{
-				if (!(replaced && bInst.opcode == InstructionType.PHI))
-				{
-					bInst.replaceRightOperand(scopeMap.get(var));
-					replaced = true;
-				}
-			}
-			if (bInst.op2 != null && bInst.op2.equals(findPhi))
-			{
-				if (!(replaced && bInst.opcode == InstructionType.PHI))
-				{
-					bInst.replaceRightOperand(scopeMap.get(var));
-					replaced = true;
-				}
-			}
-			if (bInst.op2name != null && bInst.op2name.equals(var) && !replaced)
-			{
-				bInst.replaceRightOperand(scopeMap.get(var));
-				replaced = true;
-			}
-			
-			// Don't propagate past the phi, since it essentially replaces the current value
-			if (replaced && bInst.opcode == InstructionType.PHI)
-			{
-				findPhi = bInst; 
-				scopeMap.put(var, bInst);
-			}
-			
-			// If the phi value was used to replace some operand, and this same expression was used to save a result, replace
-			// with the newly generated result
-			else if (replaced && bInst.origIdent.equals(phi.origIdent) && bInst.kind != ResultKind.CONST)
-			{
-				System.out.println("now replacing " + phi.origIdent + " with : " + bInst.toString());
-				scopeMap.put(var, bInst);
-			}
-			
-//			// If there is an assignment that matches this PHI variable, use its value...
-			if (bInst.id > 0 && bInst.generated && bInst.origIdent.equals(var))
-			{
-				scopeMap.put(var, bInst);
-			}
-		}
-	
-		// Now propagate down the tree
-		if (leftChild != null && visited.contains(leftChild) == false)
-		{
-			visited.add(leftChild);
-			leftChild.propagatePhi(var, scopeMap.get(var), visited, scopeMap);
-		}
-		if (rightChild != null && visited.contains(rightChild) == false)
-		{
-			visited.add(rightChild);
-			rightChild.propagatePhi(var, scopeMap.get(var), visited, scopeMap);
-		}
 		
-//		for (PLIRBasicBlock child : children)
-//		{
-//			if (visited.contains(child) == false)
+			// Now propagate down the tree
+			if (leftChild != null && visited.contains(leftChild) == false)
+			{
+				visited.add(leftChild);
+				leftChild.propagatePhi(var, scopeMap.get(var), visited, scopeMap, scope);
+			}
+			if (rightChild != null && visited.contains(rightChild) == false && rightChild.isWhileEntry == false)
+			{
+				visited.add(rightChild);
+				rightChild.propagatePhi(var, scopeMap.get(var), visited, scopeMap, scope);
+			}
+			
+//			for (PLIRBasicBlock child : children)
 //			{
-//				visited.add(child);
-//				child.propagatePhi(var, scopeMap.get(var), visited, scopeMap);
+//				if (visited.contains(child) == false)
+//				{
+//					visited.add(child);
+//					child.propagatePhi(var, scopeMap.get(var), visited, scopeMap);
+//				}
 //			}
-//		}
-		
-		
-//		if (this.joinNode != null)
-//		{
-//			if (visited.contains(this.joinNode) == false)
+			
+			
+//			if (this.joinNode != null)
 //			{
-//				visited.add(this.joinNode);
-//				joinNode.propagatePhi(var, scopeMap.get(var), visited, scopeMap);
+//				if (visited.contains(this.joinNode) == false)
+//				{
+//					visited.add(this.joinNode);
+//					joinNode.propagatePhi(var, scopeMap.get(var), visited, scopeMap);
+//				}
 //			}
-//		}
+		}
 	}
 	
 	public void fixSpot()
