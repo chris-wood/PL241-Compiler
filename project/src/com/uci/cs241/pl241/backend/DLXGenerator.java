@@ -199,7 +199,8 @@ public class DLXGenerator
 						}
 						
 						// Use this offset instead
-						offset = offsetMap.get(loc).pc;
+						PLIRInstruction realJump = PLStaticSingleAssignment.getInstruction(loc);
+						offset = offsetMap.get(realJump.id).pc;
 						inst.rc = offset - inst.pc;
 					}
 					else
@@ -373,7 +374,18 @@ public class DLXGenerator
 						jumpToBlock = offsetMap.get(refInst.id).block;
 					}
 					
-					if (jumpToBlock.endInstructions.size() > 0)
+					int index = 0;
+					for (int i = 0; i < jumpToBlock.instructions.size(); i++)
+					{
+						if (jumpToBlock.instructions.get(i).pc == offset)
+						{
+							index = i;
+						}
+					}
+					
+					if (jumpToBlock.endInstructions.size() > 0 && index == jumpToBlock.instructions.size() - 1)
+//					if (jumpToBlock.endInstructions.size() > 0 
+//							&& jumpToBlock.instructions.get(jumpToBlock.instructions.size() - 1).pc == offset)
 					{
 						offset -= jumpToBlock.endInstructions.size();
 					}

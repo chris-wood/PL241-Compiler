@@ -295,6 +295,7 @@ public class PLIRBasicBlock
 		}
 	}
 	
+	public boolean terminateAtNextPhi = false;
 	public void propagatePhi(String var, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited, HashMap<String, PLIRInstruction> scopeMap, PLSymbolTable scope)
 	{
 //		if (visited.contains(this) == false)
@@ -321,7 +322,8 @@ public class PLIRBasicBlock
 				
 				if (bInst.opcode == InstructionType.PHI)
 				{
-					System.err.println("asd");
+//					System.err.println("asd");
+//					return;
 				}
 				
 				if (bInst.opcode == InstructionType.PHI)
@@ -332,54 +334,96 @@ public class PLIRBasicBlock
 					}
 				}
 				
-				if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
+				if (phi.origIdent.equals("j"))
 				{
-//					if (!(replaced && bInst.opcode == InstructionType.PHI))
-					{
-						bInst.replaceLeftOperand(scopeMap.get(var));
-						replaced = true;
-					}
-				}
-				if (bInst.op1 != null && bInst.op1.equals(findPhi))
-				{
-//					if (!(replaced && bInst.opcode == InstructionType.PHI))
-					{
-						bInst.replaceLeftOperand(scopeMap.get(var));
-						replaced = true;
-					}
-				}
-				if (bInst.op1name != null && bInst.op1name.equals(var))
-				{
-					bInst.replaceLeftOperand(scopeMap.get(var));
-					replaced = true;
+					System.out.println("here");
 				}
 				
-				if (bInst.op2 != null && bInst.op2.origIdent.equals(var))
+				if ((bInst.opcode == InstructionType.PHI && bInst.op1 != null && bInst.op1.isConstant))
 				{
-					if (!(replaced && bInst.opcode == InstructionType.PHI))
+					System.err.println("here");
+				}
+				
+				// guard against constant overwriting
+				boolean couldHaveReplaced = false;
+				if (!(bInst.opcode == InstructionType.PHI && bInst.op1 != null && bInst.op1.isConstant))
+				{
+					if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
 					{
-						bInst.replaceRightOperand(scopeMap.get(var));
-						replaced = true;
+//						if (!(replaced && bInst.opcode == InstructionType.PHI))
+						{
+							replaced  = bInst.replaceLeftOperand(scopeMap.get(var));
+//							replaced = true;
+						}
+					}
+					if (bInst.op1 != null && bInst.op1.equals(findPhi))
+					{
+//						if (!(replaced && bInst.opcode == InstructionType.PHI))
+						{
+							replaced = bInst.replaceLeftOperand(scopeMap.get(var));
+//							replaced = true;
+						}
+					}
+					if (bInst.op1name != null && bInst.op1name.equals(var))
+					{
+						replaced = bInst.replaceLeftOperand(scopeMap.get(var));
+//						replaced = true;
 					}
 				}
-				if (bInst.op2 != null && bInst.op2.equals(findPhi))
+				else
 				{
-					if (!(replaced && bInst.opcode == InstructionType.PHI))
+					if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
 					{
-						bInst.replaceRightOperand(scopeMap.get(var));
-						replaced = true;
+//						if (!(replaced && bInst.opcode == InstructionType.PHI))
+						{
+//							replaced  = bInst.replaceLeftOperand(scopeMap.get(var));
+							couldHaveReplaced = true;
+						}
 					}
-				}
-				if (bInst.op2name != null && bInst.op2name.equals(var))
-				{
-					if (!(replaced && bInst.opcode == InstructionType.PHI))
+					if (bInst.op1 != null && bInst.op1.equals(findPhi))
 					{
-						bInst.replaceRightOperand(scopeMap.get(var));
-						replaced = true;
+//						if (!(replaced && bInst.opcode == InstructionType.PHI))
+						{
+//							replaced = bInst.replaceLeftOperand(scopeMap.get(var));
+							couldHaveReplaced = true;
+						}
+					}
+					if (bInst.op1name != null && bInst.op1name.equals(var))
+					{
+//						replaced = bInst.replaceLeftOperand(scopeMap.get(var));
+						couldHaveReplaced = true;
 					}
 				}
 				
-				if (replaced)
+				if (bInst.opcode != InstructionType.PHI)
+				{
+					if (bInst.op2 != null && bInst.op2.origIdent.equals(var) && !replaced)
+					{
+//						if (!(replaced && bInst.opcode == InstructionType.PHI))
+						{
+							replaced = bInst.replaceRightOperand(scopeMap.get(var));
+//							replaced = true;
+						}
+					}
+					if (bInst.op2 != null && bInst.op2.equals(findPhi) && !replaced)
+					{
+//						if (!(replaced && bInst.opcode == InstructionType.PHI))
+						{
+							replaced = bInst.replaceRightOperand(scopeMap.get(var));
+//							replaced = true;
+						}
+					}
+					if (bInst.op2name != null && bInst.op2name.equals(var) && !replaced)
+					{
+//						if (!(replaced && bInst.opcode == InstructionType.PHI))
+						{
+							replaced = bInst.replaceRightOperand(scopeMap.get(var));
+//							replaced = true;
+						}
+					}
+				}
+				
+				if (replaced) // && !couldHaveReplaced)
 				{
 					ArrayList<PLIRInstruction> visitedInsts = new ArrayList<PLIRInstruction>();
 					bInst.evaluate(scopeMap.get(var), scope, visitedInsts);
@@ -404,6 +448,13 @@ public class PLIRBasicBlock
 				if (bInst.id > 0 && bInst.generated && (bInst.origIdent != null && bInst.origIdent.equals(var)))
 				{
 					scopeMap.put(var, bInst);
+				}
+				
+				// If for some reason the phi value was prematurely re-assigned, perhaps because of a READ, then don't propogate further
+				if (bInst.origIdent.equals(phi.origIdent))
+				{
+					terminateAtNextPhi = true;
+//					return; // in this case, we short circuit since the value has been reasssigned without making use of the phi
 				}
 			}
 		

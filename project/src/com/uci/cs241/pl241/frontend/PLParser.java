@@ -243,6 +243,17 @@ public class PLParser
 						PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.END);
 						result.addInstruction(inst);
 						PLStaticSingleAssignment.globalSSAIndex++; // skip over dummy END instruction
+						
+						if (root.parents.size() > 0)
+						{
+							PLIRBasicBlock parent = result.parents.get(0);
+							while (parent != null && parent.parents.size() > 0)
+							{
+								parent = parent.parents.get(0);
+							}
+							root = parent;
+						}			
+						
 						blocks.add(root);
 						
 						// Insert globals into the root so the code generator knows what to allocate space for
@@ -506,6 +517,7 @@ public class PLParser
 	{	
 		PLIRInstruction li = new PLIRInstruction(scope, InstructionType.ADD, 0, Integer.parseInt(sym));
 		li.type = OperandType.CONST;
+		li.isConstant = true;
 		advance(in);
 		PLIRBasicBlock block = new PLIRBasicBlock();
 		block.addInstruction(li);
@@ -2265,11 +2277,11 @@ public class PLParser
 			ArrayList<PLIRInstruction> phisGenerated = new ArrayList<PLIRInstruction>();
 			for (String var : modded)
 			{
-				scope.displayCurrentScopeSymbols();
-				for (String inst : scope.symTable.get(scope.getCurrentScope()).keySet())
-				{
-					System.out.println(inst + " - " + scope.symTable.get(scope.getCurrentScope()).get(inst).kind);
-				}
+//				scope.displayCurrentScopeSymbols();
+//				for (String inst : scope.symTable.get(scope.getCurrentScope()).keySet())
+//				{
+//					System.out.println(inst + " - " + scope.symTable.get(scope.getCurrentScope()).get(inst).kind);
+//				}
 				
 				PLIRInstruction bodyInst = body.modifiedIdents.get(var);
 //				bodyInst.forceGenerate(scope, bodyInst.tempPosition);
@@ -2302,11 +2314,11 @@ public class PLParser
 				// Now loop through the entry and fix instructions as needed
 				// Those fixed are replaced with the result of this phi if they have used or modified the sym...
 				
-				for (String inst : scope.symTable.get(scope.getCurrentScope()).keySet())
-				{
-					System.out.println(inst + " - " + scope.symTable.get(scope.getCurrentScope()).get(inst).kind);
-				}
-				System.out.println("---");
+//				for (String inst : scope.symTable.get(scope.getCurrentScope()).keySet())
+//				{
+//					System.out.println(inst + " - " + scope.symTable.get(scope.getCurrentScope()).get(inst).kind);
+//				}
+//				System.out.println("---");
 				
 				if (cmpInst.op1 != null)
 				{
@@ -2370,6 +2382,7 @@ public class PLParser
 				HashMap<String, PLIRInstruction> scopeMap = new HashMap<String, PLIRInstruction>(); 
 				scopeMap.put(var, phi);
 				
+				body.terminateAtNextPhi = false;
 				body.propagatePhi(var, phi, visited, scopeMap, scope);
 			}
 			
@@ -2382,15 +2395,18 @@ public class PLParser
 					if (var.equals(phi.origIdent))
 					{
 						PLIRInstruction bodyInst = body.modifiedIdents.get(var);
-						debug("replacing phi " + phi.origIdent + " with " + var + ", " + bodyInst.toString());
+						System.out.println("replacing phi " + phi.origIdent + " with " + var + ", " + bodyInst.toString());
 						bodyInst.overrideGenerate = true;
+						bodyInst.tempPosition = PLStaticSingleAssignment.globalSSAIndex;
 						bodyInst.forceGenerate(scope);
-						debug(bodyInst.toString());
-						debug(phi.toString());
+//						debug(bodyInst.toString());
+//						debug(phi.toString());
 						if (bodyInst.op2type == OperandType.CONST) debug("hoorah");
 						phi.op2type = OperandType.INST;
 						phi.op2 = bodyInst;
-						debug(bodyInst.toString());
+						
+						System.out.println(bodyInst.toString());
+						System.out.println(phi.toString());
 					}
 				}
 			}

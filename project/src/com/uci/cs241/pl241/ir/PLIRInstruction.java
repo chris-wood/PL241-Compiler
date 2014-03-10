@@ -27,6 +27,8 @@ public class PLIRInstruction
 	public String op2address;
 	public String op2name;
 	
+	public boolean isConstant = false;
+	
 	public ArrayList<PLIRInstruction> dependents = new ArrayList<PLIRInstruction>();
 	
 	public ArrayList<PLIRInstruction> loadInstructions = new ArrayList<PLIRInstruction>();
@@ -423,7 +425,13 @@ public class PLIRInstruction
 	
 	public PLIRInstruction evaluate(PLIRInstruction newOp, PLSymbolTable table, ArrayList<PLIRInstruction> visitedInsts)
 	{
-		System.out.println("Reevaluation " + this);
+		System.out.println("Reevaluation " + this + "," + id);
+		
+		if (this.opcode == InstructionType.MUL)
+		{
+			System.out.println("asd");
+		}
+		
 //		if (op1 != null && op1.equals(newOp) == false && op1.opcode != InstructionType.PHI)
 		if (op1 != null)
 		{
@@ -504,7 +512,7 @@ public class PLIRInstruction
 					break;
 				}
 			}
-			else if (op1.kind == ResultKind.CONST) // right is not constant
+			else if (op1.kind == ResultKind.CONST && op2.opcode != InstructionType.GLOBAL) // right is not constant
 			{
 				type = OperandType.INST;
 				kind = ResultKind.VAR;
@@ -512,8 +520,11 @@ public class PLIRInstruction
 				op2.tempPosition = this.id - 1;
 				op2.overrideGenerate = true;
 				op2.forceGenerate(table);
+				
+				this.tempPosition = this.id - 1;
+				forceGenerate(table);
 			}
-			else if (op2.kind == ResultKind.CONST)
+			else if (op2.kind == ResultKind.CONST && op1.opcode != InstructionType.GLOBAL)
 			{
 				type = OperandType.INST;
 				kind = ResultKind.VAR;
@@ -521,8 +532,11 @@ public class PLIRInstruction
 				op1.tempPosition = this.id - 1;
 				op1.overrideGenerate = true;
 				op1.forceGenerate(table);
+				
+				this.tempPosition = this.id - 1;
+				forceGenerate(table);
 			}
-			else // both constants
+			else if (op2.opcode != InstructionType.GLOBAL && op1.opcode != InstructionType.GLOBAL)
 			{
 				type = OperandType.INST;
 				kind = ResultKind.VAR;
@@ -533,6 +547,9 @@ public class PLIRInstruction
 				op2.tempPosition = this.id - 1;
 				op2.overrideGenerate = true;
 				op2.forceGenerate(table);
+				
+				this.tempPosition = this.id - 1;
+				forceGenerate(table);
 			}
 		}
 		
@@ -574,25 +591,40 @@ public class PLIRInstruction
 	}
 	
 	private boolean leftProtected = false;
-	public void replaceLeftOperand(PLIRInstruction newLeft)
+	public boolean leftWasPhiReplaced = false;
+	public boolean replaceLeftOperand(PLIRInstruction newLeft)
 	{
 		if (!leftProtected)
 		{
 			op1 = newLeft;
 			op1type = OperandType.INST;
 			leftProtected = true;
+			
+			if (opcode == InstructionType.PHI && newLeft.opcode == InstructionType.PHI)
+			{
+				leftWasPhiReplaced = true;
+			}
+			return true;
 		}
+		return false;
 	}
 	
 	private boolean rightProtected = false;
-	public void replaceRightOperand(PLIRInstruction newRight)
+	public boolean rightWasPhiReplaced = false;
+	public boolean replaceRightOperand(PLIRInstruction newRight)
 	{
-		if (!rightProtected)
+		if (leftWasPhiReplaced)
+		{
+			System.out.println("asd");
+		}
+		if (!rightProtected && !(leftWasPhiReplaced && opcode == InstructionType.PHI))
 		{
 			op2 = newRight;
 			op2type = OperandType.INST;
 			rightProtected = true;
+			return true;
 		}
+		return false;
 	}
 	
 	public boolean isNotLiveInstruction()
@@ -665,7 +697,7 @@ public class PLIRInstruction
 		
 		if (b1.kind == ResultKind.CONST)
 		{
-			inst.op1 = null;
+			inst.op1 = b1;
 			inst.op1type = OperandType.CONST;
 			inst.i1 = b1.tempVal;
 		}

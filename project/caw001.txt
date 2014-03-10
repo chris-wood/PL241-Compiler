@@ -4,6 +4,7 @@ var a, b, i, j;
 array[10][10] output;
 {
   while 1 != 2 do
+    call OutputNewLine();
     let a <- call InputNum();
     let b <- call InputNum();
     let i <- call InputNum();
@@ -12,6 +13,7 @@ array[10][10] output;
     call OutputNum(a + b);
     let output[i][j] <- a + b;
     call OutputNum(output[i][j]);
+    call OutputNewLine();
     
     let i <- 0;
     let j <- 0;

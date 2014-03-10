@@ -92,6 +92,7 @@ public class PLC
 			ArrayList<PLIRBasicBlock> blocks = parser.parse(scanner);
 			
 			// Filter basic blocks...
+			ArrayList<PLIRInstruction> globals = new ArrayList<PLIRInstruction>(); 
 			for (PLIRBasicBlock entry : blocks)
 			{
 				HashSet<Integer> seenInst = new HashSet<Integer>();
@@ -111,6 +112,11 @@ public class PLC
 							if (PLStaticSingleAssignment.isIncluded(curr.instructions.get(i).id) == false || 
 									seenInst.contains(curr.instructions.get(i).id) || curr.instructions.get(i).id == 0)
 							{
+								toRemove.add(curr.instructions.get(i));
+							}
+							else if (curr.instructions.get(i).opcode == PLIRInstruction.InstructionType.GLOBAL)
+							{
+								globals.add(curr.instructions.get(i));
 								toRemove.add(curr.instructions.get(i));
 							}
 							else
@@ -134,14 +140,17 @@ public class PLC
 						}
 					}
 				}
+				
+				ArrayList<Integer> seen = new ArrayList<Integer>();
+				for (PLIRInstruction glob : globals)
+				{
+					if (!(seen.contains(glob.id)))
+					{
+						blocks.get(blocks.size() - 1).insertInstruction(glob, 0);
+						seen.add(glob.id);
+					}					
+				}
 			}
-			
-			// Now rename everything so that we're in good shape
-//			PLStaticSingleAssignment.globalSSAIndex = 0;
-//			for (PLIRBasicBlock entry : blocks)
-//			{
-//				
-//			}
 			
 			// Display the instructions BEFORE CSE
 			PLIRBasicBlock root = blocks.get(blocks.size() - 1);
