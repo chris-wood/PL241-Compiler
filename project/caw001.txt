@@ -1,31 +1,32 @@
-// multidimensional array test
-main 
-var a, b, i, j;
-array[10][10] output;
+// enveloping phis inside while loops
+main
+var a, b, c, d;
 {
-  while 1 != 2 do
-    call OutputNewLine();
-    let a <- call InputNum();
-    let b <- call InputNum();
-    let i <- call InputNum();
-    let j <- call InputNum();
-
-    call OutputNum(a + b);
-    let output[i][j] <- a + b;
-    call OutputNum(output[i][j]);
-    call OutputNewLine();
-    
-    let i <- 0;
-    let j <- 0;
-    while i < 10 do
-      while j < 10 do
-        call OutputNum(output[i][j]);
-        let j <- j + 1
-      od;
+  let a <- 1;
+  let b <- 2;
+  let c <- 3;
+  while (a + b) <= c do
+    let b <- c + 1;
+    let a <- a + b + c + 1;
+    let d <- 0;
+    while d < b do
+      call OutputNum(a);
+      call OutputNum(b);
+      call OutputNum(c);
+      call OutputNum(d);
       call OutputNewLine();
-      let i <- i + 1
+      let a <- a + 1;
+      let d <- d + 1;
+      call OutputNum(b);
+      call OutputNum(d);
+      call OutputNewLine()
     od
-  od
+  od;
+
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
+  call OutputNewLine()
 }.
 
 // dynamic array test
@@ -70,6 +71,36 @@ var a, i;
   od
 }.
 
+// multidimensional array test
+main 
+var a, b, i, j;
+array[10][10] output;
+{
+  while 1 != 2 do
+    call OutputNewLine();
+    let a <- call InputNum();
+    let b <- call InputNum();
+    let i <- call InputNum();
+    let j <- call InputNum();
+
+    call OutputNum(a + b);
+    let output[i][j] <- a + b;
+    call OutputNum(output[i][j]);
+    call OutputNewLine();
+    
+    let i <- 0;
+    let j <- 0;
+    while i < 10 do
+      while j < 10 do
+        call OutputNum(output[i][j]);
+        let j <- j + 1
+      od;
+      call OutputNewLine();
+      let i <- i + 1
+    od
+  od
+}.
+
 // dynamic array test
 main 
 var index;
@@ -96,36 +127,7 @@ array[5] localArray;
   call OutputNewLine()
 }.
 
-// enveloping phis inside while loops
-main
-var a, b, c, d;
-{
-  let a <- 1;
-  let b <- 2;
-  let c <- 3;
-  while (a + b) <= c do
-    let b <- c + 1;
-    let a <- a + b + c + 1;
-    let d <- 0;
-    while d < b do
-      call OutputNum(a);
-      call OutputNum(b);
-      call OutputNum(c);
-      call OutputNum(d);
-      call OutputNewLine();
-      let a <- a + 1;
-      let d <- d + 1;
-      call OutputNum(b);
-      call OutputNum(d);
-      call OutputNewLine()
-    od
-  od;
 
-  call OutputNum(a);
-  call OutputNum(b);
-  call OutputNum(c);
-  call OutputNewLine()
-}.
 
 main
 array[5] input;

@@ -1,18 +1,13 @@
 digraph cfg {
-BB7[shape = box, label = "BB(7)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := global #0\n" + "4 := global #0\n" + "5 := global #0\n" + "6 := phi(b) (2) (15)\n" + "7 := phi(a) (1) (14)\n" + "8 := phi(output) (5) (27)\n" + "9 := phi(j) (4) (37)\n" + "10 := phi(i) (3) (38)\n" + "11 := cmp #1 #2\n" + "12 := beq (11) #46\n"];
-BB9[shape = box, label = "BB(9)\n" + "13 := wln\n" + "14 := read\n" + "15 := read\n" + "16 := read\n" + "17 := read\n" + "18 := add (14) (15)\n" + "19 := write (18)\n" + "20 := add (14) (15)\n" + "21 := mul #4 (17)\n" + "22 := add FP output_baseaddr\n" + "23 := adda\n" + "24 := mul #4 (16)\n" + "25 := mul\n" + "26 := adda\n" + "27 := store (26) (20)\n" + "28 := mul #4 (17)\n" + "29 := add FP output_baseaddr\n" + "30 := adda (28) (29)\n" + "31 := mul #4 (16)\n" + "32 := mul (31) #10\n" + "33 := adda (32) (30)\n" + "34 := load (33)\n" + "35 := write (34)\n" + "36 := wln\n" + "37 := phi(j) #0 (41)\n" + "38 := phi(i) #0 (55)\n" + "39 := cmp (38) #10\n" + "40 := bge (39) #17\n"];
-BB61[shape = box, label = "BB(61)\n" + "58 := end\n"];
-BB43[shape = box, label = "BB(43)\n" + "41 := phi(j) #0 (52)\n" + "42 := cmp (41) #10\n" + "43 := bge (42) #11\n"];
-BB60[shape = box, label = "BB(60)\n" + "57 := beq #0 #-51\n"];
-BB49[shape = box, label = "BB(49)\n" + "44 := mul #4 (41)\n" + "45 := add FP output_baseaddr\n" + "46 := adda (44) (45)\n" + "47 := mul #4 (38)\n" + "48 := mul (47) #10\n" + "49 := adda (48) (46)\n" + "50 := load (49)\n" + "51 := write (50)\n" + "52 := add (41) #1\n" + "53 := beq #0 #-12\n"];
-BB54[shape = box, label = "BB(54)\n" + "54 := wln\n" + "55 := add (38) #1\n" + "56 := beq #0 #-19\n"];
-BB7 -> BB9;
-BB7 -> BB61;
-BB9 -> BB43;
-BB9 -> BB60;
-BB43 -> BB49;
-BB43 -> BB54;
-BB60 -> BB7;
-BB49 -> BB43;
-BB54 -> BB9;
+BB5[shape = box, label = "BB(5)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := global #0\n" + "4 := global #0\n" + "5 := phi(d) (4) (14)\n" + "6 := phi(b) #2 (11)\n" + "7 := phi(a) #1 (15)\n" + "8 := add (7) (6)\n" + "9 := cmp (8) #3\n" + "10 := bgt (9) #20\n"];
+BB16[shape = box, label = "BB(16)\n" + "11 := add #3 #1\n" + "12 := add #4 #4\n" + "13 := add (7) (12)\n" + "14 := phi(d) #0 (24)\n" + "15 := phi(a) (13) (23)\n" + "16 := cmp (14) #4\n" + "17 := bge (16) #12\n"];
+BB62[shape = box, label = "BB(62)\n" + "30 := write (7)\n" + "31 := write (6)\n" + "32 := write #3\n" + "33 := wln\n" + "34 := end\n"];
+BB35[shape = box, label = "BB(35)\n" + "18 := write (15)\n" + "19 := write (11)\n" + "20 := write #3\n" + "21 := write (14)\n" + "22 := wln\n" + "23 := add (15) #1\n" + "24 := add (14) #1\n" + "25 := write (11)\n" + "26 := write (24)\n" + "27 := wln\n" + "28 := beq #0 #-14\n"];
+BB61[shape = box, label = "BB(61)\n" + "29 := beq #0 #-24\n"];
+BB5 -> BB16;
+BB5 -> BB62;
+BB16 -> BB35;
+BB16 -> BB61;
+BB35 -> BB16;
+BB61 -> BB5;
 }
