@@ -1,6 +1,6 @@
 digraph dom {
 BB3[shape = box, label = "BB(3 [ factIter ])\n" + "2 := loadparam 0\n" + "3 := add #0 #0\n" + "4 := (3)\n" + "5 := phi(f) #1 (10)\n" + "6 := phi(i) #1 (9)\n" + "7 := cmp (6) (2)\n" + "8 := bgt (7) #4\n"];
-BB13[shape = box, label = "BB(13)\n" + "9 := add (6) #1\n" + "10 := mul (5) (6)\n" + "11 := beq #0 #-6\n"];
+BB13[shape = box, label = "BB(13)\n" + "9 := add (6) #1\n" + "10 := mul (5) (6)\n" + "11 := beq #0 #-4\n"];
 BB21[shape = box, label = "BB(21)\n" + "12 := return (5)\n"];
 BB3 -> BB13;
 BB3 -> BB21;

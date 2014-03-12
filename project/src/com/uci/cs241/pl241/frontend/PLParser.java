@@ -994,7 +994,7 @@ public class PLParser
 		}
 		
 		// Build the comparison instruction with the memorized condition
-		if (leftInst == null || (leftInst != null && leftInst.isArray) || left.arrayName != null)
+		if (leftInst == null || (leftInst != null && leftInst.isArray && leftInst.opcode != InstructionType.LOAD) || left.arrayName != null)
 		{
 			ArrayList<PLIRInstruction> offsetInstructions = null;
 			if (leftInst.opcode == InstructionType.LOAD)
@@ -1044,7 +1044,7 @@ public class PLParser
 		
 		// Add the result of all relations
 //		if (rightInst.isArray)
-		if (rightInst == null || (rightInst != null && rightInst.isArray) || right.arrayName != null)
+		if (rightInst == null || (rightInst != null && rightInst.isArray && rightInst.opcode != InstructionType.LOAD) || right.arrayName != null)
 		{
 //			ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(right);
 			
@@ -1978,7 +1978,7 @@ public class PLParser
 		{	
 			// Eat the while token and then save the current PC
 			advance(in);
-			int loopLocation = PLStaticSingleAssignment.globalSSAIndex;
+//			int loopLocation = PLStaticSingleAssignment.globalSSAIndex;
 			
 			scope.pushNewScope("while" + (blockDepth++));
 			
@@ -2023,6 +2023,29 @@ public class PLParser
 			entry.addInstruction(bgeInst);
 			
 			scope.popScope();
+			
+			// Hook the body of the loop back to the entry
+			if (body.joinNode != null)
+			{
+				PLIRBasicBlock join = body.joinNode;
+				while (join.joinNode != null)
+				{
+					join = join.joinNode;
+				}
+				join.rightChild = entry;
+				join.fixSpot();
+			}
+			else
+			{
+				body.rightChild = entry;
+				body.fixSpot();
+			}
+			entry.leftChild = body;
+			body.parents.add(entry);
+			
+			// Patch up the follow-through branch; 
+			entry.rightChild = joinNode;
+			joinNode.parents.add(entry); 
 			
 			////////////////////////////////////////////
 			// We've passed through the body and know what variables are updated, now we need to insert phis
@@ -2113,7 +2136,7 @@ public class PLParser
 				// Propagate the PHI through the body of the loop
 				ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
 				visited.add(entry);
-				body.propagatePhi(var, phi, visited, scope);
+				body.propagatePhi(var, phi, visited, scope, 1);
 			}
 			
 			// Go through the phis and make sure we adjusted the values accordingly
@@ -2136,31 +2159,9 @@ public class PLParser
 			
 			////////////////////////////////////////////
 			
-			// Hook the body of the loop back to the entry
-			if (body.joinNode != null)
-			{
-				PLIRBasicBlock join = body.joinNode;
-				while (join.joinNode != null)
-				{
-					join = join.joinNode;
-				}
-				join.rightChild = entry;
-				join.fixSpot();
-			}
-			else
-			{
-				body.rightChild = entry;
-				body.fixSpot();
-			}
-			entry.leftChild = body;
-			body.parents.add(entry);
-			
-			// Patch up the follow-through branch; 
-			entry.rightChild = joinNode;
-			joinNode.parents.add(entry); 
-			
 			// Insert the unconditional branch at (location - pc)
-			PLIRInstruction beqInst = PLIRInstruction.create_BEQ(scope, loopLocation - PLStaticSingleAssignment.globalSSAIndex);
+//			PLIRInstruction beqInst = PLIRInstruction.create_BEQ(scope, loopLocation - PLStaticSingleAssignment.globalSSAIndex);
+			PLIRInstruction beqInst = PLIRInstruction.create_BEQ(scope, cmpInst.id - PLStaticSingleAssignment.globalSSAIndex - 1 - offset);
 			beqInst.jumpInst = cmpInst;
 			
 			if (body.joinNode != null)

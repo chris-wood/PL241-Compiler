@@ -432,136 +432,143 @@ public class PLIRInstruction
 			System.out.println("asd");
 		}
 		
-//		if (op1 != null && op1.equals(newOp) == false && op1.opcode != InstructionType.PHI)
-		if (op1 != null)
+//		if (this.opcode == InstructionType.LOAD)
+//		{
+//		
+//		}
+//		else
 		{
-			if (op1.origIdent.equals(newOp.origIdent))
+	//		if (op1 != null && op1.equals(newOp) == false && op1.opcode != InstructionType.PHI)
+			if (op1 != null)
 			{
-				op1type = OperandType.INST;
-				op1 = newOp;
-			}
-			else if (visitedInsts.contains(op1) == false)
-			{
-				visitedInsts.add(op1);
-				System.out.println("left: " + op1);
-				op1 = op1.evaluate(newOp, table, visitedInsts);
-				op1type = op1.type == OperandType.FUNC_PARAM ? OperandType.INST : op1.type;
-			}
-		}
-		
-//		if (op2 != null && op2.equals(newOp) == false && op2.opcode != InstructionType.PHI)
-		if (op2 != null && !(newOp.opcode == InstructionType.PHI && opcode == InstructionType.PHI))
-		{
-			if (op2.origIdent.equals(newOp.origIdent))
-			{
-				op2type = OperandType.INST;
-				op2 = newOp;
-			}
-			else if (visitedInsts.contains(op2) == false)
-			{
-				visitedInsts.add(op2);
-				System.out.println("right: " + op2);
-				op2 = op2.evaluate(newOp, table, visitedInsts);
-				op2type = op2.type == OperandType.FUNC_PARAM ? OperandType.INST : op2.type;
-			}
-		}
-		
-		// re-evaluate the node
-		if (op1 != null)
-		{
-			if (op1.kind == ResultKind.CONST)
-			{
-				op1type = OperandType.CONST;
-				i1 = op1.tempVal;
-			}
-		}
-		if (op2 != null)
-		{
-			if (op2.kind == ResultKind.CONST)
-			{
-				op2type = OperandType.CONST;
-				i2 = op2.tempVal;
-			}
-		}
-		
-		// handle computation...
-		if (op1 != null && op2 != null)
-		{
-			if (op1.kind == ResultKind.CONST && op2.kind == ResultKind.CONST)
-			{
-				i1 = op1.tempVal;
-				i2 = op2.tempVal;
-				kind = ResultKind.CONST;
-				switch (opcode)
+				if (op1.origIdent.equals(newOp.origIdent))
 				{
-				case ADD:
-					tempVal = i1 + i2;
-					kind = ResultKind.CONST;
-					break;
-				case SUB:
-					tempVal = i1 - i2;
-					kind = ResultKind.CONST;
-					break;
-				case MUL:
-					tempVal = i1 * i2;
-					kind = ResultKind.CONST;
-					break;
-				case DIV:
-					tempVal = i1 / i2;
-					kind = ResultKind.CONST;
-					break;
+					op1type = OperandType.INST;
+					op1 = newOp;
+				}
+				else if (visitedInsts.contains(op1) == false)
+				{
+					visitedInsts.add(op1);
+					System.out.println("left: " + op1);
+					op1 = op1.evaluate(newOp, table, visitedInsts);
+					op1type = op1.type == OperandType.FUNC_PARAM ? OperandType.INST : op1.type;
 				}
 			}
-			else if (op1.kind == ResultKind.CONST && op2.opcode != InstructionType.GLOBAL) // right is not constant
+			
+	//		if (op2 != null && op2.equals(newOp) == false && op2.opcode != InstructionType.PHI)
+			if (op2 != null && !(newOp.opcode == InstructionType.PHI && opcode == InstructionType.PHI))
 			{
-				type = OperandType.INST;
-				kind = ResultKind.VAR;
-				
-				op2.tempPosition = this.id - 1;
-				op2.overrideGenerate = true;
-				op2.forceGenerate(table);
-				
-				this.tempPosition = this.id - 1;
+				if (op2.origIdent.equals(newOp.origIdent))
+				{
+					op2type = OperandType.INST;
+					op2 = newOp;
+				}
+				else if (visitedInsts.contains(op2) == false)
+				{
+					visitedInsts.add(op2);
+					System.out.println("right: " + op2);
+					op2 = op2.evaluate(newOp, table, visitedInsts);
+					op2type = op2.type == OperandType.FUNC_PARAM ? OperandType.INST : op2.type;
+				}
+			}
+			
+			// re-evaluate the node
+			if (op1 != null)
+			{
+				if (op1.kind == ResultKind.CONST)
+				{
+					op1type = OperandType.CONST;
+					i1 = op1.tempVal;
+				}
+			}
+			if (op2 != null)
+			{
+				if (op2.kind == ResultKind.CONST)
+				{
+					op2type = OperandType.CONST;
+					i2 = op2.tempVal;
+				}
+			}
+			
+			// handle computation...
+			if (op1 != null && op2 != null)
+			{
+				if (op1.kind == ResultKind.CONST && op2.kind == ResultKind.CONST)
+				{
+					i1 = op1.tempVal;
+					i2 = op2.tempVal;
+					kind = ResultKind.CONST;
+					switch (opcode)
+					{
+					case ADD:
+						tempVal = i1 + i2;
+						kind = ResultKind.CONST;
+						break;
+					case SUB:
+						tempVal = i1 - i2;
+						kind = ResultKind.CONST;
+						break;
+					case MUL:
+						tempVal = i1 * i2;
+						kind = ResultKind.CONST;
+						break;
+					case DIV:
+						tempVal = i1 / i2;
+						kind = ResultKind.CONST;
+						break;
+					}
+				}
+				else if (op1.kind == ResultKind.CONST && op2.opcode != InstructionType.GLOBAL) // right is not constant
+				{
+					type = OperandType.INST;
+					kind = ResultKind.VAR;
+					
+					op2.tempPosition = this.id - 1;
+					op2.overrideGenerate = true;
+					op2.forceGenerate(table);
+					
+					this.tempPosition = this.id - 1;
+					forceGenerate(table);
+				}
+				else if (op2.kind == ResultKind.CONST && op1.opcode != InstructionType.GLOBAL)
+				{
+					type = OperandType.INST;
+					kind = ResultKind.VAR;
+					
+					op1.tempPosition = this.id - 1;
+					op1.overrideGenerate = true;
+					op1.forceGenerate(table);
+					
+					this.tempPosition = this.id - 1;
+					forceGenerate(table);
+				}
+				else if (op2.opcode != InstructionType.GLOBAL && op1.opcode != InstructionType.GLOBAL)
+				{
+					type = OperandType.INST;
+					kind = ResultKind.VAR;
+					
+					op1.tempPosition = this.id - 1;
+					op1.overrideGenerate = true;
+					op1.forceGenerate(table);
+					op2.tempPosition = this.id - 1;
+					op2.overrideGenerate = true;
+					op2.forceGenerate(table);
+					
+					this.tempPosition = this.id - 1;
+					forceGenerate(table);
+				}
+			}
+			
+			if (opcode == InstructionType.CMP)
+			{
+				kind = ResultKind.COND;
 				forceGenerate(table);
 			}
-			else if (op2.kind == ResultKind.CONST && op1.opcode != InstructionType.GLOBAL)
+			
+			if (kind == ResultKind.CONST)
 			{
-				type = OperandType.INST;
-				kind = ResultKind.VAR;
-				
-				op1.tempPosition = this.id - 1;
-				op1.overrideGenerate = true;
-				op1.forceGenerate(table);
-				
-				this.tempPosition = this.id - 1;
 				forceGenerate(table);
 			}
-			else if (op2.opcode != InstructionType.GLOBAL && op1.opcode != InstructionType.GLOBAL)
-			{
-				type = OperandType.INST;
-				kind = ResultKind.VAR;
-				
-				op1.tempPosition = this.id - 1;
-				op1.overrideGenerate = true;
-				op1.forceGenerate(table);
-				op2.tempPosition = this.id - 1;
-				op2.overrideGenerate = true;
-				op2.forceGenerate(table);
-				
-				this.tempPosition = this.id - 1;
-				forceGenerate(table);
-			}
-		}
-		
-		if (opcode == InstructionType.CMP)
-		{
-			kind = ResultKind.COND;
-			forceGenerate(table);
-		}
-		
-		if (kind == ResultKind.CONST)
-		{
-			forceGenerate(table);
 		}
 		
 		return this;
@@ -846,6 +853,12 @@ public class PLIRInstruction
 	    if (this.id == other.id)
 	    {
 	    	return true;
+	    }
+	    else if (opcode == InstructionType.ADD && other.opcode == InstructionType.ADD 
+	    		&& op1type == OperandType.FP && other.op1type == OperandType.FP 
+	    		&& op2address.equals(other.op2address)) // special type of comparison
+	    {
+	    		return false;
 	    }
 	    else
 	    {

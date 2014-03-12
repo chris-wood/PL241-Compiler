@@ -296,7 +296,7 @@ public class PLIRBasicBlock
 	}
 	
 	public boolean terminateAtNextPhi = false;
-	public void propagatePhi(String var, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited, PLSymbolTable scope)
+	public void propagatePhi(String var, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited, PLSymbolTable scope, int branch)
 	{
 		HashMap<String, PLIRInstruction> scopeMap = new HashMap<String, PLIRInstruction>();
 		
@@ -377,7 +377,8 @@ public class PLIRBasicBlock
 				
 				// guard against constant overwriting
 				boolean couldHaveReplaced = false;
-				if (!(bInst.opcode == InstructionType.PHI && bInst.op1 != null && bInst.op1.isConstant))
+				if (!(bInst.opcode == InstructionType.PHI && bInst.op1 != null && bInst.op1.isConstant) 
+						&& !(bInst.opcode == InstructionType.PHI && branch == 2))
 				{
 					if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
 					{
@@ -429,8 +430,8 @@ public class PLIRBasicBlock
 //					}
 //				}
 				
-				if (bInst.opcode != InstructionType.PHI && bInst.opcode != InstructionType.STORE)
-//				if (bInst.opcode != InstructionType.STORE)
+//				if (bInst.opcode != InstructionType.PHI && bInst.opcode != InstructionType.STORE)
+				if (bInst.opcode != InstructionType.STORE && !(bInst.opcode == InstructionType.PHI && branch == 1))
 				{
 					if (bInst.op2 != null && bInst.op2.origIdent.equals(var) && !replaced)
 					{
@@ -457,8 +458,12 @@ public class PLIRBasicBlock
 						}
 					}
 				}
+				else if (bInst.opcode == InstructionType.PHI && branch == 2)
+				{
+					System.out.println("here");
+				}
 				
-				if (replaced && bInst.opcode != InstructionType.STORE) // && !couldHaveReplaced)
+				if (replaced && bInst.opcode != InstructionType.STORE && bInst.opcode != InstructionType.PHI) // && !couldHaveReplaced)
 				{
 					
 					
@@ -512,15 +517,15 @@ public class PLIRBasicBlock
 			// Now propagate down the tree
 			if (leftChild != null && visited.contains(leftChild) == false)
 			{
-				visited.add(leftChild);
+//				visited.add(leftChild);
 				
-				leftChild.propagatePhi(var, scopeMap.get(var), visited, scope);
+				leftChild.propagatePhi(var, scopeMap.get(var), visited, scope, 1);
 			}
 			if (rightChild != null && visited.contains(rightChild) == false && rightChild.isWhileEntry == false)
 			{
 				visited.add(rightChild);
 				
-				rightChild.propagatePhi(var, scopeMap.get(var), visited, scope);
+				rightChild.propagatePhi(var, scopeMap.get(var), visited, scope, 2);
 			}
 			
 //			for (PLIRBasicBlock child : children)

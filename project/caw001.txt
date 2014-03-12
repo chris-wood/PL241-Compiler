@@ -1,3 +1,88 @@
+main
+array[5] input;
+var maxnumber;
+function max(a1,a2,a3,a4,a5);
+array[5] arg;
+var size,temp,i;
+{
+                let arg[0] <- a1;
+                let arg[1] <- a2;
+                let arg[2] <- a3;
+                let arg[3] <- a4;
+                let arg[4] <- a5;
+                
+                let size <- 5;
+                let i <- 1;
+                let temp <- arg[0];
+
+                call OutputNewLine();
+                call OutputNewLine();
+                call OutputNum(temp);
+                call OutputNum(arg[1]);
+                call OutputNum(i);
+                call OutputNum(size);
+                call OutputNewLine();
+
+                while i < size
+                do
+                    call OutputNum(temp);
+                    call OutputNewLine();
+                        if arg[i] > temp
+                        then
+                                let temp <- arg[i]
+                        fi;
+                        let i <- i+1
+                od;
+
+                call OutputNewLine();
+                call OutputNewLine();
+                call OutputNum(temp);
+                call OutputNewLine();
+                call OutputNewLine();
+
+                return temp
+        
+}
+;
+{
+        let input[0] <- 22;
+        let        input[1] <- 61;
+        let        input[2] <- 17;
+        let        input[3] <- 34;
+        let        input[4] <- 11;
+
+        call OutputNum(input[0]);
+        call OutputNum(input[1]);
+        call OutputNum(input[2]);
+        call OutputNum(input[3]);
+        call OutputNum(input[4]);
+        call OutputNewLine();
+        
+        let        maxnumber <- call max(input[0],input[1],input[2],input[3], input[4]);
+        call OutputNum(maxnumber);
+        call OutputNewLine()
+        
+}
+.
+
+// testing if/else with modifier in only one branch!
+main 
+var a, b;
+array[5] input;
+{
+  let a <- call InputNum();
+  let input[1] <- 22;
+  let input[2] <- a;
+  call OutputNum(input[1]);
+  call OutputNum(a);
+  if input[2] == 0 then
+    call OutputNum(input[1])
+  else
+    call OutputNum(1337)
+  fi;
+  call OutputNewLine()
+}.
+
 // multidimensional array test
 main 
 var a, b, i, j;
@@ -30,64 +115,7 @@ array[10][10] output;
   od
 }.
 
-main
-array[5] input;
-var maxnumber;
-function max(a1,a2,a3,a4,a5);
-array[5] arg;
-var size,temp,i;
-{
-                let arg[0] <- a1;
-                let arg[1] <- a2;
-                let arg[2] <- a3;
-                let arg[3] <- a4;
-                let arg[4] <- a5;
-                
-                let size <- 5;
-                let i <- 1;
-                let temp <- arg[0];
 
-                call OutputNewLine();
-                call OutputNewLine();
-                call OutputNum(temp);
-                call OutputNum(i);
-                call OutputNum(size);
-
-                while i < size
-                do
-                    call OutputNum(temp);
-                    call OutputNewLine();
-                        if arg[i] > temp
-                        then
-                                let temp <- arg[i]
-                        fi;
-                        let i <- i+1
-                od;
-
-                return temp
-        
-}
-;
-{
-        let input[0] <- 22;
-        let        input[1] <- 61;
-        let        input[2] <- 17;
-        let        input[3] <- 34;
-        let        input[4] <- 11;
-
-        call OutputNum(input[0]);
-        call OutputNum(input[1]);
-        call OutputNum(input[2]);
-        call OutputNum(input[3]);
-        call OutputNum(input[4]);
-        call OutputNewLine();
-        
-        let        maxnumber <- call max(input[0],input[1],input[2],input[3], input[4]);
-        call OutputNum(maxnumber);
-        call OutputNewLine()
-        
-}
-.
 
 
 
@@ -321,24 +349,6 @@ var i;
   call OutputNewLine()
 }
 .
-
-// testing if/else with modifier in only one branch!
-main 
-var a, b;
-array[5] input;
-{
-  let a <- call InputNum();
-  let input[1] <- 22;
-  let input[2] <- a;
-  call OutputNum(input[1]);
-  call OutputNum(a);
-  if input[1] == 0 then
-    call OutputNum(input[2])
-  else
-    call OutputNum(1337)
-  fi;
-  call OutputNewLine()
-}.
 
 // multidimensional array test
 main 
