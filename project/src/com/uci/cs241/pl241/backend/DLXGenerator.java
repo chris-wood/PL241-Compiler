@@ -975,14 +975,19 @@ public class DLXGenerator
 			{
 				PLIRInstruction ssaInst = b.instructions.get(i);
 				
-//				while (ssaInst.op1 != null && ssaInst.op1.refInst != null)
-//				{
-//					ssaInst.op1 = ssaInst.op1.refInst;
-//				}
-//				while (ssaInst.op2 != null && ssaInst.op2.refInst != null)
-//				{
-//					ssaInst.op2 = ssaInst.op2.refInst;
-//				}
+				if (ssaInst.refInst != null)
+				{
+					continue; // this instruction was eliminated via CSE and the original will already be generated
+				}
+				
+				while (ssaInst.op1 != null && ssaInst.op1.refInst != null)
+				{
+					ssaInst.op1 = ssaInst.op1.refInst;
+				}
+				while (ssaInst.op2 != null && ssaInst.op2.refInst != null)
+				{
+					ssaInst.op2 = ssaInst.op2.refInst;
+				}
 
 				// Dummy instruction to generate
 				DLXInstruction newInst = new DLXInstruction();

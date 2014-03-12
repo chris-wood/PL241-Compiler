@@ -92,14 +92,14 @@ public class CSE
 						{
 							if (inst.op1type == OperandType.INST && inst.op2type == OperandType.INST)
 							{
-								if (inst.op1.equals(parentInst.op1) && inst.op2.equals(inst.op2))
+								if (inst.op1.equals(parentInst.op1) && inst.op2.equals(parentInst.op2))
 								{
 									inst.removeInstruction(EliminationReason.CSE, parentInst);
 								}
 							}
 							else if (inst.op1type == OperandType.CONST && inst.op2type == OperandType.INST)
 							{
-								if (inst.i1 == parentInst.i1 && inst.op2.equals(inst.op2))
+								if (inst.i1 == parentInst.i1 && inst.op2.equals(parentInst.op2))
 								{
 									inst.removeInstruction(EliminationReason.CSE, parentInst);
 								}

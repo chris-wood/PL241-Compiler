@@ -686,14 +686,24 @@ public class PLIRInstruction
 		PLIRInstruction inst = new PLIRInstruction(table);
 		inst.opcode = InstructionType.PHI;
 		inst.kind = ResultKind.VAR;
-		
-//		if (!(b1.origIdent.equals(b2.origIdent)))
-//		{
-//			System.out.println("b1 = " + b1.origIdent);
-//			System.out.println("b2 = " + b2.origIdent);
-//			throw new ParserException("Phi instruction pairs don't refer to the same ident");
-//		}
 		inst.origIdent = b1.origIdent; // use either b1 or b2 origIndent, they will match at this point
+		
+//		if (b1.saveName.equals(b2.saveName) == false)
+		if (b1.origIdent.equals(b2.origIdent) == false)
+		{
+			if (b1.saveName.equals(b2.saveName) == false)
+			{
+				throw new ParserException("Attempted to create a PHI for two different variables.: " + b1.saveName + " - " + b2.saveName);
+			}
+		}
+		if (b1.saveName == null || b1.saveName.equals(""))
+		{
+			inst.saveName = b1.origIdent;
+		}
+		else
+		{
+			inst.saveName = b1.saveName;
+		}
 		
 		if (b1.kind == ResultKind.CONST)
 		{
@@ -856,7 +866,7 @@ public class PLIRInstruction
 		
 		if (opcode == null)
 		{
-			System.err.println("Dummy placeholder variable encountered: " + dummyName);
+//			System.err.println("Dummy placeholder variable encountered: " + dummyName);
 		}
 		else
 		{
@@ -911,7 +921,7 @@ public class PLIRInstruction
 					s = "bgt";
 					break;
 				case PHI:
-					s = "phi(" + origIdent + ")";
+					s = "phi(" + saveName + ")";
 					break;
 				case FUNC:
 					s = "func";
@@ -946,18 +956,12 @@ public class PLIRInstruction
 				// Append the operands
 				for (PLIRInstruction operand : callOperands)
 				{
-					if (operand.type == null)
-					{
-						System.err.println(this.opcode);
-						System.err.println(this.id);
-					}
 					switch (operand.type)
 					{
 						case INST:
 							PLIRInstruction op = operand;
 							while (op.isRemoved && op.refInst.id != this.id)
 							{
-//								System.err.println("recursing to: " + op.refInst);
 								op = op.refInst;
 							}
 							s = s + " (" + op.id + ")";
@@ -971,8 +975,6 @@ public class PLIRInstruction
 						case FP:
 							s = s + " FP";
 							break;
-//						case BASEADDRESS:
-//							s = s + " " + operand.
 					}
 				}
 			}
@@ -984,7 +986,6 @@ public class PLIRInstruction
 						PLIRInstruction op = op1;
 						while (op.isRemoved && op.id != this.id)
 						{
-//							System.err.println("recursing from " + this.id + " to: " + op.refInst);
 							op = op.refInst;
 						}
 						s = s + " (" + op.id + ")";
@@ -1008,7 +1009,6 @@ public class PLIRInstruction
 						PLIRInstruction op = op1;
 						while (op.isRemoved && op.id != this.id && op.refInst.id != this.id)
 						{
-//							System.err.println("recursing from " + this.id + " to: " + op.refInst.id);
 							op = op.refInst;
 						}
 						s = s + " (" + op.id + ")";
@@ -1030,7 +1030,6 @@ public class PLIRInstruction
 						PLIRInstruction op = op2;
 						while (op.isRemoved && op.id != this.id)
 						{
-//							System.err.println("recursing from " + this.id + " to: " + op.refInst);
 							op = op.refInst;
 						}
 						s = s + " (" + op.id + ")";

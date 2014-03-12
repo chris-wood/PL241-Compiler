@@ -1,30 +1,106 @@
-// enveloping phis inside while loops
-main
-var a, b, c, d;
+// multidimensional array test
+main 
+var a, b, i, j;
+array[10][10] output;
 {
-  let a <- 1;
-  let b <- 2;
-  let c <- 3;
-  while (a + b) <= c do
-    let b <- c + 1;
-    let a <- a + b + c + 1;
-    let d <- 0;
-    while d < b do
-      call OutputNum(a);
-      call OutputNum(b);
-      call OutputNum(c);
-      call OutputNum(d);
-      call OutputNewLine();
-      let a <- a + 1;
-      let d <- d + 1;
-      call OutputNum(b);
-      call OutputNum(d);
-      call OutputNewLine()
-    od
-  od;
+  while 1 != 2 do
+    call OutputNewLine();
+    let a <- call InputNum();
+    let b <- call InputNum();
+    let i <- call InputNum();
+    let j <- call InputNum();
 
-  call OutputNum(a);
-  call OutputNum(b);
+    call OutputNum(a + b);
+    call OutputNum(i);
+    call OutputNum(j);
+    let output[i][j] <- a + b;
+    call OutputNum(output[i][j]);
+    call OutputNewLine();
+    
+    let i <- 0;
+    while i < 10 do
+      let j <- 0;
+      while j < 10 do
+        call OutputNum(output[i][j]);
+        let j <- j + 1
+      od;
+      call OutputNewLine();
+      let i <- i + 1
+    od
+  od
+}.
+
+main
+array[5] input;
+var maxnumber;
+function max(a1,a2,a3,a4,a5);
+array[5] arg;
+var size,temp,i;
+{
+                let arg[0] <- a1;
+                let arg[1] <- a2;
+                let arg[2] <- a3;
+                let arg[3] <- a4;
+                let arg[4] <- a5;
+                
+                let size <- 5;
+                let i <- 1;
+                let temp <- arg[0];
+
+                call OutputNewLine();
+                call OutputNewLine();
+                call OutputNum(temp);
+                call OutputNum(i);
+                call OutputNum(size);
+
+                while i < size
+                do
+                    call OutputNum(temp);
+                    call OutputNewLine();
+                        if arg[i] > temp
+                        then
+                                let temp <- arg[i]
+                        fi;
+                        let i <- i+1
+                od;
+
+                return temp
+        
+}
+;
+{
+        let input[0] <- 22;
+        let        input[1] <- 61;
+        let        input[2] <- 17;
+        let        input[3] <- 34;
+        let        input[4] <- 11;
+
+        call OutputNum(input[0]);
+        call OutputNum(input[1]);
+        call OutputNum(input[2]);
+        call OutputNum(input[3]);
+        call OutputNum(input[4]);
+        call OutputNewLine();
+        
+        let        maxnumber <- call max(input[0],input[1],input[2],input[3], input[4]);
+        call OutputNum(maxnumber);
+        call OutputNewLine()
+        
+}
+.
+
+
+
+// multidimensional array test
+main 
+var a, b, c;
+array[10] output;
+{
+  let a <- call InputNum();
+  let b <- call InputNum();
+  let output[0] <- a + b;
+  call OutputNum(output[0]);
+  let c <- output[0];
   call OutputNum(c);
   call OutputNewLine()
 }.
@@ -71,116 +147,36 @@ var a, i;
   od
 }.
 
-// multidimensional array test
-main 
-var a, b, i, j;
-array[10][10] output;
+// enveloping phis inside while loops
+main
+var a, b, c, d;
 {
-  while 1 != 2 do
-    call OutputNewLine();
-    let a <- call InputNum();
-    let b <- call InputNum();
-    let i <- call InputNum();
-    let j <- call InputNum();
-
-    call OutputNum(a + b);
-    let output[i][j] <- a + b;
-    call OutputNum(output[i][j]);
-    call OutputNewLine();
-    
-    let i <- 0;
-    let j <- 0;
-    while i < 10 do
-      while j < 10 do
-        call OutputNum(output[i][j]);
-        let j <- j + 1
-      od;
+  let a <- 1;
+  let b <- 2;
+  let c <- 3;
+  while (a + b) <= c do
+    let b <- c + 1;
+    let a <- a + b + c + 1;
+    let d <- 0;
+    while d < b do
+      call OutputNum(a);
+      call OutputNum(b);
+      call OutputNum(c);
+      call OutputNum(d);
       call OutputNewLine();
-      let i <- i + 1
+      let a <- a + 1;
+      let d <- d + 1;
+      call OutputNum(b);
+      call OutputNum(d);
+      call OutputNewLine()
     od
-  od
-}.
-
-// dynamic array test
-main 
-var index;
-array[10] output;
-
-function populate(n, v);
-var i;
-array[5] localArray;
-{
-  call OutputNum(n);
-  call OutputNum(v);
-  let i <- 0;
-  while i < 5 do
-    let localArray[i] <- i + v;
-    call OutputNum(localArray[i]);
-    call OutputNewLine();
-    let i <- i + 1
   od;
-  return 10
-};
 
-{
-  call OutputNum(call populate(5, 10));
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
   call OutputNewLine()
 }.
-
-
-
-main
-array[5] input;
-var maxnumber;
-function max(a1,a2,a3,a4,a5);
-array[5] arg;
-var size,temp,i;
-{
-                let arg[1] <- a1;
-                let arg[2] <- a2;
-                let arg[3] <- a3;
-                let arg[4] <- a4;
-                let arg[5] <- a5;
-                
-                let size <- 5;
-                let i <- 2;
-                let temp <- arg[1];
-
-                while i <= size
-                do
-                        if arg[i] > temp
-                        then
-                                let temp <- arg[i]
-                        fi;
-                        let i <- i+1
-                od;
-                return temp
-        
-}
-;
-{
-        let input[1] <- 22;
-        let        input[2] <- 61;
-        let        input[3] <- 17;
-        let        input[4] <- 34;
-        let        input[5] <- 11;
-        
-        let        maxnumber <- call max(input[1],input[2],input[3],input[4])
-        
-}
-.
-
-
-
-
-  call OutputNewLine();
-  call OutputNewLine();
-  while i < 10 do
-    call OutputNum(i);
-    call OutputNum(output[i]);
-    call OutputNewLine();
-    let i <- i + 1
-  od
 
 // super hard
 main
@@ -229,19 +225,34 @@ var a, b, c, d, e, f, g, h;
 }
 .
 
-// multidimensional array test
+
+
+// dynamic array test
 main 
-var a, b, c;
+var index;
 array[10] output;
+
+function populate(n, v);
+var i;
+array[5] localArray;
 {
-  let a <- call InputNum();
-  let b <- call InputNum();
-  let output[0] <- a + b;
-  call OutputNum(output[0]);
-  let c <- output[0];
-  call OutputNum(c);
+  call OutputNum(n);
+  call OutputNum(v);
+  let i <- 0;
+  while i < 5 do
+    let localArray[i] <- i + v;
+    call OutputNum(localArray[i]);
+    call OutputNewLine();
+    let i <- i + 1
+  od;
+  return 10
+};
+
+{
+  call OutputNum(call populate(5, 10));
   call OutputNewLine()
 }.
+
 
 // CSE with register allocation!
 main

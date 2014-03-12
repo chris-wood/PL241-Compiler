@@ -168,17 +168,18 @@ public class RegisterAllocator
 							System.out.println("using param v");
 						}
 						
+						// live = live - {i}
+						if (inst.opcode != InstructionType.LOADPARAM) // Keep locals live at all times
+						{
+							live.remove(inst);
+						}
+						
 						// Use CSE-generated referencing instruction
 						while (inst.refInst != null)
 						{
 							inst = inst.refInst;
 						}
-
-						// live = live - {i}
-						if (inst.opcode != InstructionType.LOADPARAM)
-						{
-							live.remove(inst);
-						}
+//						if (inst.refInst != null) continue;
 
 						// Add edge between new var and all live variables
 						for (PLIRInstruction liveInst : live)

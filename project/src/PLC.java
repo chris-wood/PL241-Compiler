@@ -175,7 +175,7 @@ public class PLC
 					
 					// Perform CSE, starting at the root
 					CSE cse = new CSE();
-//					cse.performCSE(entry);
+					cse.performCSE(entry);
 				}
 				
 				// Display the instructions AFTER CSE

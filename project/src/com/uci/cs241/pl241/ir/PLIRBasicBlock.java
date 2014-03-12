@@ -296,8 +296,10 @@ public class PLIRBasicBlock
 	}
 	
 	public boolean terminateAtNextPhi = false;
-	public void propagatePhi(String var, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited, HashMap<String, PLIRInstruction> scopeMap, PLSymbolTable scope)
+	public void propagatePhi(String var, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited, PLSymbolTable scope)
 	{
+		HashMap<String, PLIRInstruction> scopeMap = new HashMap<String, PLIRInstruction>();
+		
 //		if (visited.contains(this) == false)
 		{
 //			visited.add(this);
@@ -310,19 +312,48 @@ public class PLIRBasicBlock
 			
 			scopeMap.put(var, phi);
 			
+			// Sort instructions in the BB by their ID
+			ArrayList<PLIRInstruction> sortedInstructions = new ArrayList<PLIRInstruction>();
+			for (PLIRInstruction inst : instructions)
+			{
+				sortedInstructions.add(inst);
+			}
+			if (sortedInstructions.size() > 1)
+			{
+				boolean sorted = false;
+				while (!sorted)
+				{
+					sorted = true;
+					for (int i = 0; i < sortedInstructions.size() - 1; i++)
+					{
+						for (int j = i + 1; j < sortedInstructions.size(); j++)
+						{
+							if (sortedInstructions.get(i).id > sortedInstructions.get(j).id)
+							{
+								PLIRInstruction tmp = sortedInstructions.get(i);
+								sortedInstructions.set(i, sortedInstructions.get(j));
+								sortedInstructions.set(j, tmp);
+								sorted = false;
+							}
+						}
+					}
+				}
+			}
+			
+			
 			// Propagate through the main instructions in this block's body
-			for (PLIRInstruction bInst : instructions)
+			for (PLIRInstruction bInst : sortedInstructions)
 			{
 				boolean replaced = false;
 				
-				if (bInst.id != 0 && phi.id > bInst.id)
+				if (bInst.id != 0 && phi.id > bInst.id || (bInst.isConstant))
 				{
 					continue;
 				}
 				
-				if (bInst.opcode == InstructionType.PHI)
+				if (bInst.opcode == InstructionType.PHI || bInst.opcode == InstructionType.CMP)
 				{
-//					System.err.println("asd");
+					System.err.println("asd");
 //					return;
 				}
 				
@@ -353,6 +384,7 @@ public class PLIRBasicBlock
 //						if (!(replaced && bInst.opcode == InstructionType.PHI))
 						{
 							replaced  = bInst.replaceLeftOperand(scopeMap.get(var));
+							couldHaveReplaced = true;
 //							replaced = true;
 						}
 					}
@@ -361,41 +393,44 @@ public class PLIRBasicBlock
 //						if (!(replaced && bInst.opcode == InstructionType.PHI))
 						{
 							replaced = bInst.replaceLeftOperand(scopeMap.get(var));
+							couldHaveReplaced = true;
 //							replaced = true;
 						}
 					}
 					if (bInst.op1name != null && bInst.op1name.equals(var))
 					{
 						replaced = bInst.replaceLeftOperand(scopeMap.get(var));
+						couldHaveReplaced = true;
 //						replaced = true;
 					}
 				}
-				else
-				{
-					if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
-					{
-//						if (!(replaced && bInst.opcode == InstructionType.PHI))
-						{
-//							replaced  = bInst.replaceLeftOperand(scopeMap.get(var));
-							couldHaveReplaced = true;
-						}
-					}
-					if (bInst.op1 != null && bInst.op1.equals(findPhi))
-					{
-//						if (!(replaced && bInst.opcode == InstructionType.PHI))
-						{
-//							replaced = bInst.replaceLeftOperand(scopeMap.get(var));
-							couldHaveReplaced = true;
-						}
-					}
-					if (bInst.op1name != null && bInst.op1name.equals(var))
-					{
-//						replaced = bInst.replaceLeftOperand(scopeMap.get(var));
-						couldHaveReplaced = true;
-					}
-				}
+//				else
+//				{
+//					if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
+//					{
+////						if (!(replaced && bInst.opcode == InstructionType.PHI))
+//						{
+////							replaced  = bInst.replaceLeftOperand(scopeMap.get(var));
+//							couldHaveReplaced = true;
+//						}
+//					}
+//					if (bInst.op1 != null && bInst.op1.equals(findPhi))
+//					{
+////						if (!(replaced && bInst.opcode == InstructionType.PHI))
+//						{
+////							replaced = bInst.replaceLeftOperand(scopeMap.get(var));
+//							couldHaveReplaced = true;
+//						}
+//					}
+//					if (bInst.op1name != null && bInst.op1name.equals(var))
+//					{
+////						replaced = bInst.replaceLeftOperand(scopeMap.get(var));
+//						couldHaveReplaced = true;
+//					}
+//				}
 				
-				if (bInst.opcode != InstructionType.PHI)
+				if (bInst.opcode != InstructionType.PHI && bInst.opcode != InstructionType.STORE)
+//				if (bInst.opcode != InstructionType.STORE)
 				{
 					if (bInst.op2 != null && bInst.op2.origIdent.equals(var) && !replaced)
 					{
@@ -423,14 +458,22 @@ public class PLIRBasicBlock
 					}
 				}
 				
-				if (replaced) // && !couldHaveReplaced)
+				if (replaced && bInst.opcode != InstructionType.STORE) // && !couldHaveReplaced)
 				{
+					
+					
 					ArrayList<PLIRInstruction> visitedInsts = new ArrayList<PLIRInstruction>();
 					bInst.evaluate(scopeMap.get(var), scope, visitedInsts);
 				}
 				
 				// Don't propagate past the phi, since it essentially replaces the current value
-				if (replaced && bInst.opcode == InstructionType.PHI)
+//				if (replaced && bInst.opcode == InstructionType.PHI)
+//				{
+//					findPhi = bInst; 
+//					scopeMap.put(var, bInst);
+//				}
+				
+				if (replaced && couldHaveReplaced && bInst.opcode == InstructionType.PHI)
 				{
 					findPhi = bInst; 
 					scopeMap.put(var, bInst);
@@ -447,27 +490,37 @@ public class PLIRBasicBlock
 //				// If there is an assignment that matches this PHI variable, use its value...
 				if (bInst.id > 0 && bInst.generated && (bInst.origIdent != null && bInst.origIdent.equals(var)))
 				{
-					scopeMap.put(var, bInst);
+					if (bInst.opcode == InstructionType.LOAD)
+					{
+						// Need to reload based on the value of the phi...?
+						scopeMap.put(var, bInst);
+					}
+					else
+					{
+						scopeMap.put(var, bInst);
+					}
 				}
 				
 				// If for some reason the phi value was prematurely re-assigned, perhaps because of a READ, then don't propogate further
-				if (bInst.origIdent.equals(phi.origIdent))
-				{
-					terminateAtNextPhi = true;
+//				if (bInst.origIdent.equals(phi.origIdent))
+//				{
+//					terminateAtNextPhi = true;
 //					return; // in this case, we short circuit since the value has been reasssigned without making use of the phi
-				}
+//				}
 			}
 		
 			// Now propagate down the tree
 			if (leftChild != null && visited.contains(leftChild) == false)
 			{
 				visited.add(leftChild);
-				leftChild.propagatePhi(var, scopeMap.get(var), visited, scopeMap, scope);
+				
+				leftChild.propagatePhi(var, scopeMap.get(var), visited, scope);
 			}
 			if (rightChild != null && visited.contains(rightChild) == false && rightChild.isWhileEntry == false)
 			{
 				visited.add(rightChild);
-				rightChild.propagatePhi(var, scopeMap.get(var), visited, scopeMap, scope);
+				
+				rightChild.propagatePhi(var, scopeMap.get(var), visited, scope);
 			}
 			
 //			for (PLIRBasicBlock child : children)
@@ -515,7 +568,8 @@ public class PLIRBasicBlock
 	{
 		if (inst != null)
 		{
-			return instructions.add(inst);
+			boolean added = instructions.add(inst);			
+			return added;
 		}
 		return false;
 	}
