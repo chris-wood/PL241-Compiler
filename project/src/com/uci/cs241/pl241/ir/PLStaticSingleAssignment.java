@@ -65,6 +65,7 @@ public class PLStaticSingleAssignment
 			}
 		}
 		return null;
+//		return instructions.get(id - 1);
 	}
 	
 	public static int addInstruction(PLSymbolTable table, PLIRInstruction inst)

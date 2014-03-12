@@ -995,22 +995,29 @@ public class PLParser
 		
 		// Build the comparison instruction with the memorized condition
 		if (leftInst == null || (leftInst != null && leftInst.isArray && leftInst.opcode != InstructionType.LOAD) || left.arrayName != null)
+//		if (leftInst == null || (leftInst != null && leftInst.isArray) || left.arrayName != null)
 		{
 			ArrayList<PLIRInstruction> offsetInstructions = null;
 			if (leftInst.opcode == InstructionType.LOAD)
 			{
-				offsetInstructions = leftInst.loadInstructions;
+				offsetInstructions = new ArrayList<PLIRInstruction>();
+				for (PLIRInstruction inst : leftInst.loadInstructions)
+				{
+					PLIRInstruction copyInst = PLIRInstruction.copy(scope, inst);
+					copyInst.forceGenerate(scope);
+					relation.addInstruction(copyInst);
+					leftInst.dependents.add(copyInst);
+					offsetInstructions.add(copyInst);
+				}
 			}
 			else
 			{
 				offsetInstructions = arrayOffsetCalculation(left);
-			}
-			
-			
-			for (PLIRInstruction inst : offsetInstructions)
-			{
-				relation.addInstruction(inst);
-				leftInst.dependents.add(inst);
+				for (PLIRInstruction inst : offsetInstructions)
+				{
+					relation.addInstruction(inst);
+					leftInst.dependents.add(inst);
+				}
 			}
 			
 			PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
@@ -1045,23 +1052,32 @@ public class PLParser
 		// Add the result of all relations
 //		if (rightInst.isArray)
 		if (rightInst == null || (rightInst != null && rightInst.isArray && rightInst.opcode != InstructionType.LOAD) || right.arrayName != null)
+//		if (rightInst == null || (rightInst != null && rightInst.isArray) || right.arrayName != null)
 		{
-//			ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(right);
+//			ArrayList<PLIRInstruction> 
 			
 			ArrayList<PLIRInstruction> offsetInstructions = null;
 			if (rightInst.opcode == InstructionType.LOAD)
 			{
-				offsetInstructions = rightInst.loadInstructions;
+//				offsetInstructions = rightInst.loadInstructions;
+				offsetInstructions = new ArrayList<PLIRInstruction>();
+				for (PLIRInstruction inst : rightInst.loadInstructions)
+				{
+					PLIRInstruction copyInst = PLIRInstruction.copy(scope, inst);
+					relation.addInstruction(copyInst);
+					rightInst.dependents.add(copyInst);
+					copyInst.forceGenerate(scope);
+					offsetInstructions.add(copyInst);
+				}
 			}
 			else
 			{
 				offsetInstructions = arrayOffsetCalculation(right);
-			}
-			
-			for (PLIRInstruction inst : offsetInstructions)
-			{
-				relation.addInstruction(inst);
-				rightInst.dependents.add(inst);
+				for (PLIRInstruction inst : offsetInstructions)
+				{
+					relation.addInstruction(inst);
+					rightInst.dependents.add(inst);
+				}
 			}
 			
 			PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
@@ -1792,7 +1808,7 @@ public class PLParser
 					
 					debug(elseInst.toString());
 					elseInst.forceGenerate(scope, elseInst.tempPosition);
-					PLIRInstruction phi = PLIRInstruction.create_phi(scope, thenInst, elseInst, PLStaticSingleAssignment.globalSSAIndex);
+					PLIRInstruction phi = PLIRInstruction.create_phi(scope, thenInst, elseInst, PLStaticSingleAssignment.globalSSAIndex, true);
 					phi.isGlobalVariable = thenInst.isGlobalVariable || elseInst.isGlobalVariable;
 					joinNode.insertInstruction(phi, 0);
 					phisToAdd.add(phi);
@@ -1838,7 +1854,7 @@ public class PLParser
 					PLIRInstruction followInst = scope.getLastValue(var);
 					followInst.forceGenerate(scope, followInst.tempPosition);
 					
-					PLIRInstruction phi = PLIRInstruction.create_phi(scope, followInst, elseInst, PLStaticSingleAssignment.globalSSAIndex);
+					PLIRInstruction phi = PLIRInstruction.create_phi(scope, followInst, elseInst, PLStaticSingleAssignment.globalSSAIndex, true);
 					phi.isGlobalVariable = followInst.isGlobalVariable || elseInst.isGlobalVariable;
 					debug(phi.toString());
 					joinNode.insertInstruction(phi, 0);
@@ -1877,7 +1893,7 @@ public class PLParser
 					PLIRInstruction followInst = scope.getLastValue(var);
 					followInst.forceGenerate(scope, followInst.tempPosition);
 					
-					PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
+					PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex, true);
 					phi.isGlobalVariable = leftInst.isGlobalVariable || followInst.isGlobalVariable;
 					debug(phi.toString());
 					joinNode.insertInstruction(phi, 0);
@@ -1924,7 +1940,7 @@ public class PLParser
 					PLIRInstruction followInst = scope.getLastValue(var);
 					followInst.forceGenerate(scope, followInst.tempPosition);
 					
-					PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex);
+					PLIRInstruction phi = PLIRInstruction.create_phi(scope, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex, true);
 					phi.isGlobalVariable = leftInst.isGlobalVariable || followInst.isGlobalVariable;
 					debug(phi.toString());
 					joinNode.insertInstruction(phi, 0);
@@ -1978,7 +1994,7 @@ public class PLParser
 		{	
 			// Eat the while token and then save the current PC
 			advance(in);
-//			int loopLocation = PLStaticSingleAssignment.globalSSAIndex;
+			int entryStartLocation = PLStaticSingleAssignment.globalSSAIndex;
 			
 			scope.pushNewScope("while" + (blockDepth++));
 			
@@ -2062,23 +2078,17 @@ public class PLParser
 			ArrayList<PLIRInstruction> phisGenerated = new ArrayList<PLIRInstruction>();
 			for (String var : modded)
 			{
-//				scope.displayCurrentScopeSymbols();
-//				for (String inst : scope.symTable.get(scope.getCurrentScope()).keySet())
-//				{
-//					System.out.println(inst + " - " + scope.symTable.get(scope.getCurrentScope()).get(inst).kind);
-//				}
-				
 				PLIRInstruction bodyInst = body.modifiedIdents.get(var);
 //				bodyInst.forceGenerate(scope, bodyInst.tempPosition);
-				bodyInst.forceGenerate(scope);
+//				bodyInst.forceGenerate(scope);
 				
 				PLIRInstruction preInst = scope.getCurrentValue(var);
 //				preInst.forceGenerate(scope, preInst.tempPosition);
-				preInst.forceGenerate(scope);
+//				preInst.forceGenerate(scope);
 				
 				// Inject the phi at the appropriate spot in the join node...
 //				PLIRInstruction phi = PLIRInstruction.create_phi(scope, preInst, bodyInst, loopLocation + offset);
-				PLIRInstruction phi = PLIRInstruction.create_phi(scope, preInst, bodyInst, cmpInst.id - 1);
+				PLIRInstruction phi = PLIRInstruction.create_phi(scope, preInst, bodyInst, entryStartLocation, true);
 				phi.op1name = var;
 				phi.op2name = var;
 				phi.isGlobalVariable = preInst.isGlobalVariable || bodyInst.isGlobalVariable;
@@ -2088,6 +2098,119 @@ public class PLParser
 				phi.origIdent = var; // needed for propagation
 				offset++;
 				entry.insertInstruction(phi, 0);
+//				PLStaticSingleAssignment.injectInstruction(phi, scope, entryStartLocation);
+				
+				// Propogate through the start of the while header
+				PLIRInstruction replacement = phi;
+				for (int i = 1; i < entry.instructions.size(); i++)
+				{
+					PLIRInstruction entryInst = entry.instructions.get(i);
+					if (entryInst.id != 0 && entryInst.id < entryStartLocation || (entryInst.isConstant))
+					{
+						continue;
+					}
+					
+					boolean replaced = false;
+//					if (entryInst.origIdent.equals(var))
+					{
+						// guard against constant overwriting
+						boolean couldHaveReplaced = false;
+						if (!(entryInst.opcode == InstructionType.PHI && entryInst.op1 != null && entryInst.op1.isConstant) 
+								&& !(entryInst.opcode == InstructionType.PHI))
+						{
+							if (entryInst.op1 != null && entryInst.op1.origIdent.equals(var))
+							{
+//								if (!(replaced && entryInst.opcode == InstructionType.PHI))
+								{
+									replaced  = entryInst.replaceLeftOperand(replacement);
+									couldHaveReplaced = true;
+//									replaced = true;
+								}
+							}
+							if (entryInst.op1 != null && entryInst.op1.equals(phi))
+							{
+//								if (!(replaced && entryInst.opcode == InstructionType.PHI))
+								{
+									replaced = entryInst.replaceLeftOperand(replacement);
+									couldHaveReplaced = true;
+//									replaced = true;
+								}
+							}
+							if (entryInst.op1name != null && entryInst.op1name.equals(var))
+							{
+								replaced = entryInst.replaceLeftOperand(replacement);
+								couldHaveReplaced = true;
+//								replaced = true;
+							}
+						}
+						
+//						if (entryInst.opcode != InstructionType.PHI && entryInst.opcode != InstructionType.STORE)
+						if (entryInst.opcode != InstructionType.STORE && !(entryInst.opcode == InstructionType.PHI))
+						{
+							if (entryInst.op2 != null && entryInst.op2.origIdent.equals(var) && !replaced)
+							{
+//								if (!(replaced && entryInst.opcode == InstructionType.PHI))
+								{
+									replaced = entryInst.replaceRightOperand(replacement);
+//									replaced = true;
+								}
+							}
+							if (entryInst.op2 != null && entryInst.op2.equals(phi) && !replaced)
+							{
+//								if (!(replaced && entryInst.opcode == InstructionType.PHI))
+								{
+									replaced = entryInst.replaceRightOperand(replacement);
+//									replaced = true;
+								}
+							}
+							if (entryInst.op2name != null && entryInst.op2name.equals(var) && !replaced)
+							{
+//								if (!(replaced && entryInst.opcode == InstructionType.PHI))
+								{
+									replaced = entryInst.replaceRightOperand(replacement);
+//									replaced = true;
+								}
+							}
+						}
+						else if (entryInst.opcode == InstructionType.PHI)
+						{
+							System.out.println("here");
+						}
+						
+						if (replaced && entryInst.opcode != InstructionType.STORE && entryInst.opcode != InstructionType.PHI) // && !couldHaveReplaced)
+						{
+							ArrayList<PLIRInstruction> visitedInsts = new ArrayList<PLIRInstruction>();
+							entryInst.evaluate(replacement, scope, visitedInsts);
+						}
+						
+						if (replaced && couldHaveReplaced && entryInst.opcode == InstructionType.PHI)
+						{ 
+							replacement = entryInst;
+						}
+						
+						// If the phi value was used to replace some operand, and this same expression was used to save a result, replace
+						// with the newly generated result
+						else if (replaced && (entryInst.origIdent.equals(phi.origIdent) || entryInst.saveName.equals(phi.origIdent)) && entryInst.kind != ResultKind.CONST)
+						{
+							System.out.println("now replacing " + phi.origIdent + " with : " + entryInst.toString());
+							replacement = entryInst;
+						}
+						
+//						// If there is an assignment that matches this PHI variable, use its value...
+						if (entryInst.id > 0 && entryInst.generated && (entryInst.origIdent != null && entryInst.origIdent.equals(var)))
+						{
+							if (entryInst.opcode == InstructionType.LOAD)
+							{
+								// Need to reload based on the value of the phi...?
+								replacement = entryInst;
+							}
+							else
+							{
+								replacement = entryInst;
+							}
+						}
+					}
+				}
 
 				// The current value in scope needs to be updated now with the result of the phi
 				scope.updateSymbol(var, phi);
@@ -2149,7 +2272,7 @@ public class PLParser
 					{
 						PLIRInstruction bodyInst = body.modifiedIdents.get(var);
 						bodyInst.overrideGenerate = true;
-						bodyInst.tempPosition = PLStaticSingleAssignment.globalSSAIndex;
+//						bodyInst.tempPosition = PLStaticSingleAssignment.globalSSAIndex;
 						bodyInst.forceGenerate(scope);
 						phi.op2type = OperandType.INST;
 						phi.op2 = bodyInst;
@@ -2161,7 +2284,7 @@ public class PLParser
 			
 			// Insert the unconditional branch at (location - pc)
 //			PLIRInstruction beqInst = PLIRInstruction.create_BEQ(scope, loopLocation - PLStaticSingleAssignment.globalSSAIndex);
-			PLIRInstruction beqInst = PLIRInstruction.create_BEQ(scope, cmpInst.id - PLStaticSingleAssignment.globalSSAIndex - 1 - offset);
+			PLIRInstruction beqInst = PLIRInstruction.create_BEQ(scope, entryStartLocation - PLStaticSingleAssignment.globalSSAIndex);
 			beqInst.jumpInst = cmpInst;
 			
 			if (body.joinNode != null)
@@ -2182,7 +2305,8 @@ public class PLParser
 			
 			// Fixup the conditional branch at the appropriate location
 			bgeInst.fixupLocation = entryCmpInst.fixupLocation;
-			Fixup(bgeInst.fixupLocation, 0); 
+//			Fixup(bgeInst.fixupLocation, 0); //1337
+			Fixup(bgeInst.fixupLocation, 0); //1337
 			
 			// Configure the dominator tree connections
 			entry.dominatorSet.add(body);

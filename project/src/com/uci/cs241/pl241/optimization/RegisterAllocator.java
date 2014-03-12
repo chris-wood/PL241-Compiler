@@ -143,31 +143,8 @@ public class RegisterAllocator
 				for (int i = b.instructions.size() - 1; i >= 0; i--)
 				{
 					PLIRInstruction inst = b.instructions.get(i);
-					if (inst.opcode != InstructionType.PHI && inst.isNotLiveInstruction() == false)
-					{
-						if (inst.opcode == InstructionType.LOADPARAM)
-						{
-							System.err.println("follow me");
-						}
-						if (inst.opcode == InstructionType.CMP)
-						{
-							System.err.println("follow me");
-						}
-						
-						if (live.contains(4))
-						{
-							System.err.println("last inst added LOADPARAM 1");
-						}
-						
-						if (inst.id == 12)
-						{
-							System.out.println("using param v");
-						}
-						if (inst.id == 13)
-						{
-							System.out.println("using param v");
-						}
-						
+					if (inst.opcode != InstructionType.PHI && inst.isNotLiveInstruction() == false || (inst.opcode == InstructionType.PHI && branch == 1))
+					{	
 						// live = live - {i}
 						if (inst.opcode != InstructionType.LOADPARAM) // Keep locals live at all times
 						{

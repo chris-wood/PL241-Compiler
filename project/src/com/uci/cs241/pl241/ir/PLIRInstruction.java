@@ -85,6 +85,44 @@ public class PLIRInstruction
 	public boolean isRemoved = false;
 	public PLIRInstruction refInst = null;
 	
+	public static PLIRInstruction copy(PLSymbolTable scope, PLIRInstruction inst)
+	{
+		PLIRInstruction copyInst = new PLIRInstruction(scope);
+		copyInst.opcode = inst.opcode;
+		copyInst.type = inst.type;
+		copyInst.origIdent = inst.origIdent;
+		copyInst.saveName = inst.saveName;
+		copyInst.op1 = inst.op1;
+		copyInst.op1type = inst.op1type;
+		copyInst.i1 = inst.i1;
+		copyInst.op2 = inst.op2;
+		copyInst.op2type = inst.op2type;
+		copyInst.i2 = inst.i2;
+		copyInst.op2address = inst.op2address;
+		copyInst.op2name = inst.op2name;
+		copyInst.branchDirection = inst.branchDirection;
+		copyInst.condcode = inst.condcode;
+		copyInst.cost = inst.cost;
+		copyInst.depth = inst.depth;
+		copyInst.dummyName = inst.dummyName;
+		copyInst.elimReason = inst.elimReason;
+		copyInst.funcName = inst.funcName;
+		copyInst.globalMark = inst.globalMark;
+		copyInst.isConstant = inst.isConstant;
+		copyInst.isGlobalVariable = inst.isGlobalVariable;
+		copyInst.isArray = inst.isArray;
+		copyInst.isRemoved = inst.isRemoved;
+		copyInst.jumpInst = inst.jumpInst;
+		copyInst.paramNumber = inst.paramNumber;
+		copyInst.refInst = inst.refInst;
+		copyInst.storedValue = inst.storedValue;
+		copyInst.tempVal = inst.tempPosition;
+		copyInst.uses = inst.uses;
+		copyInst.wasIdent = inst.wasIdent;
+		copyInst.whilePhi = inst.whilePhi;
+		return copyInst;
+	}
+	
 	public void removeInstruction(EliminationReason reason, PLIRInstruction ref)
 	{
 		PLStaticSingleAssignment.displayInstructions();
@@ -427,7 +465,7 @@ public class PLIRInstruction
 	{
 		System.out.println("Reevaluation " + this + "," + id);
 		
-		if (this.opcode == InstructionType.MUL)
+		if (this.opcode == InstructionType.MUL || this.opcode == InstructionType.CMP)
 		{
 			System.out.println("asd");
 		}
@@ -475,7 +513,7 @@ public class PLIRInstruction
 			// re-evaluate the node
 			if (op1 != null)
 			{
-				if (op1.kind == ResultKind.CONST)
+				if (op1.kind == ResultKind.CONST || op1type == OperandType.CONST)
 				{
 					op1type = OperandType.CONST;
 					i1 = op1.tempVal;
@@ -483,7 +521,7 @@ public class PLIRInstruction
 			}
 			if (op2 != null)
 			{
-				if (op2.kind == ResultKind.CONST)
+				if (op2.kind == ResultKind.CONST || op2type == OperandType.CONST)
 				{
 					op2type = OperandType.CONST;
 					i2 = op2.tempVal;
@@ -528,6 +566,8 @@ public class PLIRInstruction
 					op2.forceGenerate(table);
 					
 					this.tempPosition = this.id - 1;
+//					this.id = 0;
+					op1.overrideGenerate = true;
 					forceGenerate(table);
 				}
 				else if (op2.kind == ResultKind.CONST && op1.opcode != InstructionType.GLOBAL)
@@ -540,6 +580,8 @@ public class PLIRInstruction
 					op1.forceGenerate(table);
 					
 					this.tempPosition = this.id - 1;
+//					this.id = 0;
+					this.overrideGenerate = true;
 					forceGenerate(table);
 				}
 				else if (op2.opcode != InstructionType.GLOBAL && op1.opcode != InstructionType.GLOBAL)
@@ -555,6 +597,8 @@ public class PLIRInstruction
 					op2.forceGenerate(table);
 					
 					this.tempPosition = this.id - 1;
+//					this.id = 0;
+					op1.overrideGenerate = true;
 					forceGenerate(table);
 				}
 			}
@@ -688,7 +732,7 @@ public class PLIRInstruction
 		return inst;
 	}
 	
-	public static PLIRInstruction create_phi(PLSymbolTable table, PLIRInstruction b1, PLIRInstruction b2, int loc) throws ParserException
+	public static PLIRInstruction create_phi(PLSymbolTable table, PLIRInstruction b1, PLIRInstruction b2, int loc, boolean generate) throws ParserException
 	{
 		PLIRInstruction inst = new PLIRInstruction(table);
 		inst.opcode = InstructionType.PHI;
@@ -737,11 +781,12 @@ public class PLIRInstruction
 		}
 		
 		inst.isRemoved = false;
-		inst.forceGenerate(table, loc);
+		if (generate)
+		{
+			inst.forceGenerate(table, loc);
+			inst.id = loc + 1;
+		}
 		inst.type = OperandType.INST;
-		
-		// override the location
-		inst.id = loc + 1;
 		
 		return inst;
 	}

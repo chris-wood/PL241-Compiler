@@ -1,4 +1,125 @@
 main
+var a, b, c;
+{
+  let a <- 1;
+  let b <- 2;
+  let c <- 4;
+  if b < c then
+    while ( b + 1 ) < c do
+      let a <- a + 1;
+      while ( b + 2 ) < c do
+        let b <- b + 1
+      od
+    od
+  fi;
+  let b <- c + 1;
+
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
+  call OutputNewLine()
+}
+.
+
+// Predefined function and procedure test
+main
+var a, b, c, d;
+{
+  let a <- call InputNum( );
+  let b <- call InputNum( );
+  let c <- call InputNum( );
+  call OutputNum( a );
+  call OutputNewLine( );
+  
+  while b > c do
+    let d <- call InputNum( );
+    
+    let c <- c + 1;
+    
+    call OutputNum( d );
+    call OutputNewLine( );
+    
+    let b <- b + 1
+  od
+}
+.
+ 
+
+// Array testing
+main
+array [ 5 ][ 10 ][ 15 ][ 20 ] a;
+var b, c, d;
+function foo( );
+{
+  return 14
+};
+{
+  let b <- 1;
+  let c <- 19;
+  let a[ 4 ][ 9 ][ 1 + call foo( ) ][ b * c ] <- 45;
+  let d <- a[ 4 ][ 9 ][ call foo( ) + 1 ][ c * b ] + 2
+}
+.
+
+main
+
+function foo();
+var a, b, c, d, e, f, g, h;
+{
+  let a <- 1;
+  let b <- 2;
+  let c <- 3;
+  let d <- 4;
+  let e <- 5;
+  let f <- 6;
+  let g <- 7;
+  let h <- 8;
+  
+  if a < b then
+    let a <- a + 1;
+    let e <- e + 1;
+    if b < c then
+      let c <- c * 3;
+      while a < c do
+        let a <- a + 1
+      od
+    fi;
+    call OutputNum(a);
+    call OutputNewLine();
+    call OutputNewLine();
+    let g <- 9 
+  else
+    let b <- b - 1;
+    let f <- f + 1;
+    if b < c then
+      let c <- c * 3;
+      while b < c do
+        let b <- b + 1;
+        let c <- c - 1
+      od
+    else
+      let c <- c * 4;
+      let d <- d + 1
+    fi;
+    let h <- 425
+  fi;
+  
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
+  call OutputNum(d);
+  call OutputNum(e);
+  call OutputNum(f);
+  call OutputNum(g);
+  call OutputNum(h)
+};
+
+{
+  call foo
+}
+.
+
+main
 array[5] input;
 var maxnumber;
 function max(a1,a2,a3,a4,a5);
