@@ -682,7 +682,7 @@ public class DLXGenerator
 				instructions.add(inst);
 			}
 			int index = instructions.size() - 1;
-			if (DLXInstruction.isBranch(entry.instructions.get(entry.instructions.size() - 1)) == false)
+			if (entry.instructions.size() > 0 && DLXInstruction.isBranch(entry.instructions.get(entry.instructions.size() - 1)) == false)
 			{
 				index = entry.instructions.size();
 			}

@@ -59,6 +59,46 @@ var size,temp,i;
 .
 
 main
+var a, b, c;
+{
+  let a <- 1;
+  let b <- 2;
+  let c <- 4;
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
+  call OutputNewLine();
+
+  if b < c then
+    while ( b + 1 ) < c do
+      let a <- a + 1;
+      call OutputNum(a);
+      call OutputNum(b);
+      call OutputNum(c);
+      while ( b + 1 ) < c do
+        let b <- b + 1
+      od;
+      call OutputNum(b);
+      call OutputNewLine()
+    od
+  fi;
+  let b <- c + 1;
+
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
+  call OutputNewLine()
+}
+.
+
+
+
+
+
+
+
+
+main
 
 function foo();
 var a, b, c, d, e, f, g, h;
@@ -116,37 +156,6 @@ var a, b, c, d, e, f, g, h;
 }
 .
 
-main
-var a, b, c;
-{
-  let a <- 1;
-  let b <- 2;
-  let c <- 4;
-  call OutputNum(a);
-  call OutputNum(b);
-  call OutputNum(c);
-  call OutputNewLine();
-
-  if b < c then
-    while ( b + 1 ) < c do
-      let a <- a + 1;
-      call OutputNum(a);
-      call OutputNewLine();
-      while ( b + 1 ) < c do
-        let b <- b + 1
-      od;
-      call OutputNum(b);
-      call OutputNewLine()
-    od
-  fi;
-  let b <- c + 1;
-
-  call OutputNum(a);
-  call OutputNum(b);
-  call OutputNum(c);
-  call OutputNewLine()
-}
-.
 
 // Array testing
 main

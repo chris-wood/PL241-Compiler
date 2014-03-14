@@ -461,7 +461,7 @@ public class PLIRInstruction
 		}
 	}
 	
-	public PLIRInstruction evaluate(PLIRInstruction newOp, PLSymbolTable table, ArrayList<PLIRInstruction> visitedInsts)
+	public PLIRInstruction evaluate(int placement, int offset, PLIRInstruction newOp, PLSymbolTable table, ArrayList<PLIRInstruction> visitedInsts)
 	{
 		System.out.println("Reevaluation " + this + "," + id);
 		
@@ -488,7 +488,7 @@ public class PLIRInstruction
 				{
 					visitedInsts.add(op1);
 					System.out.println("left: " + op1);
-					op1 = op1.evaluate(newOp, table, visitedInsts);
+					op1 = op1.evaluate(placement, offset, newOp, table, visitedInsts);
 					op1type = op1.type == OperandType.FUNC_PARAM ? OperandType.INST : op1.type;
 				}
 			}
@@ -505,7 +505,7 @@ public class PLIRInstruction
 				{
 					visitedInsts.add(op2);
 					System.out.println("right: " + op2);
-					op2 = op2.evaluate(newOp, table, visitedInsts);
+					op2 = op2.evaluate(placement, offset, newOp, table, visitedInsts);
 					op2type = op2.type == OperandType.FUNC_PARAM ? OperandType.INST : op2.type;
 				}
 			}
@@ -565,7 +565,8 @@ public class PLIRInstruction
 					op2.overrideGenerate = true;
 					op2.forceGenerate(table);
 					
-//					this.tempPosition = this.id - 1;
+					int pos = placement < 0 ? tempPosition + offset : placement;
+					this.tempPosition = pos;
 //					this.id = 0;
 					op1.overrideGenerate = true;
 					forceGenerate(table);
@@ -579,7 +580,8 @@ public class PLIRInstruction
 					op1.overrideGenerate = true;
 					op1.forceGenerate(table);
 					
-//					this.tempPosition = this.id - 1;
+					int pos = placement < 0 ? tempPosition + offset : placement;
+					this.tempPosition = pos;
 //					this.id = 0;
 					this.overrideGenerate = true;
 					forceGenerate(table);
@@ -596,7 +598,8 @@ public class PLIRInstruction
 					op2.overrideGenerate = true;
 					op2.forceGenerate(table);
 					
-//					this.tempPosition = this.id - 1;
+					int pos = placement < 0 ? tempPosition + offset : placement;
+					this.tempPosition = pos;
 //					this.id = 0;
 					op1.overrideGenerate = true;
 					forceGenerate(table);

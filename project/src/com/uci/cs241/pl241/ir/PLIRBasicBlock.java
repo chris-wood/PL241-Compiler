@@ -296,7 +296,7 @@ public class PLIRBasicBlock
 	}
 	
 	public boolean terminateAtNextPhi = false;
-	public void propagatePhi(String var, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited, PLSymbolTable scope, int branch)
+	public void propagatePhi(String var, int offset, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited, PLSymbolTable scope, int branch)
 	{
 		HashMap<String, PLIRInstruction> scopeMap = new HashMap<String, PLIRInstruction>();
 		
@@ -377,8 +377,9 @@ public class PLIRBasicBlock
 				
 				// guard against constant overwriting
 				boolean couldHaveReplaced = false;
-				if (!(bInst.opcode == InstructionType.PHI && bInst.op1 != null && bInst.op1.isConstant) 
-						&& !(bInst.opcode == InstructionType.PHI && branch == 2))
+//				if (!(bInst.opcode == InstructionType.PHI && bInst.op1 != null && bInst.op1.isConstant) 
+//						&& !(bInst.opcode == InstructionType.PHI && branch == 2))
+				if (!(bInst.opcode == InstructionType.PHI && branch == 2))
 				{
 					if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
 					{
@@ -465,10 +466,8 @@ public class PLIRBasicBlock
 				
 				if (replaced && bInst.opcode != InstructionType.STORE && bInst.opcode != InstructionType.PHI) // && !couldHaveReplaced)
 				{
-					
-					
 					ArrayList<PLIRInstruction> visitedInsts = new ArrayList<PLIRInstruction>();
-					bInst.evaluate(scopeMap.get(var), scope, visitedInsts);
+					bInst.evaluate(bInst.id - 1, offset, scopeMap.get(var), scope, visitedInsts);
 				}
 				
 				// Don't propagate past the phi, since it essentially replaces the current value
@@ -519,13 +518,13 @@ public class PLIRBasicBlock
 			{
 //				visited.add(leftChild);
 				
-				leftChild.propagatePhi(var, scopeMap.get(var), visited, scope, 1);
+				leftChild.propagatePhi(var, offset, scopeMap.get(var), visited, scope, 1);
 			}
 			if (rightChild != null && visited.contains(rightChild) == false && rightChild.isWhileEntry == false)
 			{
 				visited.add(rightChild);
 				
-				rightChild.propagatePhi(var, scopeMap.get(var), visited, scope, 2);
+				rightChild.propagatePhi(var, offset, scopeMap.get(var), visited, scope, 2);
 			}
 			
 //			for (PLIRBasicBlock child : children)

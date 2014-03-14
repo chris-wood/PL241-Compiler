@@ -1951,6 +1951,15 @@ public class PLParser
 			PLIRInstruction entryCmpInst = entry.instructions.get(entry.instructions.size() - 1);
 			PLIRInstruction bgeInst = CondNegBraFwd(entryCmpInst);
 			
+			int innerOffset = 0;
+			for (PLIRInstruction headerInst : entry.instructions)
+			{
+				if (!(headerInst.opcode == InstructionType.PHI || headerInst.id == 0))
+				{
+					innerOffset++;
+				}
+			}
+			
 			// Determine which identifiers are used in the entry/join node so we can defer generation (if PHIs are needed)
 			deferredPhiIdents.clear();
 			for (String i2 : entry.usedIdents.keySet())
@@ -2026,10 +2035,12 @@ public class PLParser
 			for (String var : modded)
 			{
 				PLIRInstruction bodyInst = body.modifiedIdents.get(var);
+//				bodyInst.generated = false;
 //				bodyInst.forceGenerate(scope, bodyInst.tempPosition);
 //				bodyInst.forceGenerate(scope);
 				
 				PLIRInstruction preInst = scope.getCurrentValue(var);
+//				preInst.generated = false;
 //				preInst.forceGenerate(scope, preInst.tempPosition);
 //				preInst.forceGenerate(scope);
 				
@@ -2127,7 +2138,7 @@ public class PLParser
 						if (replaced && entryInst.opcode != InstructionType.STORE && entryInst.opcode != InstructionType.PHI) // && !couldHaveReplaced)
 						{
 							ArrayList<PLIRInstruction> visitedInsts = new ArrayList<PLIRInstruction>();
-							entryInst.evaluate(replacement, scope, visitedInsts);
+							entryInst.evaluate(entryInst.id - 1, 0, replacement, scope, visitedInsts);
 						}
 						
 						if (replaced && couldHaveReplaced && entryInst.opcode == InstructionType.PHI)
@@ -2185,7 +2196,7 @@ public class PLParser
 					}
 					if (replaced)
 					{
-						cmpInst.evaluate(replacement, scope, new ArrayList<PLIRInstruction>());
+						cmpInst.evaluate(cmpInst.id - 1, offset, replacement, scope, new ArrayList<PLIRInstruction>());
 					}
 				}
 				
@@ -2201,7 +2212,7 @@ public class PLParser
 					}
 					if (replaced)
 					{
-						cmpInst.evaluate(replacement, scope, new ArrayList<PLIRInstruction>());
+						cmpInst.evaluate(cmpInst.id - 1, offset, replacement, scope, new ArrayList<PLIRInstruction>());
 					}
 				}
 				
@@ -2211,7 +2222,7 @@ public class PLParser
 				
 //				if (this.identTypeMap.containsKey(var) && identTypeMap.get(var) != IdentType.ARRAY)
 				{
-					body.propagatePhi(var, replacement, visited, scope, 1);
+					body.propagatePhi(var, offset + innerOffset, replacement, visited, scope, 1);
 				}
 			}
 			
