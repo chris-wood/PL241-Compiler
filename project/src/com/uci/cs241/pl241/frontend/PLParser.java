@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import javax.lang.model.type.TypeKind;
+
 import com.uci.cs241.pl241.backend.DLXBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
 import com.uci.cs241.pl241.ir.PLIRInstruction;
@@ -1619,11 +1621,11 @@ public class PLParser
 			PLIRBasicBlock entry = parse_relation(in);
 			for (PLIRInstruction inst : entry.instructions)
 			{
-				if (inst.kind == ResultKind.CONST)
-				{
-					inst.overrideGenerate = true;
-					inst.forceGenerate(scope);
-				}
+//				if (inst.kind == ResultKind.CONST)
+//				{
+//					inst.overrideGenerate = true;
+//					inst.forceGenerate(scope);
+//				}
 			}
 			
 			// Fixup setup
@@ -2206,7 +2208,11 @@ public class PLParser
 				// Propagate the PHI through the body of the loop
 				ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
 				visited.add(entry);
-				body.propagatePhi(var, replacement, visited, scope, 1);
+				
+//				if (this.identTypeMap.containsKey(var) && identTypeMap.get(var) != IdentType.ARRAY)
+				{
+					body.propagatePhi(var, replacement, visited, scope, 1);
+				}
 			}
 			
 			// Go through the phis and make sure we adjusted the values accordingly

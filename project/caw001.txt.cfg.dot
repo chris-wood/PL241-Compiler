@@ -1,34 +1,15 @@
 digraph cfg {
-BB2[shape = box, label = "BB(2 [ foo ])\n" + "1 := add #0 #0\n" + "2 := (1)\n" + "3 := (1)\n" + "4 := (1)\n" + "5 := (1)\n" + "6 := (1)\n" + "7 := (1)\n" + "8 := (1)\n" + "9 := add #0 #3\n" + "10 := add #0 #2\n" + "11 := add #0 #1\n" + "12 := cmp #1 #2\n" + "13 := bge (12) #16\n"];
-BB30[shape = box, label = "BB(30)\n" + "14 := add (11) #1\n" + "15 := cmp (10) #3\n" + "16 := bge (15) #7\n"];
-BB62[shape = box, label = "BB(62)\n" + "29 := sub #2 #1\n" + "30 := cmp (29) (9)\n" + "31 := bge (30) #10\n"];
-BB41[shape = box, label = "BB(41)\n" + "17 := mul (9) #3\n" + "18 := phi(a) (14) (21)\n" + "19 := cmp (18) (17)\n" + "20 := bge (19) #3\n"];
-BB53[shape = box, label = "BB(53)\n" + "23 := phi(c) (17) (9)\n" + "24 := phi(a) (18) (14)\n" + "25 := write (24)\n" + "26 := wln\n" + "27 := wln\n" + "28 := beq #0 #17\n"];
-BB73[shape = box, label = "BB(73)\n" + "32 := phi(c) (34) (38)\n" + "33 := phi(b) (29) (37)\n" + "34 := mul (32) #3\n" + "35 := cmp (33) (34)\n" + "36 := bge (35) #4\n"];
-BB90[shape = box, label = "BB(90)\n" + "41 := mul (9) #4\n"];
-BB48[shape = box, label = "BB(48)\n" + "21 := add (18) #1\n" + "22 := beq #0 #-4\n"];
-BB52[shape = box, label = "BB(52)\n"];
-BB61[shape = box, label = "BB(61)\n" + "45 := phi(c) (23) (42)\n" + "46 := phi(f) #6 #7\n" + "47 := phi(d) #4 (43)\n" + "48 := phi(b) (10) (44)\n" + "49 := phi(h) #8 #425\n" + "50 := phi(g) #9 #7\n" + "51 := phi(e) #6 #5\n" + "52 := phi(a) (24) (11)\n" + "53 := write (52)\n" + "54 := write (48)\n" + "55 := write (45)\n" + "56 := write (47)\n" + "57 := write (51)\n" + "58 := write (46)\n" + "59 := write (50)\n" + "60 := write (49)\n" + "61 := return\n"];
-BB80[shape = box, label = "BB(80)\n" + "37 := add (33) #1\n" + "38 := sub (34) #1\n" + "39 := beq #0 #-7\n"];
-BB88[shape = box, label = "BB(88)\n" + "40 := beq #0 #2\n"];
-BB89[shape = box, label = "BB(89)\n" + "42 := phi(c) (34) (41)\n" + "43 := phi(d) #4 #5\n" + "44 := phi(b) (33) (29)\n"];
-BB2 -> BB30;
-BB2 -> BB62;
-BB30 -> BB41;
-BB30 -> BB53;
-BB62 -> BB73;
-BB62 -> BB90;
-BB41 -> BB48;
-BB41 -> BB52;
-BB53 -> BB61;
-BB73 -> BB80;
-BB73 -> BB88;
-BB90 -> BB89;
-BB48 -> BB41;
-BB52 -> BB53;
-BB80 -> BB73;
-BB88 -> BB89;
-BB89 -> BB61;
+BB4[shape = box, label = "BB(4 [ max ])\n" + "3 := loadparam 0\n" + "4 := loadparam 1\n" + "5 := loadparam 2\n" + "6 := loadparam 3\n" + "7 := loadparam 4\n" + "8 := add #0 #0\n" + "9 := (8)\n" + "10 := (8)\n" + "11 := (8)\n" + "12 := mul #4 #0\n" + "13 := add FP arg_baseaddr\n" + "14 := adda (12) (13)\n" + "15 := store (14)\n" + "16 := mul #4 #1\n" + "17 := (13)\n" + "18 := adda (16) (13)\n" + "19 := store (18)\n" + "20 := mul #4 #2\n" + "21 := (13)\n" + "22 := adda (20) (13)\n" + "23 := store (22)\n" + "24 := mul #4 #3\n" + "25 := (13)\n" + "26 := adda (24) (13)\n" + "27 := store (26)\n" + "28 := mul #4 #4\n" + "29 := (13)\n" + "30 := adda (28) (13)\n" + "31 := store (30)\n" + "32 := (12)\n" + "33 := (13)\n" + "34 := adda (12) (13)\n" + "35 := load (34)\n" + "36 := phi(i) #1 (51)\n" + "37 := phi(temp) (35) (50)\n" + "38 := cmp (36) #5\n" + "39 := bge (38) #14\n"];
+BB36[shape = box, label = "BB(36)\n" + "40 := mul #4 (36)\n" + "41 := (13)\n" + "42 := adda\n" + "43 := load (42)\n" + "44 := cmp (43) (37)\n" + "45 := ble (44) #5\n"];
+BB46[shape = box, label = "BB(46)\n" + "53 := return (37)\n"];
+BB38[shape = box, label = "BB(38)\n" + "46 := (40)\n" + "47 := (13)\n" + "48 := adda (40) (13)\n" + "49 := load (48)\n"];
+BB41[shape = box, label = "BB(41)\n" + "50 := phi(temp) (49) (37)\n" + "51 := add (36) #1\n" + "52 := beq #0 #-16\n"];
+BB4 -> BB36;
+BB4 -> BB46;
+BB36 -> BB38;
+BB36 -> BB41;
+BB38 -> BB41;
+BB41 -> BB4;
 
-BB124[shape = box, label = "BB(124)\n" + "62 := func foo\n" + "63 := end\n"];
+BB48[shape = box, label = "BB(48)\n" + "1 := global #0\n" + "2 := global #0\n" + "54 := read\n" + "55 := mul #4 #0\n" + "56 := add FP input_baseaddr\n" + "57 := adda (55) (56)\n" + "58 := store (57) (54)\n" + "59 := read\n" + "60 := mul #4 #1\n" + "61 := (56)\n" + "62 := adda (60) (56)\n" + "63 := store (62) (59)\n" + "64 := read\n" + "65 := mul #4 #2\n" + "66 := (56)\n" + "67 := adda (65) (56)\n" + "68 := store (67) (64)\n" + "69 := read\n" + "70 := mul #4 #3\n" + "71 := (56)\n" + "72 := adda (70) (56)\n" + "73 := store (72) (69)\n" + "74 := read\n" + "75 := mul #4 #4\n" + "76 := (56)\n" + "77 := adda (75) (56)\n" + "78 := store (77) (74)\n" + "79 := (55)\n" + "80 := (56)\n" + "81 := adda (55) (56)\n" + "82 := load (81)\n" + "83 := write (82)\n" + "84 := (60)\n" + "85 := (56)\n" + "86 := adda (60) (56)\n" + "87 := load (86)\n" + "88 := write (87)\n" + "89 := (65)\n" + "90 := (56)\n" + "91 := adda (65) (56)\n" + "92 := load (91)\n" + "93 := write (92)\n" + "94 := (70)\n" + "95 := (56)\n" + "96 := adda (70) (56)\n" + "97 := load (96)\n" + "98 := write (97)\n" + "99 := (75)\n" + "100 := (56)\n" + "101 := adda (75) (56)\n" + "102 := load (101)\n" + "103 := write (102)\n" + "104 := wln\n" + "105 := (55)\n" + "106 := (56)\n" + "107 := adda (55) (56)\n" + "108 := load (107)\n" + "109 := (60)\n" + "110 := (56)\n" + "111 := adda (60) (56)\n" + "112 := load (111)\n" + "113 := (65)\n" + "114 := (56)\n" + "115 := adda (65) (56)\n" + "116 := load (115)\n" + "117 := (70)\n" + "118 := (56)\n" + "119 := adda (70) (56)\n" + "120 := load (119)\n" + "121 := (75)\n" + "122 := (56)\n" + "123 := adda (75) (56)\n" + "124 := load (123)\n" + "125 := func max (108) (112) (116) (120) (124)\n" + "126 := wln\n" + "127 := write (125)\n" + "128 := wln\n" + "129 := end\n"];
 }

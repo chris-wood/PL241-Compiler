@@ -682,6 +682,10 @@ public class DLXGenerator
 				instructions.add(inst);
 			}
 			int index = instructions.size() - 1;
+			if (DLXInstruction.isBranch(entry.instructions.get(entry.instructions.size() - 1)) == false)
+			{
+				index = entry.instructions.size();
+			}
 			for (DLXInstruction inst : entry.endInstructions)
 			{
 				if (instructions.size() > 0)
@@ -1149,8 +1153,8 @@ public class DLXGenerator
 							if (globalArrayOffset.containsKey(ident)) 
 							{
 								newInst.rb = GLOBAL_ADDRESS;
-//								newInst.rc = -4 * (globalArrayOffset.get(ident));
-								newInst.rc = -(globalArrayOffset.get(ident));
+								newInst.rc = -4 * (globalArrayOffset.get(ident));
+//								newInst.rc = -(globalArrayOffset.get(ident));
 							}
 							else // local array on the stack
 							{
