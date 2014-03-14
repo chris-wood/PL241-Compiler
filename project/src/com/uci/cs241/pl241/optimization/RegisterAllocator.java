@@ -138,6 +138,20 @@ public class RegisterAllocator
 				}
 				
 				live.addAll(b.liveAtEnd);
+				if (b.joinNode != null)
+				{
+					for (int i = 0; i < b.joinNode.instructions.size(); i++)
+					{
+						if (b.joinNode.instructions.get(i).opcode != InstructionType.PHI)
+						{
+							break;
+						}
+						else
+						{
+							live.add(b.joinNode.instructions.get(i)); // add all the IF phis to the live range so that moving them later doesn't cause a conflict
+						}
+					}
+				}
 
 				// for all non-phis
 				for (int i = b.instructions.size() - 1; i >= 0; i--)
@@ -156,7 +170,6 @@ public class RegisterAllocator
 						{
 							inst = inst.refInst;
 						}
-//						if (inst.refInst != null) continue;
 
 						// Add edge between new var and all live variables
 						for (PLIRInstruction liveInst : live)

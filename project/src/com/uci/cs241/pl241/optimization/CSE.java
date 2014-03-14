@@ -90,7 +90,13 @@ public class CSE
 						}
 						else if (inst.opcode == parentInst.opcode && inst.id > parentInst.id) // special case to handle commutative operations
 						{
-							if (inst.op1type == OperandType.INST && inst.op2type == OperandType.INST)
+						    if (inst.opcode == InstructionType.ADD && parentInst.opcode == InstructionType.ADD 
+						    		&& inst.op1type == OperandType.FP && parentInst.op1type == OperandType.FP 
+						    		&& inst.op2address.equals(parentInst.op2address)) // special type of comparison
+						    {
+						    	inst.removeInstruction(EliminationReason.CSE, parentInst);
+						    }
+						    else if (inst.op1type == OperandType.INST && inst.op2type == OperandType.INST)
 							{
 								if (inst.op1.equals(parentInst.op1) && inst.op2.equals(parentInst.op2))
 								{

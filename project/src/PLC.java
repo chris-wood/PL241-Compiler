@@ -175,7 +175,7 @@ public class PLC
 					
 					// Perform CSE, starting at the root
 					CSE cse = new CSE();
-//					cse.performCSE(entry);
+					cse.performCSE(entry);
 				}
 				
 				// Display the instructions AFTER CSE
@@ -391,6 +391,7 @@ public class PLC
 				{
 					dlxWriter.println(inst.encodedForm);
 					System.out.println(inst);// + ", " + Long.toHexString(inst.encodedForm));
+					System.out.println(Long.toHexString(inst.encodedForm));
 					mnemonicDlxWriter.println(inst);
 				}
 				mnemonicDlxWriter.flush();

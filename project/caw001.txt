@@ -4,12 +4,21 @@ var a, b, c;
   let a <- 1;
   let b <- 2;
   let c <- 4;
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
+  call OutputNewLine();
+
   if b < c then
     while ( b + 1 ) < c do
       let a <- a + 1;
-      while ( b + 2 ) < c do
+      call OutputNum(a);
+      call OutputNewLine();
+      while ( b + 1 ) < c do
         let b <- b + 1
-      od
+      od;
+      call OutputNum(b);
+      call OutputNewLine()
     od
   fi;
   let b <- c + 1;
@@ -20,6 +29,37 @@ var a, b, c;
   call OutputNewLine()
 }
 .
+
+// Array testing
+main
+array [ 5 ][ 10 ][ 15 ][ 20 ] a;
+var b, c, d;
+function foo( );
+{
+  return 13
+};
+{
+  let b <- 1;
+  let c <- 19;
+  let a[ 4 ][ 9 ][ 1 + call foo( ) ][ b * c ] <- 45;
+  let d <- a[ 4 ][ 9 ][ call foo( ) + 1 ][ c * b ] + 2;
+  call OutputNum(d)
+}
+.
+
+// testing if/else with modifier in only one branch!
+main 
+var a, b;
+array[5] input;
+{
+  let a <- call InputNum();
+  let input[1] <- a;
+  let input[2] <- input[1];
+  call OutputNum(input[1]);
+  call OutputNum(input[2]);
+  call OutputNewLine()
+}.
+
 
 // Predefined function and procedure test
 main
@@ -45,21 +85,7 @@ var a, b, c, d;
 .
  
 
-// Array testing
-main
-array [ 5 ][ 10 ][ 15 ][ 20 ] a;
-var b, c, d;
-function foo( );
-{
-  return 14
-};
-{
-  let b <- 1;
-  let c <- 19;
-  let a[ 4 ][ 9 ][ 1 + call foo( ) ][ b * c ] <- 45;
-  let d <- a[ 4 ][ 9 ][ call foo( ) + 1 ][ c * b ] + 2
-}
-.
+
 
 main
 

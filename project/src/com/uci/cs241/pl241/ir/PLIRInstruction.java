@@ -561,11 +561,11 @@ public class PLIRInstruction
 					type = OperandType.INST;
 					kind = ResultKind.VAR;
 					
-					op2.tempPosition = this.id - 1;
+//					op2.tempPosition = this.id - 1;
 					op2.overrideGenerate = true;
 					op2.forceGenerate(table);
 					
-					this.tempPosition = this.id - 1;
+//					this.tempPosition = this.id - 1;
 //					this.id = 0;
 					op1.overrideGenerate = true;
 					forceGenerate(table);
@@ -575,11 +575,11 @@ public class PLIRInstruction
 					type = OperandType.INST;
 					kind = ResultKind.VAR;
 					
-					op1.tempPosition = this.id - 1;
+//					op1.tempPosition = this.id - 1;
 					op1.overrideGenerate = true;
 					op1.forceGenerate(table);
 					
-					this.tempPosition = this.id - 1;
+//					this.tempPosition = this.id - 1;
 //					this.id = 0;
 					this.overrideGenerate = true;
 					forceGenerate(table);
@@ -589,14 +589,14 @@ public class PLIRInstruction
 					type = OperandType.INST;
 					kind = ResultKind.VAR;
 					
-					op1.tempPosition = this.id - 1;
+//					op1.tempPosition = this.id - 1;
 					op1.overrideGenerate = true;
 					op1.forceGenerate(table);
-					op2.tempPosition = this.id - 1;
+//					op2.tempPosition = this.id - 1;
 					op2.overrideGenerate = true;
 					op2.forceGenerate(table);
 					
-					this.tempPosition = this.id - 1;
+//					this.tempPosition = this.id - 1;
 //					this.id = 0;
 					op1.overrideGenerate = true;
 					forceGenerate(table);
@@ -894,16 +894,15 @@ public class PLIRInstruction
 	    if (!(o instanceof PLIRInstruction)) return false;
 	    PLIRInstruction other = (PLIRInstruction)o;
 	    
+	    if (op1type == OperandType.FP && other.op1type == OperandType.FP)
+	    {
+	    	System.err.println("asd");
+	    }
+	    
 	    // the wonderful benefit of SSA :-)
 	    if (this.id == other.id)
 	    {
 	    	return true;
-	    }
-	    else if (opcode == InstructionType.ADD && other.opcode == InstructionType.ADD 
-	    		&& op1type == OperandType.FP && other.op1type == OperandType.FP 
-	    		&& op2address.equals(other.op2address)) // special type of comparison
-	    {
-	    		return false;
 	    }
 	    else
 	    {

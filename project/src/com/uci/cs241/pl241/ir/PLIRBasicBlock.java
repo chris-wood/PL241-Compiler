@@ -389,7 +389,7 @@ public class PLIRBasicBlock
 //							replaced = true;
 						}
 					}
-					if (bInst.op1 != null && bInst.op1.equals(findPhi))
+					else if (bInst.op1 != null && bInst.op1.equals(findPhi))
 					{
 //						if (!(replaced && bInst.opcode == InstructionType.PHI))
 						{
@@ -398,7 +398,7 @@ public class PLIRBasicBlock
 //							replaced = true;
 						}
 					}
-					if (bInst.op1name != null && bInst.op1name.equals(var))
+					else if (bInst.op1name != null && bInst.op1name.equals(var))
 					{
 						replaced = bInst.replaceLeftOperand(scopeMap.get(var));
 						couldHaveReplaced = true;
@@ -441,7 +441,7 @@ public class PLIRBasicBlock
 //							replaced = true;
 						}
 					}
-					if (bInst.op2 != null && bInst.op2.equals(findPhi) && !replaced)
+					else if (bInst.op2 != null && bInst.op2.equals(findPhi) && !replaced)
 					{
 //						if (!(replaced && bInst.opcode == InstructionType.PHI))
 						{
@@ -449,7 +449,7 @@ public class PLIRBasicBlock
 //							replaced = true;
 						}
 					}
-					if (bInst.op2name != null && bInst.op2name.equals(var) && !replaced)
+					else if (bInst.op2name != null && bInst.op2name.equals(var) && !replaced)
 					{
 //						if (!(replaced && bInst.opcode == InstructionType.PHI))
 						{

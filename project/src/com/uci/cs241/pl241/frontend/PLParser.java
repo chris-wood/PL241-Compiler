@@ -558,6 +558,30 @@ public class PLParser
 		if (isArray)
 		{
 			result.arrayName = name;
+			
+//			ArrayList<PLIRInstruction> offsetInstructions = null;
+//			if (result.instructions.get(0).opcode == InstructionType.STORE)
+//			{
+//				result.instructions.remove(0);
+//			}
+//			offsetInstructions = arrayOffsetCalculation(result);
+//			for (PLIRInstruction inst : offsetInstructions)
+//			{
+//				result.addInstruction(inst);
+//			}
+			
+//			PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
+//			PLIRInstruction load = new PLIRInstruction(scope);
+//			offsetInstructions.add(0, result.instructions.get(0));
+//			load.loadInstructions = offsetInstructions;
+//			load.opcode = InstructionType.LOAD;
+//			load.origIdent = name;
+//			load.op1type = OperandType.ADDRESS;
+//			load.op1 = offset;
+//			load.type = OperandType.INST;
+//			load.forceGenerate(scope);
+//			load.isArray = true;
+//			result.addInstruction(load);
 		}
 		
 		if (isArray && arrayDimensionMap.get(name).size() != result.arrayOperands.size())
@@ -646,70 +670,23 @@ public class PLParser
 			
 			// Form the expression instruction
 			PLIRInstruction leftInst = factor.getLastInst();
-			if (leftInst.isArray)
-			{
-//				PLIRInstruction lastAddress = null;
-////				for (PLIRInstruction operand : factor.arrayOperands)
-//				for (int i = 0; i < factor.arrayOperands.size(); i++)
-//				{
-//					PLIRInstruction operand = factor.arrayOperands.get(i);
-//					
-//					// Need to load from memory - insert the load
-//					PLIRInstruction inst1 = new PLIRInstruction(scope);
-//					inst1.opcode = InstructionType.MUL;
-//					inst1.op1type = OperandType.CONST;
-//					inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE!
-//					inst1.op2type = operand.type;
-//					inst1.op2 = operand;
-//					if (inst1.op2type == OperandType.CONST)
-//					{
-//						inst1.i2 = inst1.op2.tempVal;
-//					}
-//					inst1.forceGenerate(scope);
-//					termNode.addInstruction(inst1);
-//					
-//					PLIRInstruction inst2 = new PLIRInstruction(scope);
-//					inst2.opcode = InstructionType.ADD;
-//					inst2.op1type = OperandType.FP;
-//					if (i == 0)
-//					{
-//						inst2.op2type = OperandType.BASEADDRESS;
-//						inst2.op2address = leftInst.origIdent + "_baseaddr";
-//					}
-//					else
-//					{
-//						inst2.op2type = OperandType.ADDRESS;
-//						inst2.op2 = lastAddress;
-//					}
-//					inst2.forceGenerate(scope);
-//					termNode.addInstruction(inst2);
-//					
-//					PLIRInstruction inst3 = new PLIRInstruction(scope);
-//					inst3.opcode = InstructionType.ADDA;
-//					inst3.op1type = OperandType.INST;
-//					inst3.op1 = inst1;
-//					inst3.op2type = OperandType.INST;
-//					inst3.op2 = inst2;
-//					inst3.forceGenerate(scope);
-//					termNode.addInstruction(inst3);
-//					
-//					PLIRInstruction load = new PLIRInstruction(scope);
-//					load.opcode = InstructionType.LOAD;
-//					load.op1type = OperandType.ADDRESS;
-//					load.op1 = inst3;
-//					load.forceGenerate(scope);
-//					termNode.addInstruction(load);
-//					
-//					// save the load value (or the last address, if necessary)
-//					leftInst = load;
-//					lastAddress = load;
-//				}
-				
-				ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(factor);
+			if (leftInst.isArray || factor.arrayName != null)
+			{	
+				ArrayList<PLIRInstruction> offsetInstructions = null;
+				if (factor.instructions.get(0).opcode == InstructionType.STORE)
+				{
+					factor.instructions.remove(0);
+				}
+				offsetInstructions = arrayOffsetCalculation(factor);
 				for (PLIRInstruction inst : offsetInstructions)
 				{
 					termNode.addInstruction(inst);
 				}
+//				ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(factor);
+//				for (PLIRInstruction inst : offsetInstructions)
+//				{
+//					termNode.addInstruction(inst);
+//				}
 				
 				PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
 				PLIRInstruction load = new PLIRInstruction(scope);
@@ -720,73 +697,28 @@ public class PLParser
 				load.type = OperandType.INST;
 				load.forceGenerate(scope);
 				load.isArray = true;
+				leftInst = load;
 				termNode.addInstruction(load);
 			}
 			
 			PLIRInstruction rightInst = rightNode.getLastInst();
 			if (rightInst.isArray)
 			{
-//				PLIRInstruction lastAddress = null;
-//				for (int i = 0; i < factor.arrayOperands.size(); i++)
-//				{
-//					PLIRInstruction operand = factor.arrayOperands.get(i);
-//					
-//					// Need to load from memory - insert the load
-//					PLIRInstruction inst1 = new PLIRInstruction(scope);
-//					inst1.opcode = InstructionType.MUL;
-//					inst1.op1type = OperandType.CONST;
-//					inst1.i1 = 4; // CONSTANT! DOESN'T CHANGE!
-//					inst1.op2type = operand.type;
-//					inst1.op2 = operand;
-//					if (inst1.op2type == OperandType.CONST)
-//					{
-//						inst1.i2 = inst1.op2.tempVal;
-//					}
-//					inst1.forceGenerate(scope);
-//					termNode.addInstruction(inst1);
-//					
-//					PLIRInstruction inst2 = new PLIRInstruction(scope);
-//					inst2.opcode = InstructionType.ADD;
-//					inst2.op1type = OperandType.FP;
-////					inst2.op2type = OperandType.BASEADDRESS;
-////					inst2.op2address = rightInst.origIdent + "_baseaddr";
-//					if (i == 0)
-//					{
-//						inst2.op2type = OperandType.BASEADDRESS;
-//						inst2.op2address = rightInst.origIdent + "_baseaddr";
-//					}
-//					else
-//					{
-//						inst2.op2type = OperandType.ADDRESS;
-//						inst2.op2 = lastAddress;
-//					}
-//					inst2.forceGenerate(scope);
-//					termNode.addInstruction(inst2);
-//					
-//					PLIRInstruction inst3 = new PLIRInstruction(scope);
-//					inst3.opcode = InstructionType.ADDA;
-//					inst3.op1type = OperandType.INST;
-//					inst3.op1 = inst1;
-//					inst3.op2type = OperandType.INST;
-//					inst3.op2 = inst2;
-//					inst3.forceGenerate(scope);
-//					termNode.addInstruction(inst3);
-//					
-//					PLIRInstruction load = new PLIRInstruction(scope);
-//					load.opcode = InstructionType.LOAD;
-//					load.op1type = OperandType.ADDRESS;
-//					load.op1 = inst3;
-//					load.forceGenerate(scope);
-//					termNode.addInstruction(load);
-//					
-//					rightInst = load;
-//					lastAddress = load;
-//				}
-				ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(rightNode);
+				ArrayList<PLIRInstruction> offsetInstructions = null;
+				if (rightNode.instructions.get(0).opcode == InstructionType.STORE)
+				{
+					rightNode.instructions.remove(0);
+				}
+				offsetInstructions = arrayOffsetCalculation(rightNode);
 				for (PLIRInstruction inst : offsetInstructions)
 				{
 					termNode.addInstruction(inst);
 				}
+//				ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(rightNode);
+//				for (PLIRInstruction inst : offsetInstructions)
+//				{
+//					termNode.addInstruction(inst);
+//				}
 				
 				PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
 				PLIRInstruction load = new PLIRInstruction(scope);
@@ -797,6 +729,7 @@ public class PLParser
 				load.type = OperandType.INST;
 				load.forceGenerate(scope);
 				load.isArray = true;
+				rightInst = load;
 				termNode.addInstruction(load);
 			}
 			
@@ -869,9 +802,14 @@ public class PLParser
 			
 			// Form the expression instruction
 			PLIRInstruction leftInst = term.getLastInst();
-			if (leftInst.isArray)
+			if (leftInst.isArray || term.arrayName != null)
 			{
-				ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(term);
+				ArrayList<PLIRInstruction> offsetInstructions = null;
+				if (term.instructions.get(0).opcode == InstructionType.STORE)
+				{
+					term.instructions.remove(0);
+				}
+				offsetInstructions = arrayOffsetCalculation(term);
 				for (PLIRInstruction inst : offsetInstructions)
 				{
 					exprNode.addInstruction(inst);
@@ -886,13 +824,19 @@ public class PLParser
 				load.type = OperandType.INST;
 				load.forceGenerate(scope);
 				load.isArray = true;
+				leftInst = load;
 				exprNode.addInstruction(load);
 			} 
 			
 			PLIRInstruction rightInst = rightNode.getLastInst();
-			if (rightInst.isArray)
+			if (rightInst.isArray || rightNode.arrayName != null)
 			{	
-				ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(rightNode);
+				ArrayList<PLIRInstruction> offsetInstructions = null;
+				if (rightNode.instructions.get(0).opcode == InstructionType.STORE)
+				{
+					rightNode.instructions.remove(0);
+				}
+				offsetInstructions = arrayOffsetCalculation(rightNode);
 				for (PLIRInstruction inst : offsetInstructions)
 				{
 					exprNode.addInstruction(inst);
@@ -907,6 +851,7 @@ public class PLParser
 				load.type = OperandType.INST;
 				load.forceGenerate(scope);
 				load.isArray = true;
+				rightInst = load;
 				exprNode.addInstruction(load);
 			}
 			
@@ -1163,10 +1108,10 @@ public class PLParser
 					PLIRInstruction storeInst = result.getLastInst();
 					
 					// Check if the result is an array, in which case we need to load it from memory
-					if (storeInst!= null)
-					{
+//					if (storeInst!= null)
+//					{
 //						storeInst.saveName = varName;
-					}
+//					}
 					if (storeInst == null || (storeInst != null && storeInst.isArray) || result.arrayName != null)
 					{
 						ArrayList<PLIRInstruction> offsetInstructions = null;
@@ -1179,7 +1124,7 @@ public class PLParser
 						{
 							result.addInstruction(inst);
 						}
-						
+//						
 						PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
 						PLIRInstruction load = new PLIRInstruction(scope);
 						offsetInstructions.add(0, result.instructions.get(0));
@@ -2213,12 +2158,14 @@ public class PLParser
 				}
 
 				// The current value in scope needs to be updated now with the result of the phi
-				scope.updateSymbol(var, phi);
+//				scope.updateSymbol(var, phi);
+				scope.updateSymbol(var, replacement);
 				
 				// Add to this block's list of modified identifiers
 				// Rationale: since we added a phi, the value potentially changes (is modified), 
 				// 	so the latest value in the current scope needs to be modified
-				entry.modifiedIdents.put(var, phi);
+//				entry.modifiedIdents.put(var, phi);
+				entry.modifiedIdents.put(var, replacement);
 				
 				// Now loop through the entry and fix instructions as needed
 				// Those fixed are replaced with the result of this phi if they have used or modified the sym...
@@ -2236,7 +2183,7 @@ public class PLParser
 					}
 					if (replaced)
 					{
-						cmpInst.evaluate(phi, scope, new ArrayList<PLIRInstruction>());
+						cmpInst.evaluate(replacement, scope, new ArrayList<PLIRInstruction>());
 					}
 				}
 				
@@ -2252,14 +2199,14 @@ public class PLParser
 					}
 					if (replaced)
 					{
-						cmpInst.evaluate(phi, scope, new ArrayList<PLIRInstruction>());
+						cmpInst.evaluate(replacement, scope, new ArrayList<PLIRInstruction>());
 					}
 				}
 				
 				// Propagate the PHI through the body of the loop
 				ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
 				visited.add(entry);
-				body.propagatePhi(var, phi, visited, scope, 1);
+				body.propagatePhi(var, replacement, visited, scope, 1);
 			}
 			
 			// Go through the phis and make sure we adjusted the values accordingly

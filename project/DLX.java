@@ -16,7 +16,6 @@ public class DLX {
 	// emulated memory
 	static final int MemSize = 100000; // bytes in memory (divisible by 4)
 	static int M[] = new int [MemSize/4];
-
     
 	public static void main(String argv[]) throws Exception {
 		// read in the raw instructions
@@ -76,6 +75,9 @@ public class DLX {
 				case ADD:
 				case ADDI:
 					R[a] = R[b] + c;
+					// System.out.println(c);
+					// System.out.println(R[b]);
+					// System.out.println("R(" + a + ") = " + R[a]);
 					break;
 				case SUB:
 				case SUBI:
@@ -157,6 +159,10 @@ public class DLX {
 					break;
 				case STW:
 				case STX: // remember: c == R[origc] because of F2 format
+					// for (int i = 0; i < 32; i++)
+					// {
+					// 	System.out.println("R" + i + ": " + R[i]);
+					// }
 					// System.out.println("Storing: " + ((R[b]+c) / 4));
 					M[(R[b]+c) / 4] = R[a]; 
 					break;

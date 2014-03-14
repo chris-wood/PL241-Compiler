@@ -1,5 +1,6 @@
 package com.uci.cs241.pl241.backend;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -426,20 +427,52 @@ public class DLXGenerator
 				a = inst.ra;
 				b = inst.rb;
 				c = inst.rc;
-				System.out.println((b & 0x1F));
-				code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (c & 0xFFFF);
+				if (c < 0)
+				{
+					System.out.println(Long.toBinaryString(c));
+					System.out.println((c & 0xFFFF));
+					BigInteger cop = new BigInteger(Long.toBinaryString(c), 2);
+					System.out.println(cop.xor(new BigInteger("FFFF", 16)));
+					System.out.println(cop.longValue());
+					if (inst.opcode == InstructionType.ADDI)
+					{
+						System.out.println("here");
+					}
+//					code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (~c + 1) & 0xFFFF;
+					code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (c & 0xFFFF);
+				}
+				else
+				{
+					code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (c & 0xFFFF);
+				}
 				break;
 			case F2:
 				opcode = opcodeMap.get(inst.opcode);
 				a = inst.ra;
 				b = inst.rb;
 				c = inst.rc;
-				code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (c & 0x1F);
+				if (c < 0)
+				{
+//					code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | ((~c + 1) & 0x1F);
+					code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (c & 0x1F);
+				}
+				else
+				{
+					code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (c & 0x1F);
+				}
 				break;
 			case F3:
 				opcode = opcodeMap.get(inst.opcode);
 				c = inst.rc;
-				code = (long) ((opcode & 0x3F) << 26) | (c & 0x3FFFFFF);
+				if (c < 0)
+				{
+//					code = (long) ((opcode & 0x3F) << 26) | ((~c + 1) & 0x3FFFFFF);
+					code = (long) ((opcode & 0x3F) << 26) | (c & 0x3FFFFFF);
+				}
+				else
+				{
+					code = (long) ((opcode & 0x3F) << 26) | (c & 0x3FFFFFF);
+				}
 				break;
 		}
 
@@ -665,18 +698,8 @@ public class DLXGenerator
 			{
 				instructions.get(instructions.size() - 1).offset = entry.endInstructions.size();
 			}
-
-			// Find the join node, which is the stopping block for straight line code generation
-			if (entry.id == 66)
-				{
-				System.out.println("here");
-				}
 			
 			DLXBasicBlock join = findJoin(entry, entry.left, entry.right);
-			if (join != null && join.id == 70)
-				{
-				System.out.println("here)");
-				}
 			if (entry.left != null && entry.right != null)
 			{
 				// If the join is not null then we have encountered an if statement control flow
@@ -814,7 +837,7 @@ public class DLXGenerator
 	}
 
 	public boolean checkForGlobalStore(DLXBasicBlock edb, PLIRInstruction usingInst, boolean appendToStart, boolean reallyStart)
-	{
+	{	
 		// Short circuit for arrays
 		if (globalArrayOffset.containsKey(usingInst.origIdent))
 		{
@@ -822,29 +845,6 @@ public class DLXGenerator
 		}
 		
 		boolean store = false;
-//		if (usingInst.opcode == PLIRInstruction.InstructionType.PHI)
-//		{
-//			String name = usingInst.op1name;
-//			if (globalRefMap.containsKey(name))
-//			{
-//				DLXInstruction storeInst = new DLXInstruction();
-//				storeInst.opcode = InstructionType.STW;
-//				storeInst.format = formatMap.get(InstructionType.STW);
-//				storeInst.ra = usingInst.regNum; // save contents of ssaInst.regNum
-//				storeInst.rb = GLOBAL_ADDRESS;
-//				storeInst.rc = -4 * (globalOffset.get(globalRefMap.get(name)) + 1); // 
-//
-//				if (appendToStart)
-//				{
-//					appendInstructionToBlock(edb, storeInst);
-//				}
-//				else
-//				{
-//					appendInstructionToEndBlock(edb, storeInst);
-//				}
-//				loaded = true;
-//			}
-//		}
 		if (!store && globalOffset.containsKey(usingInst.id))
 		{
 			DLXInstruction storeInst = new DLXInstruction();
@@ -988,6 +988,11 @@ public class DLXGenerator
 				{
 					ssaInst.op2 = ssaInst.op2.refInst;
 				}
+				
+				if (ssaInst.id == 15)
+				{
+					System.err.println("here");
+				}
 
 				// Dummy instruction to generate
 				DLXInstruction newInst = new DLXInstruction();
@@ -1124,6 +1129,12 @@ public class DLXGenerator
 
 //							fixOffset(ssaInst.id, newInst);
 //							appendInstructionToBlock(edb, newInst);
+							
+							
+							if (newInst.ra == 2 && newInst.rb == 0 && newInst.rc == 3)
+							{
+								System.out.println("where is this going");
+							}
 
 							checkForGlobalStore(edb, ssaInst, true, false);
 						}
@@ -1138,7 +1149,8 @@ public class DLXGenerator
 							if (globalArrayOffset.containsKey(ident)) 
 							{
 								newInst.rb = GLOBAL_ADDRESS;
-								newInst.rc = -4 * (globalArrayOffset.get(ident));
+//								newInst.rc = -4 * (globalArrayOffset.get(ident));
+								newInst.rc = -(globalArrayOffset.get(ident));
 							}
 							else // local array on the stack
 							{
@@ -1149,6 +1161,11 @@ public class DLXGenerator
 							// Store the offset
 							fixOffset(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
+						}
+						
+						if (newInst.ra == 2 && newInst.rb == 0 && newInst.rc == 3)
+						{
+							System.out.println("where is this going");
 						}
 
 						break;
@@ -2104,11 +2121,9 @@ public class DLXGenerator
 						DLXInstruction storeInst = new DLXInstruction();
 						storeInst.opcode = InstructionType.STW;
 						storeInst.format = formatMap.get(InstructionType.STW);
-						storeInst.ra = ssaInst.op1.regNum; // save contents of
-															// ssaInst.regNum
+						storeInst.ra = ssaInst.op1.regNum; // save contents of ssaInst.regNum
 						storeInst.rb = GLOBAL_ADDRESS;
-						storeInst.rc = -4 * (globalOffset.get(ssaInst.op2.id) + 1); // word
-																					// size
+						storeInst.rc = -4 * (globalOffset.get(ssaInst.op2.id) + 1); // word size
 
 						fixOffset(ssaInst.id, storeInst);
 						appendInstructionToBlock(edb, storeInst);
