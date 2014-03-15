@@ -86,7 +86,15 @@ public class PLStaticSingleAssignment
 			next.id++;
 			next.fixupLocation++;
 		}
-		instructions.add(loc,inst);
+		if (loc > instructions.size())
+		{
+			loc = instructions.size();
+			instructions.add(inst);
+		}
+		else
+		{
+			instructions.add(loc,inst);
+		}
 		globalSSAIndex++;
 		return loc + 1;
 	}

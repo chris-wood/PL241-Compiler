@@ -979,6 +979,11 @@ public class DLXGenerator
 			{
 				PLIRInstruction ssaInst = b.instructions.get(i);
 				
+				if (ssaInst.id == 58)
+				{
+					System.err.println("asd");
+				}
+				
 				if (ssaInst.refInst != null)
 				{
 					continue; // this instruction was eliminated via CSE and the original will already be generated

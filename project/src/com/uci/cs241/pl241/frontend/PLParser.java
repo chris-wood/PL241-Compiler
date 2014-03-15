@@ -2036,7 +2036,7 @@ public class PLParser
 			{
 				PLIRInstruction bodyInst = body.modifiedIdents.get(var);
 //				bodyInst.generated = false;
-//				bodyInst.forceGenerate(scope, bodyInst.tempPosition);
+				bodyInst.forceGenerate(scope, bodyInst.tempPosition);
 //				bodyInst.forceGenerate(scope);
 				
 				PLIRInstruction preInst = scope.getCurrentValue(var);

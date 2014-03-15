@@ -351,6 +351,8 @@ public class PLIRBasicBlock
 					continue;
 				}
 				
+				if (bInst.opcode == InstructionType.BEQ) continue;
+				
 				if (bInst.opcode == InstructionType.PHI || bInst.opcode == InstructionType.CMP)
 				{
 					System.err.println("asd");
@@ -377,9 +379,9 @@ public class PLIRBasicBlock
 				
 				// guard against constant overwriting
 				boolean couldHaveReplaced = false;
-//				if (!(bInst.opcode == InstructionType.PHI && bInst.op1 != null && bInst.op1.isConstant) 
-//						&& !(bInst.opcode == InstructionType.PHI && branch == 2))
-				if (!(bInst.opcode == InstructionType.PHI && branch == 2))
+				if (!(bInst.opcode == InstructionType.PHI && bInst.op1 != null && bInst.op1.isConstant) 
+						&& !(bInst.opcode == InstructionType.PHI && branch == 2))
+//				if (!(bInst.opcode == InstructionType.PHI && branch == 2))
 				{
 					if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
 					{
