@@ -12,6 +12,7 @@ public class Function
 	public ArrayList<PLIRInstruction> params;
 	public ArrayList<PLIRInstruction> vars;
 	public ArrayList<String> scope;
+	public HashMap<String, Integer> constantsToSave = new HashMap<String, Integer>(); 
 	public HashMap<PLIRInstruction, PLIRInstruction> modifiedGlobals;
 	public HashMap<String, ArrayList<Integer>> arraySizes;
 	public String name;
@@ -112,7 +113,10 @@ public class Function
 	{
 		for (PLIRInstruction s : vars)
 		{
-			if (s.origIdent.equals(v)) return true;
+			for (String scope : s.ident.keySet()){
+				if (s.ident.get(scope).equals(v)) return true;
+			}
+//			if (s.origIdent.equals(v)) return true;
 		}
 		return false;
 	}
@@ -121,7 +125,10 @@ public class Function
 	{
 		for (PLIRInstruction s : params)
 		{
-			if (s.origIdent.equals(p)) return true;
+			for (String scope : s.ident.keySet()){
+				if (s.ident.get(scope).equals(p)) return true;
+			}
+//			if (s.origIdent.equals(p)) return true;
 			if (s.dummyName.equals(p)) return true;
 		}
 		return false;
@@ -131,7 +138,10 @@ public class Function
 	{
 		for (PLIRInstruction inst : params)
 		{
-			if (inst.origIdent.equals(name)) return inst;
+			for (String scope : inst.ident.keySet()){
+				if (inst.ident.get(scope).equals(name)) return inst;
+			}
+//			if (inst.origIdent.equals(name)) return inst;;
 			if (inst.dummyName.equals(name)) return inst;
 		}
 		return null;
@@ -141,7 +151,10 @@ public class Function
 	{
 		for (PLIRInstruction inst : vars)
 		{
-			if (inst.origIdent.equals(name)) return inst;
+			for (String scope : inst.ident.keySet()){
+				if (inst.ident.get(scope).equals(name)) return inst;
+			}
+//			if (inst.origIdent.equals(name)) return inst;
 		}
 		return null;
 	}

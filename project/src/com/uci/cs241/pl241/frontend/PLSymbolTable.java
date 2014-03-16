@@ -34,7 +34,9 @@ public class PLSymbolTable
 	{
 		for (PLIRInstruction glob : globalVariables)
 		{
-			if (glob.origIdent.equals(v)) return glob;
+			String ident = glob.ident.get(getCurrentScope());
+			if (ident.equals(v)) return glob;
+//			if (glob.origIdent.equals(v)) return glob;
 		}
 		return null;
 	}
@@ -43,7 +45,9 @@ public class PLSymbolTable
 	{
 		for (PLIRInstruction glob : globalVariables)
 		{
-			if (glob.origIdent.equals(v)) return true;
+			String ident = glob.ident.get(getCurrentScope());
+			if (ident.equals(v)) return true;
+//			if (glob.origIdent.equals(v)) return true;
 		}
 		return false;
 	}
@@ -76,7 +80,12 @@ public class PLSymbolTable
 			for (String value : symTable.get(lastScope).keySet())
 			{
 				System.err.println("Adding " + value + " from scope " + lastScope + " to " + scope);
+//				symTable.get(scope).put(value, PLIRInstruction.copy(this, symTable.get(lastScope).get(value)));
 				symTable.get(scope).put(value, symTable.get(lastScope).get(value));
+				
+				// Idents carry through to new scopes
+				symTable.get(scope).get(value).ident.put(scope, symTable.get(scope).get(value).ident.get(lastScope));
+				symTable.get(scope).get(value).saveName.put(scope, symTable.get(scope).get(value).saveName.get(lastScope));
 			}
 			for (String value : funScopeTable.get(lastScope))
 			{
@@ -199,6 +208,7 @@ public class PLSymbolTable
 		else
 		{
 			return symTable.get(getCurrentScope()).get(sym);
+//			return PLIRInstruction.copy(this, symTable.get(getCurrentScope()).get(sym));
 		}
 	}
 	

@@ -122,6 +122,7 @@ public class PLC
 							else
 							{
 								seenInst.add(curr.instructions.get(i).id);
+								curr.instructions.get(i).block = curr;
 							}
 						}
 						for (PLIRInstruction inst : toRemove)
@@ -250,26 +251,31 @@ public class PLC
 				HashMap<String, Integer> globalArrayOffset = new HashMap<String, Integer>();
 				HashMap<String, Integer> globalRefMap = new HashMap<String, Integer>();
 				int globalIndex = 0;
-				for (PLIRInstruction inst : parser.globalVariables.values())
+				for (String ident : parser.globalVariables.keySet())
 				{
-					if (parser.identTypeMap.get(inst.origIdent) == IdentType.ARRAY)
+					PLIRInstruction inst = parser.globalVariables.get(ident);
+					if (parser.identTypeMap.get(ident) == IdentType.ARRAY)
 					{
 						int dimensions = 1;
-						for (Integer d : parser.arrayDimensionMap.get(inst.origIdent))
+						for (Integer d : parser.arrayDimensionMap.get(ident))
 						{
 							dimensions *= d;
 						}
 						globalIndex += dimensions;
-						globalArrayOffset.put(inst.origIdent, globalIndex);
+						globalArrayOffset.put(ident, globalIndex);
 					}
 					else
 					{
 						globalOffset.put(inst.id, globalIndex++);
 					}
-					globalRefMap.put(inst.origIdent, inst.id);
+					globalRefMap.put(ident, inst.id);
 				}
 				
 				DLXGenerator dlxGen = new DLXGenerator(globalOffset, globalArrayOffset, globalRefMap, ra.constants, ra.arrays);
+				for (int i = 0; i < blocks.size() - 1; i++)
+				{
+					dlxGen.functionMap.put(blocks.get(i).label, parser.scope.functions.get(blocks.get(i).label));
+				}
 				
 				ArrayList<ArrayList<DLXInstruction>> program = new ArrayList<ArrayList<DLXInstruction>>();
 				for (int i = 0; i < blocks.size(); i++)

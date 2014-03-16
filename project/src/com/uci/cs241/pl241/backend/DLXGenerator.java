@@ -44,6 +44,7 @@ public class DLXGenerator
 
 	// Global variable address table
 	public HashMap<String, Integer> functionAddressTable = new HashMap<String, Integer>();
+	public HashMap<String, Function> functionMap = new HashMap<String, Function>();
 	
 	public DLXBasicBlock exitBlock;
 
@@ -767,7 +768,28 @@ public class DLXGenerator
 	public boolean checkForGlobalLoad(DLXBasicBlock edb, PLIRInstruction usingInst, int refId, int regNum, int offset, boolean fixOffset)
 	{
 		// Short circuit for arrays
-		if (globalArrayOffset.containsKey(usingInst.origIdent))
+		String name, saveName;
+		if (usingInst.block == null || (usingInst.block != null && usingInst.block.label == null))
+		{
+			name = usingInst.ident.get("main");
+			saveName = usingInst.saveName.get("main");
+		}
+		else if (usingInst.block.scopeName == null)
+		{
+			name = usingInst.ident.get(usingInst.block.label);
+			saveName = usingInst.saveName.get(usingInst.block.label);
+		}
+		else
+		{
+			name = usingInst.ident.get(usingInst.block.scopeName);
+			saveName = usingInst.saveName.get(usingInst.block.scopeName);
+		}
+//		String name = usingInst.ident.get(usingInst.block.scopeName);
+//		String saveName = usingInst.saveName.get(usingInst.block.scopeName);
+		
+		
+//		if (globalArrayOffset.containsKey(usingInst.origIdent))
+		if (globalArrayOffset.containsKey(name))
 		{
 			return false;
 		}
@@ -802,7 +824,8 @@ public class DLXGenerator
 			loadInst.ra = regNum; // save contents of ssaInst.regNum
 			loadInst.rb = GLOBAL_ADDRESS;
 
-			loadInst.rc = -4 * (globalOffset.get(refId) + 1); // word size
+			loadInst.rc = -4 * (globalOffset.get(globalRefMap.get(name)) + 1); // word size
+//			loadInst.rc = -4 * (globalOffset.get(refId) + 1); // word size
 
 			if (fixOffset)
 			{
@@ -820,13 +843,15 @@ public class DLXGenerator
 			loadInst.rb = GLOBAL_ADDRESS;
 			
 			int ref = 0;
-			if (usingInst.origIdent == null || usingInst.origIdent.length() == 0)
+			if (name == null || name.length() == 0)
 			{
-				ref = globalRefMap.get(usingInst.saveName);
+//				ref = globalRefMap.get(usingInst.saveName);
+				ref = globalRefMap.get(saveName);
 			}
 			else
 			{
-				ref = globalRefMap.get(usingInst.origIdent);
+//				ref = globalRefMap.get(usingInst.origIdent);
+				ref = globalRefMap.get(name);
 			}
 			loadInst.rc = -4 * (globalOffset.get(ref) + 1); // 
 
@@ -842,8 +867,33 @@ public class DLXGenerator
 
 	public boolean checkForGlobalStore(DLXBasicBlock edb, PLIRInstruction usingInst, boolean appendToStart, boolean reallyStart)
 	{	
+		
+		if (usingInst.id == 25)
+		{
+			System.err.println("asd");
+		}
 		// Short circuit for arrays
-		if (globalArrayOffset.containsKey(usingInst.origIdent))
+		String name, saveName;
+		if (usingInst.block == null || (usingInst.block != null && usingInst.block.label == null))
+		{
+			name = usingInst.ident.get("main");
+			saveName = usingInst.saveName.get("main");
+		}
+		else if (usingInst.block.scopeName == null)
+		{
+			name = usingInst.ident.get(usingInst.block.label);
+			saveName = usingInst.saveName.get(usingInst.block.label);
+		}
+		else
+		{
+			name = usingInst.ident.get(usingInst.block.scopeName);
+			saveName = usingInst.saveName.get(usingInst.block.scopeName);
+		}
+//		String name = usingInst.ident.get(usingInst.block.scopeName);
+//		String saveName = usingInst.saveName.get(usingInst.block.scopeName);
+		
+//		if (globalArrayOffset.containsKey(usingInst.origIdent))
+		if (globalArrayOffset.containsKey(name))
 		{
 			return false;
 		}
@@ -871,7 +921,8 @@ public class DLXGenerator
 			// success
 			return true;
 		}
-		else if (!store && (usingInst.isGlobalVariable || this.globalRefMap.containsKey(usingInst.origIdent)))
+//		else if (!store && (usingInst.isGlobalVariable || this.globalRefMap.containsKey(usingInst.origIdent)))
+		else if (!store && (usingInst.isGlobalVariable || this.globalRefMap.containsKey(name)))
 		{
 			DLXInstruction storeInst = new DLXInstruction();
 			storeInst.opcode = InstructionType.STW;
@@ -880,13 +931,16 @@ public class DLXGenerator
 			storeInst.rb = GLOBAL_ADDRESS;
 			
 			int ref = 0;
-			if (usingInst.origIdent == null || usingInst.origIdent.length() == 0)
+//			if (usingInst.origIdent == null || usingInst.origIdent.length() == 0)
+			if (name == null || name.length() == 0)
 			{
-				ref = globalRefMap.get(usingInst.saveName);
+//				ref = globalRefMap.get(usingInst.saveName);
+				ref = globalRefMap.get(saveName);
 			}
 			else
 			{
-				ref = globalRefMap.get(usingInst.origIdent);
+//				ref = globalRefMap.get(usingInst.origIdent);
+				ref = globalRefMap.get(name);
 			}
 			storeInst.rc = -4 * (globalOffset.get(ref) + 1); // word size
 
@@ -1721,6 +1775,27 @@ public class DLXGenerator
 
 					case FUNC:
 					{
+						// Save priors if constants
+						for (String var : functionMap.get(ssaInst.funcName).constantsToSave.keySet())
+						{
+							int constant = functionMap.get(ssaInst.funcName).constantsToSave.get(var);
+							DLXInstruction preInst = new DLXInstruction();
+							preInst.opcode = InstructionType.ADDI;
+							preInst.format = formatMap.get(InstructionType.ADDI);
+							preInst.ra = ssaInst.regNum;
+							preInst.rb = 0;
+							preInst.rc = constant;
+							appendInstructionToBlock(edb, preInst);
+							
+							DLXInstruction storeInst = new DLXInstruction();
+							storeInst.opcode = InstructionType.STW;
+							storeInst.format = formatMap.get(InstructionType.STW);
+							storeInst.ra = ssaInst.regNum; // save contents of ssaInst.regNum
+							storeInst.rb = GLOBAL_ADDRESS;
+							storeInst.rc = -4 * (globalOffset.get(globalRefMap.get(var)) + 1); // word size
+							appendInstructionToBlock(edb, storeInst);
+						}
+						
 						// Push all inuse registers onto the stack
 						for (int ri = LOW_REG; ri <= HIGH_REG; ri++)
 						{
@@ -1913,6 +1988,27 @@ public class DLXGenerator
 					}
 					case PROC:
 					{
+						// Save priors if constants
+						for (String var : functionMap.get(ssaInst.funcName).constantsToSave.keySet())
+						{
+							int constant = functionMap.get(ssaInst.funcName).constantsToSave.get(var);
+							DLXInstruction preInst = new DLXInstruction();
+							preInst.opcode = InstructionType.ADDI;
+							preInst.format = formatMap.get(InstructionType.ADDI);
+							preInst.ra = ssaInst.regNum;
+							preInst.rb = 0;
+							preInst.rc = constant;
+							appendInstructionToBlock(edb, preInst);
+							
+							DLXInstruction storeInst = new DLXInstruction();
+							storeInst.opcode = InstructionType.STW;
+							storeInst.format = formatMap.get(InstructionType.STW);
+							storeInst.ra = ssaInst.regNum; // save contents of ssaInst.regNum
+							storeInst.rb = GLOBAL_ADDRESS;
+							storeInst.rc = -4 * (globalOffset.get(globalRefMap.get(var)) + 1); // word size
+							appendInstructionToBlock(edb, storeInst);
+						}
+						
 						// Push all inuse registers onto the stack
 						for (int ri = LOW_REG; ri <= HIGH_REG; ri++)
 						{

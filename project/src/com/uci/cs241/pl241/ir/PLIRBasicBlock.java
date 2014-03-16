@@ -25,6 +25,7 @@ public class PLIRBasicBlock
 	public HashMap<String, PLIRInstruction> usedIdents;
 	
 	public String arrayName;
+	public String scopeName;
 	
 	// These are set if we encounter branches, and must be handled accordingly
 	// By default, they are null, so simple checks to see if they're null will help us determine whether we merge block 
@@ -361,20 +362,26 @@ public class PLIRBasicBlock
 				
 				if (bInst.opcode == InstructionType.PHI)
 				{
-					if ((bInst.id == p1id || bInst.id == p2id) && phi.id > bInst.id)
-					{
-						continue;
-					}
+					continue;
+//					if ((bInst.id == p1id || bInst.id == p2id) && phi.id > bInst.id)
+//					{
+//						continue;
+//					}
 				}
 				
-				if (phi.origIdent.equals("j"))
-				{
-					System.out.println("here");
-				}
+//				if (phi.origIdent.equals("j"))
+//				{
+//					System.out.println("here");
+//				}
 				
 				if ((bInst.opcode == InstructionType.PHI && bInst.op1 != null && bInst.op1.isConstant))
 				{
 					System.err.println("here");
+				}
+				
+				if (bInst.opcode == InstructionType.PHI)
+				{
+//					continue;
 				}
 				
 				// guard against constant overwriting
@@ -383,7 +390,8 @@ public class PLIRBasicBlock
 						&& !(bInst.opcode == InstructionType.PHI && branch == 2))
 //				if (!(bInst.opcode == InstructionType.PHI && branch == 2))
 				{
-					if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
+//					if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
+					if (bInst.op1 != null &&  bInst.op1.ident.get(scope.getCurrentScope()) != null && bInst.op1.ident.get(scope.getCurrentScope()).equals(var))
 					{
 //						if (!(replaced && bInst.opcode == InstructionType.PHI))
 						{
@@ -436,7 +444,8 @@ public class PLIRBasicBlock
 //				if (bInst.opcode != InstructionType.PHI && bInst.opcode != InstructionType.STORE)
 				if (bInst.opcode != InstructionType.STORE && !(bInst.opcode == InstructionType.PHI && branch == 1))
 				{
-					if (bInst.op2 != null && bInst.op2.origIdent.equals(var) && !replaced)
+//					if (bInst.op2 != null && bInst.op2.origIdent.equals(var) && !replaced)
+					if (bInst.op2 != null && bInst.op2.ident.get(scope.getCurrentScope()) != null && bInst.op2.ident.get(scope.getCurrentScope()).equals(var) && !replaced)
 					{
 //						if (!(replaced && bInst.opcode == InstructionType.PHI))
 						{
@@ -487,14 +496,20 @@ public class PLIRBasicBlock
 				
 				// If the phi value was used to replace some operand, and this same expression was used to save a result, replace
 				// with the newly generated result
-				else if (replaced && (bInst.origIdent.equals(phi.origIdent) || bInst.saveName.equals(phi.origIdent)) && bInst.kind != ResultKind.CONST)
+//				else if (replaced && (bInst.origIdent.equals(phi.origIdent) || bInst.saveName.equals(phi.origIdent)) && bInst.kind != ResultKind.CONST)
+				else if (replaced && ((bInst.ident.get(scope.getCurrentScope()) != null && phi.ident.get(scope.getCurrentScope()) != null 
+						&& bInst.ident.get(scope.getCurrentScope()).equals(phi.ident.get(scope.getCurrentScope())))
+						|| (bInst.saveName.get(scope.getCurrentScope()) != null && phi.ident.get(scope.getCurrentScope()) != null && 
+						bInst.saveName.get(scope.getCurrentScope()).equals(phi.ident.get(scope.getCurrentScope())))) 
+						&& bInst.kind != ResultKind.CONST)
 				{
-					System.out.println("now replacing " + phi.origIdent + " with : " + bInst.toString());
+//					System.out.println("now replacing " + phi.origIdent + " with : " + bInst.toString());
 					scopeMap.put(var, bInst);
 				}
 				
 //				// If there is an assignment that matches this PHI variable, use its value...
-				if (bInst.id > 0 && bInst.generated && (bInst.origIdent != null && bInst.origIdent.equals(var)))
+//				if (bInst.id > 0 && bInst.generated && (bInst.origIdent != null && bInst.origIdent.equals(var)))
+				if (bInst.id > 0 && bInst.generated && (bInst.ident.get(scope.getCurrentScope()) != null && bInst.ident.get(scope.getCurrentScope()).equals(var)))
 				{
 					if (bInst.opcode == InstructionType.LOAD)
 					{

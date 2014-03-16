@@ -1,32 +1,16 @@
 digraph cfg {
-BB5[shape = box, label = "BB(5)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := global #0\n" + "4 := global #0\n" + "5 := add #0 #3\n" + "6 := cmp #1 #2\n" + "7 := bge (6) #8\n"];
-BB16[shape = box, label = "BB(16)\n" + "8 := phi(c) #3 (12)\n" + "9 := phi(d) #4 (13)\n" + "10 := cmp (8) (9)\n" + "11 := bge (10) #4\n"];
-BB33[shape = box, label = "BB(33)\n" + "15 := phi(c) (5) (20)\n" + "17 := phi(d) #4 (21)\n" + "18 := cmp (15) (17)\n" + "19 := bge (18) #4\n"];
-BB23[shape = box, label = "BB(23)\n" + "12 := add (8) #2\n" + "13 := add (9) #1\n" + "14 := beq #0 #9\n"];
-BB31[shape = box, label = "BB(31)\n" + "16 := beq #0 #0\n"];
-BB40[shape = box, label = "BB(40)\n" + "20 := add (15) #3\n" + "21 := add (17) #2\n" + "22 := beq #0 #-7\n"];
-BB48[shape = box, label = "BB(48)\n"];
-BB32[shape = box, label = "BB(32)\n" + "23 := phi(d) (9) (17)\n" + "24 := phi(b) (8) (15)\n" + "25 := phi(a) #2 #3\n" + "26 := phi(b) (24) (33)\n" + "27 := phi(c) #2 (34)\n" + "28 := cmp (26) (23)\n" + "29 := bge (28) #7\n"];
-BB53[shape = box, label = "BB(53)\n" + "30 := cmp (25) (23)\n" + "31 := ble (30) #2\n"];
-BB60[shape = box, label = "BB(60)\n" + "36 := write (25)\n" + "37 := write (27)\n" + "38 := write (26)\n" + "39 := write (23)\n" + "40 := wln\n" + "41 := end\n"];
-BB55[shape = box, label = "BB(55)\n" + "32 := beq #0 #1\n"];
-BB58[shape = box, label = "BB(58)\n"];
-BB57[shape = box, label = "BB(57)\n" + "33 := phi(b) (26) #2\n" + "34 := phi(b) (33) #2\n" + "35 := beq #0 #-9\n"];
-BB5 -> BB16;
-BB5 -> BB33;
-BB16 -> BB23;
-BB16 -> BB31;
-BB33 -> BB40;
-BB33 -> BB48;
-BB23 -> BB16;
-BB31 -> BB32;
-BB40 -> BB33;
-BB48 -> BB32;
-BB32 -> BB53;
-BB32 -> BB60;
-BB53 -> BB55;
-BB53 -> BB58;
-BB55 -> BB57;
-BB58 -> BB57;
-BB57 -> BB32;
+BB4[shape = box, label = "BB(4 [ foo ])\n" + "3 := add #0 #0\n" + "4 := (3)\n" + "5 := add #0 #1\n" + "6 := add #0 #2\n" + "7 := return\n"];
+
+BB16[shape = box, label = "BB(16 [ bar ])\n" + "8 := loadparam 0\n" + "9 := add #0 #0\n" + "10 := (9)\n" + "11 := add #0 #1\n" + "12 := return\n"];
+
+BB26[shape = box, label = "BB(26 [ baz ])\n" + "13 := loadparam 0\n" + "14 := loadparam 1\n" + "15 := add #0 #0\n" + "16 := (15)\n" + "17 := return\n"];
+
+BB32[shape = box, label = "BB(32 [ boo ])\n" + "18 := loadparam 0\n" + "19 := loadparam 1\n" + "20 := add #0 #0\n" + "21 := write (1)\n" + "22 := phi({boo=x}) (1) (27)\n" + "23 := phi({boo=i}) #0 (26)\n" + "24 := cmp (23) (2)\n" + "25 := bge (24) #4\n"];
+BB42[shape = box, label = "BB(42)\n" + "26 := add (23) #1\n" + "27 := mul (22) (22)\n" + "28 := beq #0 #-6\n"];
+BB50[shape = box, label = "BB(50)\n" + "29 := write (22)\n" + "30 := wln\n" + "31 := add (22) #4\n" + "32 := return (31)\n"];
+BB32 -> BB42;
+BB32 -> BB50;
+BB42 -> BB32;
+
+BB58[shape = box, label = "BB(58)\n" + "1 := global #0\n" + "2 := global #0\n" + "33 := proc foo\n" + "34 := proc bar #1\n" + "35 := proc baz #8 #1790\n" + "36 := write #8\n" + "37 := func boo #2 #4\n" + "38 := add #1790 (37)\n" + "39 := write (1)\n" + "40 := write (38)\n" + "41 := wln\n" + "42 := end\n"];
 }

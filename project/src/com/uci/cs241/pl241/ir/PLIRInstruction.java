@@ -1,6 +1,7 @@
 package com.uci.cs241.pl241.ir;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import com.uci.cs241.pl241.frontend.PLSymbolTable;
@@ -75,9 +76,14 @@ public class PLIRInstruction
 	public int condcode;
 	public int fixupLocation;
 	public boolean wasIdent = false;
-	public String origIdent = "";
+//	public String origIdent = "";
+	
+	public HashMap<String, String> ident = new HashMap<String, String>();
+	
 	public String funcName;
-	public String saveName = "";
+	
+//	public String saveName = "";
+	public HashMap<String, String> saveName = new HashMap<String, String>();
 	
 	// Elimination information
 	public enum EliminationReason {CSE, DCR};
@@ -88,10 +94,11 @@ public class PLIRInstruction
 	public static PLIRInstruction copy(PLSymbolTable scope, PLIRInstruction inst)
 	{
 		PLIRInstruction copyInst = new PLIRInstruction(scope);
+		copyInst.id = inst.id;
 		copyInst.opcode = inst.opcode;
 		copyInst.type = inst.type;
-		copyInst.origIdent = inst.origIdent;
-		copyInst.saveName = inst.saveName;
+//		copyInst.origIdent = inst.origIdent;
+//		copyInst.saveName = inst.saveName;
 		copyInst.op1 = inst.op1;
 		copyInst.op1type = inst.op1type;
 		copyInst.i1 = inst.i1;
@@ -140,7 +147,12 @@ public class PLIRInstruction
 			else if (base.refInst.id == base.id) base = null;
 			else base = base.refInst;
 		}
-		this.origIdent = prev.origIdent;
+		
+		for (String scope : prev.ident.keySet())
+		{
+			ident.put(scope, prev.ident.get(scope));
+		}
+//		this.origIdent = prev.origIdent;
 		
 		System.err.println("CSE: " + this.id + " referencing " + ref.id);
 	}
@@ -479,7 +491,10 @@ public class PLIRInstruction
 	//		if (op1 != null && op1.equals(newOp) == false && op1.opcode != InstructionType.PHI)
 			if (op1 != null)
 			{
-				if (op1.origIdent.equals(newOp.origIdent))
+//				if (op1.origIdent.equals(newOp.origIdent))
+				String thisIdent = op1.ident.get(table.getCurrentScope());
+				String thatIdent = newOp.ident.get(table.getCurrentScope());
+				if (thisIdent != null && thatIdent != null && thisIdent.equals(thatIdent))
 				{
 					op1type = OperandType.INST;
 					op1 = newOp;
@@ -496,7 +511,10 @@ public class PLIRInstruction
 	//		if (op2 != null && op2.equals(newOp) == false && op2.opcode != InstructionType.PHI)
 			if (op2 != null && !(newOp.opcode == InstructionType.PHI && opcode == InstructionType.PHI))
 			{
-				if (op2.origIdent.equals(newOp.origIdent))
+//				if (op2.origIdent.equals(newOp.origIdent))
+				String thisIdent = op2.ident.get(table.getCurrentScope());
+				String thatIdent = newOp.ident.get(table.getCurrentScope());
+				if (thisIdent != null && thatIdent != null && thisIdent.equals(thatIdent))
 				{
 					op2type = OperandType.INST;
 					op2 = newOp;
@@ -735,29 +753,42 @@ public class PLIRInstruction
 		return inst;
 	}
 	
-	public static PLIRInstruction create_phi(PLSymbolTable table, PLIRInstruction b1, PLIRInstruction b2, int loc, boolean generate) throws ParserException
+	public static PLIRInstruction create_phi(PLSymbolTable table, String var, PLIRInstruction b1, PLIRInstruction b2, int loc, boolean generate) throws ParserException
 	{
 		PLIRInstruction inst = new PLIRInstruction(table);
 		inst.opcode = InstructionType.PHI;
 		inst.kind = ResultKind.VAR;
-		inst.origIdent = b1.origIdent; // use either b1 or b2 origIndent, they will match at this point
+		
+		
+//		inst.origIdent = b1.origIdent; // use either b1 or b2 origIndent, they will match at this point
+//		inst.ident.put(table.getCurrentScope(), b1.ident.get(table.getCurrentScope())); // use either b1 or b2 origIndent, they will match at this point
+		inst.ident.put(table.getCurrentScope(), var);
+		inst.saveName.put(table.getCurrentScope(), var);
 		
 //		if (b1.saveName.equals(b2.saveName) == false)
-		if (b1.origIdent.equals(b2.origIdent) == false)
-		{
-			if (b1.saveName.equals(b2.saveName) == false)
-			{
-				throw new ParserException("Attempted to create a PHI for two different variables.: " + b1.saveName + " - " + b2.saveName);
-			}
-		}
-		if (b1.saveName == null || b1.saveName.equals(""))
-		{
-			inst.saveName = b1.origIdent;
-		}
-		else
-		{
-			inst.saveName = b1.saveName;
-		}
+//		String b1Ident = b1.ident.get(table.getCurrentScope());
+//		String b2Ident = b2.ident.get(table.getCurrentScope());
+////		if (b1.origIdent.equals(b2.origIdent) == false)
+//		if (b1Ident.equals(b2Ident) == false)
+//		{
+//			String b1Save = b1.saveName.get(table.getCurrentScope());
+//			String b2Save = b2.saveName.get(table.getCurrentScope());
+////			if (b1.saveName.equals(b2.saveName) == false)
+//			if (b1Save.equals(b2Save) == false)
+//			{
+//				throw new ParserException("Attempted to create a PHI for two different variables.: " + b1.saveName + " - " + b2.saveName);
+//			}
+//		}
+//		if (b1.saveName == null || b1.saveName.equals(""))
+//		{
+////			inst.saveName = b1.origIdent;
+//			inst.saveName.put(table.getCurrentScope(), b1.ident.get(table.getCurrentScope()));
+//		}
+//		else
+//		{
+////			inst.saveName = b1.saveName;
+//			inst.saveName.put(table.getCurrentScope(), b1.saveName.get(table.getCurrentScope()));
+//		}
 		
 		if (b1.kind == ResultKind.CONST)
 		{
