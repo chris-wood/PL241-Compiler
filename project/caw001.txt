@@ -1,3 +1,456 @@
+
+// multidimensional array test
+main 
+var a, b, i, j;
+array[10][10] output;
+{
+  while 1 != 2 do
+    call OutputNewLine();
+    let a <- call InputNum();
+    let b <- call InputNum();
+    let i <- call InputNum();
+    let j <- call InputNum();
+
+    call OutputNum(a + b);
+    call OutputNum(i);
+    call OutputNum(j);
+    let output[i][j] <- a + b;
+    call OutputNum(output[i][j]);
+    call OutputNewLine();
+    
+    let i <- 0;
+    while i < 10 do
+      let j <- 0;
+      while j < 10 do
+        call OutputNum(output[i][j]);
+        let j <- j + 1
+      od;
+      call OutputNewLine();
+      let i <- i + 1
+    od
+  od
+}.
+
+// test002
+main
+var x, y, z;
+array [ 4 ] a;
+array [ 4 ][ 4 ] b;
+var c;
+function foo( );
+var i, d;
+{
+  let i <- 0;
+  while i < 10 do
+    let y <- y + 2;
+    let z <- x + 2;
+    let d <- y + z;
+    let i <- i + 1
+  od;
+  return d
+};
+
+procedure bar( x, z );
+var i, j, e;
+{
+  let i <- 0;
+  let j <- 0;
+  while i < 4 do
+    while j < 4 do
+      let b[ i ][ j ] <- j;
+      let j <- j + 1
+    od;
+    let a[ i ] <- i;
+    let i <- i + 1
+  od
+};
+
+{
+  let x <- 0;
+  let y <- 0;
+  let z <- 0;
+  
+  call bar( x, z );
+  let c <- call foo;
+  
+  call OutputNum(c)
+}.
+
+// factorial
+main
+var input;
+
+function factIter(n);
+var i, f;
+{
+  let i <- 1;
+  let f <- 1;
+  while i <= n do
+    let f <- f * i;
+    let i <- i + 1
+  od;
+  return f
+};
+
+function factRec(n);
+var i;
+{
+  if n <= 1 then
+    return 1
+  fi;
+  return call factRec(n - 1) * n
+};
+
+{
+  let input <- call InputNum();
+  call OutputNum(input);
+  call OutputNewLine();
+
+  call OutputNum(call factIter(input));
+
+  call OutputNum(input);
+  call OutputNewLine();
+
+  call OutputNum(call factRec(input));
+
+  call OutputNum(input);
+  call OutputNewLine()
+}
+.
+
+main
+array[5] input;
+var maxnumber;
+function max(a1,a2,a3,a4,a5);
+array[5] arg;
+var size,temp,i;
+{
+                let arg[0] <- a1;
+                let arg[1] <- a2;
+                let arg[2] <- a3;
+                let arg[3] <- a4;
+                let arg[4] <- a5;
+                
+                let size <- 5;
+                let i <- 1;
+                let temp <- arg[0];
+
+                //call OutputNewLine();
+
+                while i < size
+                do
+                  call OutputNum(temp);
+                  call OutputNewLine();
+                        if arg[i] > temp
+                        then
+                                call OutputNum(0);
+                                let temp <- arg[i]
+                        fi;
+                        let i <- i+1
+                od;
+
+                call OutputNewLine();
+                call OutputNum(temp);
+                return temp
+        
+}
+;
+{
+//        let input[0] <- 22;
+//        let        input[1] <- 61;
+//        let        input[2] <- 17;
+//        let        input[3] <- 34;
+//        let        input[4] <- 11;
+
+        let input[0] <- call InputNum();
+        let        input[1] <- call InputNum();
+        let        input[2] <- call InputNum();
+        let        input[3] <- call InputNum();
+        let        input[4] <- call InputNum();
+
+        call OutputNum(input[0]);
+        call OutputNum(input[1]);
+        call OutputNum(input[2]);
+        call OutputNum(input[3]);
+        call OutputNum(input[4]);
+        call OutputNewLine();
+        
+        let maxnumber <- call max(input[0],input[1],input[2],input[3], input[4]);
+        call OutputNewLine();
+        call OutputNum(maxnumber);
+        call OutputNewLine()
+        
+}
+.
+
+// test027
+main 
+    array [3] foo;
+    array [3] boo;
+    var a,b,c;
+    {
+        let a <- 3;
+        let c <- foo[2*a-6];
+        while 2 < 3 do
+            let b <- foo[2*a-6];
+            while 4 < foo[2*a-6] do            
+                if 3 < 4 then
+                    let boo[c] <- 3
+                else
+                    let foo[2] <- 5
+                fi
+            od;
+            let c <- foo[2*a-6]
+        od;
+        let a <- foo[2*a-6]
+    }    
+.
+
+// test023
+main
+var a, b, c, d, e;
+{
+  let a <- 1;
+  let b <- 2;
+  let c <- 3;
+  let d <- 4;
+  let e <- 5;
+  
+  if ( c ) < d then
+    if ( a + 5 - b ) > ( b * 6 ) then
+      let a <- a / c * d;
+      let d <- d - 1
+    else
+      let d <- a + b
+    fi
+  fi;
+  
+  let e <- c - a + b;
+  let a <- a + b;
+
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
+  call OutputNum(d);
+  call OutputNum(e);
+  call OutputNewLine()
+}
+.
+
+
+
+
+// test022
+main
+var a, b, c;
+{
+  let a <- 1;
+  let b <- 2;
+  let c <- 5;
+  while b < c do
+    let a <- b + 1;
+    call OutputNum(a);
+    while ( b + 1 ) < c do
+      while ( b + 2 ) < c do
+        let b <- b + 1
+      od
+    od
+  od;
+  let b <- c + 1;
+
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
+  call OutputNewLine()
+}
+.
+
+main
+array[ 2 ][ 3 ][ 4 ] a;
+var b;
+var c;
+function foo( );
+{
+  call OutputNum(55);
+  let b <- 2;
+  let c <- 3;
+  return b + c
+};
+function bar( );
+{
+  call OutputNum(35);
+  let b <- 3;
+  let c <- 4;
+  return b + c
+};
+
+{
+  let a[ 0 ][ 2 ][ 3 ] <- 1;
+  let a[ 0 ][ 2 ][ 2 ] <- 2;
+  call OutputNum(call foo);
+  call OutputNum(a[ 0 ][ 2 ][ 3 ]);
+  call OutputNum(a[ 0 ][ 2 ][ 2 ]);
+  if a[ 0 ][ 2 ][ 3 ] > a[ 0 ][ 2 ][ 2 ] then
+    let a[ 0 ][ 2 ][ 1 ] <- call foo
+  else
+    //let a[ 0 ][ 2 ][ 1 ] <- call foo
+    let a[ 0 ][ 2 ][ 1 ] <- call bar
+  fi;
+
+  let b <- a[ 0 ][ 2 ][ 1 ];
+  call OutputNum(b)
+}.
+
+// Simple CSE test
+// (I don't like the ones in Muchnick)
+main
+var a, b, c, d, e, f, g;
+{
+  let a <- b + c;
+  let d <- b + c;
+  let e <- c + b + d;
+  
+  if a != d then
+    let e <- c + b + d;
+    let f <- a * d;
+    let g <- d * a + 4;
+    let b <- 5;
+    let e <- c + b + d
+  else
+    let f <- a / d;
+    let g <- d / a
+  fi;
+  
+  let f <- a * d;
+  let g <- d / a
+}
+.
+
+
+
+
+
+// test013
+main
+
+function foo();
+var a, b, c, d, e, f, g, h;
+{
+  let a <- 1;
+  let b <- 2;
+  let c <- 3;
+  let d <- 4;
+  let e <- 5;
+  let f <- 6;
+  let g <- 7;
+  let h <- 8;
+  
+  if a < b then
+    let a <- a + 1;
+    let e <- e + 1;
+    if b < c then
+      let c <- c * 3;
+      while a < c do
+        let a <- a + 1
+      od
+    fi;
+    let g <- 9 
+  else
+    let b <- b - 1;
+    let f <- f + 1;
+    if b < c then
+      let c <- c * 3;
+      while b < c do
+        let b <- b + 1;
+        let c <- c - 1
+      od
+    else
+      let c <- c * 4;
+      let d <- d + 1
+    fi;
+    let h <- 425
+  fi;
+  
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
+  call OutputNum(d);
+  call OutputNum(e);
+  call OutputNum(f);
+  call OutputNum(h)
+};
+
+{
+  call foo
+}
+.
+
+// test011
+main
+var a, b, c, d;
+{
+  let a <- 1;
+  let b <- 2;
+  let c <- 3;
+  let d <- 4;
+
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
+  call OutputNum(d);
+  call OutputNewLine();
+  
+  if a< b then
+    let a <- a + 1;
+    while c < d do
+      let c <- c + 2;
+      let d <- d + 1
+    od
+  else
+    let a <- a + 2;
+    while c < d do
+      let c <- c + 3;
+      let d <- d + 2
+    od
+  fi;
+  
+  while b < d do
+    if a > d then
+      let b <- c
+    else
+      let c <- b
+    fi
+  od;
+
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
+  call OutputNum(d);
+  call OutputNewLine()
+}.
+
+
+// test012
+// From Brandis and Mossenbock
+// The third line in the then block, the two lines before the if and he 
+// lines after the fi are not part of the original test case. 
+main
+var a, b, c;
+{
+  let a <- 3;
+  let b <- 2;
+  if a < b then
+    let a <- 1;
+    let b <- a + 1;
+    let a <- a + 1
+  else
+    let a <- a + 1;
+    let c <- 2
+  fi;
+  let a <- a + 1;
+    call OutputNum(a)
+}.
+
 // test016
 main
 var x, y;
@@ -47,47 +500,6 @@ var i;
 
   call OutputNum(x);
   call OutputNum(y);
-  call OutputNewLine()
-}
-.
-
-main
-var input;
-
-function factIter(n);
-var i, f;
-{
-  let i <- 1;
-  let f <- 1;
-  while i <= n do
-    let f <- f * i;
-    let i <- i + 1
-  od;
-  return f
-};
-
-function factRec(n);
-var i;
-{
-  if n <= 1 then
-    return 1
-  fi;
-  return call factRec(n - 1) * n
-};
-
-{
-  let input <- call InputNum();
-  call OutputNum(input);
-  call OutputNewLine();
-
-  call OutputNum(call factIter(input));
-
-  call OutputNum(input);
-  call OutputNewLine();
-
-  call OutputNum(call factRec(input));
-
-  call OutputNum(input);
   call OutputNewLine()
 }
 .
@@ -162,82 +574,7 @@ var q, foo, af, too;
 }
 .
 
-// test011
-main
-var a, b, c, d;
-{
-  let a <- 1;
-  let b <- 2;
-  let c <- 3;
-  let d <- 4;
 
-  call OutputNum(a);
-  call OutputNum(b);
-  call OutputNum(c);
-  call OutputNum(d);
-  call OutputNewLine();
-  
-  if a< b then
-    let a <- a + 1;
-    while c < d do
-      let c <- c + 2;
-      let d <- d + 1
-    od
-  else
-    let a <- a + 2;
-    while c < d do
-      let c <- c + 3;
-      let d <- d + 2
-    od
-  fi;
-  
-  while b < d do
-    if a > d then
-      let b <- c
-    else
-      let c <- b
-    fi
-  od;
-
-  call OutputNum(a);
-  call OutputNum(b);
-  call OutputNum(c);
-  call OutputNum(d);
-  call OutputNewLine()
-}.
-
-
-// multidimensional array test
-main 
-var a, b, i, j;
-array[10][10] output;
-{
-  while 1 != 2 do
-    call OutputNewLine();
-    let a <- call InputNum();
-    let b <- call InputNum();
-    let i <- call InputNum();
-    let j <- call InputNum();
-
-    call OutputNum(a + b);
-    call OutputNum(i);
-    call OutputNum(j);
-    let output[i][j] <- a + b;
-    call OutputNum(output[i][j]);
-    call OutputNewLine();
-    
-    let i <- 0;
-    while i < 10 do
-      let j <- 0;
-      while j < 10 do
-        call OutputNum(output[i][j]);
-        let j <- j + 1
-      od;
-      call OutputNewLine();
-      let i <- i + 1
-    od
-  od
-}.
 
 
 main
@@ -270,69 +607,6 @@ var a, b, c;
   call OutputNum(b);
   call OutputNum(c);
   call OutputNewLine()
-}
-.
-
-
-
-
-main
-array[5] input;
-var maxnumber;
-function max(a1,a2,a3,a4,a5);
-array[5] arg;
-var size,temp,i;
-{
-                let arg[0] <- a1;
-                let arg[1] <- a2;
-                let arg[2] <- a3;
-                let arg[3] <- a4;
-                let arg[4] <- a5;
-                
-                let size <- 5;
-                let i <- 1;
-                let temp <- arg[0];
-
-                //call OutputNewLine();
-
-                while i < size
-                do
-                        if arg[i] > temp
-                        then
-                                let temp <- arg[i]
-                        fi;
-                        let i <- i+1
-                od;
-
-                return temp
-        
-}
-;
-{
-//        let input[0] <- 22;
-//        let        input[1] <- 61;
-//        let        input[2] <- 17;
-//        let        input[3] <- 34;
-//        let        input[4] <- 11;
-
-        let input[0] <- call InputNum();
-        let        input[1] <- call InputNum();
-        let        input[2] <- call InputNum();
-        let        input[3] <- call InputNum();
-        let        input[4] <- call InputNum();
-
-        call OutputNum(input[0]);
-        call OutputNum(input[1]);
-        call OutputNum(input[2]);
-        call OutputNum(input[3]);
-        call OutputNum(input[4]);
-        call OutputNewLine();
-        
-        let maxnumber <- call max(input[0],input[1],input[2],input[3], input[4]);
-        call OutputNewLine();
-        call OutputNum(maxnumber);
-        call OutputNewLine()
-        
 }
 .
 

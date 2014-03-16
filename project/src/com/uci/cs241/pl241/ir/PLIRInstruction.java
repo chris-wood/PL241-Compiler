@@ -473,7 +473,7 @@ public class PLIRInstruction
 		}
 	}
 	
-	public PLIRInstruction evaluate(int placement, int offset, PLIRInstruction newOp, PLSymbolTable table, ArrayList<PLIRInstruction> visitedInsts)
+	public PLIRInstruction evaluate(int placement, int offset, PLIRInstruction newOp, PLSymbolTable table, ArrayList<PLIRInstruction> visitedInsts, int branch)
 	{
 		System.out.println("Reevaluation " + this + "," + id);
 		
@@ -489,13 +489,16 @@ public class PLIRInstruction
 //		else
 		{
 	//		if (op1 != null && op1.equals(newOp) == false && op1.opcode != InstructionType.PHI)
-			if (op1 != null)
+			if (op1 != null && branch == 1)
 			{
 //				if (op1.origIdent.equals(newOp.origIdent))
 				String thisIdent = op1.ident.get(table.getCurrentScope());
 				String thatIdent = newOp.ident.get(table.getCurrentScope());
 				if (thisIdent != null && thatIdent != null && thisIdent.equals(thatIdent))
 				{
+					newOp.overrideGenerate = true;
+					newOp.tempPosition += offset;
+					newOp.forceGenerate(table);
 					op1type = OperandType.INST;
 					op1 = newOp;
 				}
@@ -503,19 +506,22 @@ public class PLIRInstruction
 				{
 					visitedInsts.add(op1);
 					System.out.println("left: " + op1);
-					op1 = op1.evaluate(placement, offset, newOp, table, visitedInsts);
+					op1 = op1.evaluate(placement, offset, newOp, table, visitedInsts, branch);
 					op1type = op1.type == OperandType.FUNC_PARAM ? OperandType.INST : op1.type;
 				}
 			}
 			
 	//		if (op2 != null && op2.equals(newOp) == false && op2.opcode != InstructionType.PHI)
-			if (op2 != null && !(newOp.opcode == InstructionType.PHI && opcode == InstructionType.PHI))
+			if (op2 != null && !(newOp.opcode == InstructionType.PHI && opcode == InstructionType.PHI) && branch == 2)
 			{
 //				if (op2.origIdent.equals(newOp.origIdent))
 				String thisIdent = op2.ident.get(table.getCurrentScope());
 				String thatIdent = newOp.ident.get(table.getCurrentScope());
 				if (thisIdent != null && thatIdent != null && thisIdent.equals(thatIdent))
 				{
+					newOp.overrideGenerate = true;
+					newOp.tempPosition += offset;
+					newOp.forceGenerate(table);
 					op2type = OperandType.INST;
 					op2 = newOp;
 				}
@@ -523,7 +529,7 @@ public class PLIRInstruction
 				{
 					visitedInsts.add(op2);
 					System.out.println("right: " + op2);
-					op2 = op2.evaluate(placement, offset, newOp, table, visitedInsts);
+					op2 = op2.evaluate(placement, offset, newOp, table, visitedInsts, branch);
 					op2type = op2.type == OperandType.FUNC_PARAM ? OperandType.INST : op2.type;
 				}
 			}
@@ -759,36 +765,10 @@ public class PLIRInstruction
 		inst.opcode = InstructionType.PHI;
 		inst.kind = ResultKind.VAR;
 		
-		
 //		inst.origIdent = b1.origIdent; // use either b1 or b2 origIndent, they will match at this point
 //		inst.ident.put(table.getCurrentScope(), b1.ident.get(table.getCurrentScope())); // use either b1 or b2 origIndent, they will match at this point
 		inst.ident.put(table.getCurrentScope(), var);
 		inst.saveName.put(table.getCurrentScope(), var);
-		
-//		if (b1.saveName.equals(b2.saveName) == false)
-//		String b1Ident = b1.ident.get(table.getCurrentScope());
-//		String b2Ident = b2.ident.get(table.getCurrentScope());
-////		if (b1.origIdent.equals(b2.origIdent) == false)
-//		if (b1Ident.equals(b2Ident) == false)
-//		{
-//			String b1Save = b1.saveName.get(table.getCurrentScope());
-//			String b2Save = b2.saveName.get(table.getCurrentScope());
-////			if (b1.saveName.equals(b2.saveName) == false)
-//			if (b1Save.equals(b2Save) == false)
-//			{
-//				throw new ParserException("Attempted to create a PHI for two different variables.: " + b1.saveName + " - " + b2.saveName);
-//			}
-//		}
-//		if (b1.saveName == null || b1.saveName.equals(""))
-//		{
-////			inst.saveName = b1.origIdent;
-//			inst.saveName.put(table.getCurrentScope(), b1.ident.get(table.getCurrentScope()));
-//		}
-//		else
-//		{
-////			inst.saveName = b1.saveName;
-//			inst.saveName.put(table.getCurrentScope(), b1.saveName.get(table.getCurrentScope()));
-//		}
 		
 		if (b1.kind == ResultKind.CONST)
 		{
@@ -804,7 +784,7 @@ public class PLIRInstruction
 		
 		if (b2.kind == ResultKind.CONST)
 		{
-			inst.op2 = null;
+			inst.op2 = b2;
 			inst.op2type = OperandType.CONST;
 			inst.i2 = b2.tempVal;
 		}

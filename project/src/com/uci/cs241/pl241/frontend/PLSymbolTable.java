@@ -45,7 +45,7 @@ public class PLSymbolTable
 	{
 		for (PLIRInstruction glob : globalVariables)
 		{
-			String ident = glob.ident.get(getCurrentScope());
+			String ident = glob.ident.get("main");
 			if (ident.equals(v)) return true;
 //			if (glob.origIdent.equals(v)) return true;
 		}

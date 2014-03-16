@@ -529,6 +529,7 @@ public class PLParser
 		PLIRInstruction li = new PLIRInstruction(scope, InstructionType.ADD, 0, Integer.parseInt(sym));
 		li.type = OperandType.CONST;
 		li.isConstant = true;
+		li.tempPosition = PLStaticSingleAssignment.globalSSAIndex;
 		advance(in);
 		PLIRBasicBlock block = new PLIRBasicBlock();
 		block.addInstruction(li);
@@ -957,6 +958,14 @@ public class PLParser
 		PLIRInstruction leftInst = left.getLastInst();
 		for (PLIRInstruction li : left.instructions)
 		{
+			if (li.op1 != null)
+			{
+				leftInst.dependents.add(li.op1);
+			}
+			if (li.op2 != null)
+			{
+				leftInst.dependents.add(li.op2);
+			}
 			leftInst.dependents.add(li);
 		}
 		
@@ -1014,6 +1023,14 @@ public class PLParser
 		PLIRInstruction rightInst = right.getLastInst();
 		for (PLIRInstruction ri : right.instructions)
 		{
+			if (ri.op1 != null)
+			{
+				rightInst.dependents.add(ri.op1);
+			}
+			if (ri.op2 != null)
+			{
+				rightInst.dependents.add(ri.op2);
+			}
 			rightInst.dependents.add(ri);
 		}
 		
@@ -1636,18 +1653,21 @@ public class PLParser
 				Function func = scope.functions.get(funcName);
 				for (PLIRInstruction glob : func.modifiedGlobals.keySet())
 				{
-					String name = glob.ident.get(scope.getCurrentScope());
-					if (scope.getCurrentValue(name).kind == ResultKind.CONST)
+					if (glob != null) // if the key is null, then we modified an array, and that code is always generated on demand
 					{
-						func.constantsToSave.put(name, scope.getCurrentValue(name).tempVal);
+						String name = glob.ident.get(scope.getCurrentScope());
+						if (scope.getCurrentValue(name).kind == ResultKind.CONST)
+						{
+							func.constantsToSave.put(name, scope.getCurrentValue(name).tempVal);
+						}
+						glob.type = OperandType.INST;
+						glob.kind = ResultKind.VAR;
+						glob.overrideGenerate = true;
+						glob.forceGenerate(scope);
+						scope.updateSymbol(name, glob);
+						debug(glob.toString());
+//						debug(scope.getCurrentValue("x").toString());
 					}
-					glob.type = OperandType.INST;
-					glob.kind = ResultKind.VAR;
-					glob.overrideGenerate = true;
-					glob.forceGenerate(scope);
-					scope.updateSymbol(name, glob);
-					debug(glob.toString());
-//					debug(scope.getCurrentValue("x").toString());
 				}
 			}
 			
@@ -1869,8 +1889,36 @@ public class PLParser
 					PLIRInstruction leftInst = thenBlock.modifiedIdents.get(var);
 					leftInst.forceGenerate(scope, leftInst.tempPosition);
 					
+					if (leftInst.kind == ResultKind.CONST)
+					{
+						String name = "";
+						for (String instScope : leftInst.ident.keySet())
+						{
+							name = leftInst.ident.get(instScope);
+							break;
+						}
+						for (int i = 0; i < scope.currentScope.size(); i++)
+						{
+							leftInst.ident.put(scope.currentScope.get(i), name);
+						}
+					}
+					
 					PLIRInstruction followInst = scope.getLastValue(var);
 					followInst.forceGenerate(scope, followInst.tempPosition);
+					
+					if (followInst.kind == ResultKind.CONST)
+					{
+						String name = "";
+						for (String instScope : followInst.ident.keySet())
+						{
+							name = followInst.ident.get(instScope);
+							break;
+						}
+						for (int i = 0; i < scope.currentScope.size(); i++)
+						{
+							followInst.ident.put(scope.currentScope.get(i), name);
+						}
+					}
 					
 					PLIRInstruction phi = PLIRInstruction.create_phi(scope, var, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex, true);
 					phi.isGlobalVariable = leftInst.isGlobalVariable || followInst.isGlobalVariable;
@@ -1955,7 +2003,7 @@ public class PLParser
 				}
 				numInstructions = numInstructions > 0 ? 0 : 1;
 //				FixupExact(lastEntryInst.fixupLocation, uncond.tempPosition - lastEntryInst.fixupLocation);
-				lastEntryInst.i2 = uncond.tempPosition - lastEntryInst.fixupLocation + 1;
+				lastEntryInst.i2 = uncond.id - lastEntryInst.id + 1;
 //				FixupExact(uncond.tempPosition - numInstructions, PLStaticSingleAssignment.globalSSAIndex - uncond.tempPosition - offset);
 //				uncond.i2 = PLStaticSingleAssignment.globalSSAIndex - uncond.tempPosition + offset;
 				uncond.i2 = joinNode.instructions.get(0).id - uncond.id - offset + 1;
@@ -2004,7 +2052,7 @@ public class PLParser
 			int innerOffset = 0;
 			for (PLIRInstruction headerInst : entry.instructions)
 			{
-				if (!(headerInst.opcode == InstructionType.PHI || headerInst.id == 0))
+				if (!(headerInst.opcode == InstructionType.PHI || headerInst.id == 0 || headerInst.opcode == InstructionType.CMP))
 				{
 					innerOffset++;
 				}
@@ -2110,7 +2158,6 @@ public class PLParser
 //				phi.saveName = var;
 				phi.saveName.put(scope.getCurrentScope(), var);
 				offset++;
-				entry.insertInstruction(phi, 0);
 //				entryStartLocation = phi.id;
 //				PLStaticSingleAssignment.injectInstruction(phi, scope, entryStartLocation);
 				
@@ -2124,7 +2171,8 @@ public class PLParser
 						continue;
 					}
 					
-					boolean replaced = false;
+					boolean replacedLeft = false;
+					boolean replacedRight = false;
 //					if (entryInst.origIdent.equals(var))
 					{
 						// guard against constant overwriting
@@ -2137,7 +2185,7 @@ public class PLParser
 							{
 //								if (!(replaced && entryInst.opcode == InstructionType.PHI))
 								{
-									replaced  = entryInst.replaceLeftOperand(replacement);
+									replacedLeft  = entryInst.replaceLeftOperand(replacement);
 									couldHaveReplaced = true;
 //									replaced = true;
 								}
@@ -2146,14 +2194,14 @@ public class PLParser
 							{
 //								if (!(replaced && entryInst.opcode == InstructionType.PHI))
 								{
-									replaced = entryInst.replaceLeftOperand(replacement);
+									replacedLeft = entryInst.replaceLeftOperand(replacement);
 									couldHaveReplaced = true;
 //									replaced = true;
 								}
 							}
 							if (entryInst.op1name != null && entryInst.op1name.equals(var))
 							{
-								replaced = entryInst.replaceLeftOperand(replacement);
+								replacedLeft = entryInst.replaceLeftOperand(replacement);
 								couldHaveReplaced = true;
 //								replaced = true;
 							}
@@ -2163,27 +2211,27 @@ public class PLParser
 						if (entryInst.opcode != InstructionType.STORE && !(entryInst.opcode == InstructionType.PHI))
 						{
 //							if (entryInst.op2 != null && entryInst.op2.origIdent.equals(var) && !replaced)
-							if (entryInst.op2 != null && entryInst.op2.ident.get(scope.getCurrentScope()) != null && entryInst.op2.ident.get(scope.getCurrentScope()).equals(var) && !replaced)
+							if (entryInst.op2 != null && entryInst.op2.ident.get(scope.getCurrentScope()) != null && entryInst.op2.ident.get(scope.getCurrentScope()).equals(var) && !replacedLeft)
 							{
 //								if (!(replaced && entryInst.opcode == InstructionType.PHI))
 								{
-									replaced = entryInst.replaceRightOperand(replacement);
+									replacedRight = entryInst.replaceRightOperand(replacement);
 //									replaced = true;
 								}
 							}
-							if (entryInst.op2 != null && entryInst.op2.equals(phi) && !replaced)
+							if (entryInst.op2 != null && entryInst.op2.equals(phi) && !replacedLeft)
 							{
 //								if (!(replaced && entryInst.opcode == InstructionType.PHI))
 								{
-									replaced = entryInst.replaceRightOperand(replacement);
+									replacedRight = entryInst.replaceRightOperand(replacement);
 //									replaced = true;
 								}
 							}
-							if (entryInst.op2name != null && entryInst.op2name.equals(var) && !replaced)
+							if (entryInst.op2name != null && entryInst.op2name.equals(var) && !replacedLeft)
 							{
 //								if (!(replaced && entryInst.opcode == InstructionType.PHI))
 								{
-									replaced = entryInst.replaceRightOperand(replacement);
+									replacedRight = entryInst.replaceRightOperand(replacement);
 //									replaced = true;
 								}
 							}
@@ -2193,13 +2241,19 @@ public class PLParser
 							System.out.println("here");
 						}
 						
-						if (replaced && entryInst.opcode != InstructionType.STORE && entryInst.opcode != InstructionType.PHI) // && !couldHaveReplaced)
+						if (replacedLeft && entryInst.opcode != InstructionType.STORE && entryInst.opcode != InstructionType.PHI) // && !couldHaveReplaced)
 						{
 							ArrayList<PLIRInstruction> visitedInsts = new ArrayList<PLIRInstruction>();
-							entryInst.evaluate(entryInst.id - 1, 0, replacement, scope, visitedInsts);
+							entryInst.evaluate(entryInst.id - 1, 0, replacement, scope, visitedInsts, 1);
 						}
 						
-						if (replaced && couldHaveReplaced && entryInst.opcode == InstructionType.PHI)
+						if (replacedRight && entryInst.opcode != InstructionType.STORE && entryInst.opcode != InstructionType.PHI) // && !couldHaveReplaced)
+						{
+							ArrayList<PLIRInstruction> visitedInsts = new ArrayList<PLIRInstruction>();
+							entryInst.evaluate(entryInst.id - 1, 0, replacement, scope, visitedInsts, 2);
+						}
+						
+						if (replacedLeft && couldHaveReplaced && entryInst.opcode == InstructionType.PHI)
 						{ 
 							replacement = entryInst;
 						}
@@ -2207,7 +2261,7 @@ public class PLParser
 						// If the phi value was used to replace some operand, and this same expression was used to save a result, replace
 						// with the newly generated result
 //						else if (replaced && (entryInst.origIdent.equals(phi.origIdent) || entryInst.saveName.equals(phi.origIdent)) && entryInst.kind != ResultKind.CONST)
-						else if (replaced && 
+						else if (replacedLeft && 
 								((entryInst.ident.get(scope.getCurrentScope()) != null && entryInst.ident.get(scope.getCurrentScope()).equals(phi.ident.get(scope.getCurrentScope())))
 								|| (entryInst.saveName.get(scope.getCurrentScope()) != null && entryInst.saveName.get(scope.getCurrentScope()).equals(phi.ident.get(scope.getCurrentScope()))))
 								&& entryInst.kind != ResultKind.CONST)
@@ -2233,6 +2287,9 @@ public class PLParser
 					}
 				}
 				
+				// Inject the phi into the entry
+				entry.insertInstruction(phi, 0);
+				
 				// Now loop through the entry and fix instructions as needed
 				// Those fixed are replaced with the result of this phi if they have used or modified the sym...
 				if (cmpInst.op1 != null)
@@ -2250,7 +2307,7 @@ public class PLParser
 					}
 					if (replaced)
 					{
-						cmpInst.evaluate(cmpInst.id - 1, offset, replacement, scope, new ArrayList<PLIRInstruction>());
+						cmpInst.evaluate(cmpInst.id - 1, offset, replacement, scope, new ArrayList<PLIRInstruction>(), 1);
 					}
 				}
 				
@@ -2267,13 +2324,14 @@ public class PLParser
 					}
 					if (replaced)
 					{
-						cmpInst.evaluate(cmpInst.id - 1, offset, replacement, scope, new ArrayList<PLIRInstruction>());
+						cmpInst.evaluate(cmpInst.id - 1, offset, replacement, scope, new ArrayList<PLIRInstruction>(), 2);
 					}
 				}
 				
 				// Propagate the PHI through the body of the loop
 				ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
 				visited.add(entry);
+				System.out.println("Propogating: " + replacement.toString());
 				body.propagatePhi(var, offset + innerOffset, replacement, visited, scope, 1);
 				
 				// The current value in scope needs to be updated now with the result of the phi

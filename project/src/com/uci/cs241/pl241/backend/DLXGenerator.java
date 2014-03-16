@@ -244,18 +244,7 @@ public class DLXGenerator
 				else // positive offset
 				{
 					int refId = inst.ssaInst.id + inst.rc;
-					PLIRInstruction refInst = null;
-					
-//					if (inst.ssaInst.jumpInst != null)
-//					{
-//						refInst = PLStaticSingleAssignment.getInstruction(inst.ssaInst.jumpInst.id + 1);
-//					}
-//					else
-//					{
-						refInst = PLStaticSingleAssignment.getInstruction(refId);
-//					}
-					
-					
+					PLIRInstruction refInst = PLStaticSingleAssignment.getInstruction(refId);	
 					
 					// If we branch forward to a PHI, then...
 					int offset = 0;
@@ -390,6 +379,10 @@ public class DLXGenerator
 //							&& jumpToBlock.instructions.get(jumpToBlock.instructions.size() - 1).pc == offset)
 					{
 						offset -= jumpToBlock.endInstructions.size();
+					}
+					if (refInst.opcode == PLIRInstruction.InstructionType.RETURN)
+					{
+						offset -= jumpToBlock.offsetSize;
 					}
 					
 //					if (jumpToBlock.startInstructions.size() > 0)
@@ -543,10 +536,13 @@ public class DLXGenerator
 
 	public void appendInstructionToBlock(DLXBasicBlock block, DLXInstruction inst)
 	{
+		inst.block = block;
+		if (emitInstruction)
+		{
 		inst.encodedForm = encodeInstruction(inst);
 		block.instructions.add(inst);
 		inst.pc = pc++;
-		inst.block = block;
+//		inst.block = block;
 
 //		if (lastLeftJump != -1)
 		if (lastLeftJumps.size() > 0)
@@ -558,30 +554,43 @@ public class DLXGenerator
 //			lastLeftJump = -1;
 			lastLeftJumps.clear();
 		}
+		}
 	}
 	
 	public void appendInstructionToStartBlock(DLXBasicBlock block, DLXInstruction inst)
 	{
+		inst.block = block;
+		if (emitInstruction)
+		{
 		inst.encodedForm = encodeInstruction(inst);
 		block.startInstructions.add(inst);
 		inst.pc = pc++;
-		inst.block = block;
+//		inst.block = block;
+		}
 	}
 
 	public void appendInstructionToEndBlock(DLXBasicBlock block, DLXInstruction inst)
 	{
+		inst.block = block;
+		if (emitInstruction)
+		{
 		inst.encodedForm = encodeInstruction(inst);
 		block.endInstructions.add(inst);
 		inst.pc = pc++;
-		inst.block = block;
+//		inst.block = block;
+		}
 	}
 
 	public void appendInstructionToBlockFromOffset(DLXBasicBlock block, DLXInstruction inst, int offset)
 	{
+		inst.block = block;
+		if (emitInstruction)
+		{
 		inst.encodedForm = encodeInstruction(inst);
 		block.instructions.add(block.instructions.size() + offset, inst);
 		inst.pc = pc++;
-		inst.block = block;
+//		inst.block = block;
+		}
 	}
 	
 	public DLXBasicBlock findJoin(DLXBasicBlock parent, DLXBasicBlock left, DLXBasicBlock right)
@@ -834,7 +843,7 @@ public class DLXGenerator
 			appendInstructionToBlock(edb, loadInst);
 			return true;
 		}
-		else if (!loaded && usingInst.isGlobalVariable)
+		else if (!loaded && globalRefMap.containsKey(name))
 		{
 			DLXInstruction loadInst = new DLXInstruction();
 			loadInst.opcode = InstructionType.LDW;
@@ -922,7 +931,7 @@ public class DLXGenerator
 			return true;
 		}
 //		else if (!store && (usingInst.isGlobalVariable || this.globalRefMap.containsKey(usingInst.origIdent)))
-		else if (!store && (usingInst.isGlobalVariable || this.globalRefMap.containsKey(name)))
+		else if (!store && (this.globalRefMap.containsKey(name)))
 		{
 			DLXInstruction storeInst = new DLXInstruction();
 			storeInst.opcode = InstructionType.STW;
@@ -996,6 +1005,7 @@ public class DLXGenerator
 	
 	public void tearDownStack(DLXBasicBlock edb, PLIRBasicBlock b, Function func)
 	{
+		int offset = 0;
 		// Pop local variables off the stack
 		
 		// Push array space onto the stack
@@ -1007,7 +1017,7 @@ public class DLXGenerator
 				dimension *= d;
 			}
 			
-			// Push the arrays onto the stack
+			// Pop the arrays off of the stack
 			for (int d = 0; d < dimension; d++)
 			{
 				DLXInstruction popInst = new DLXInstruction();
@@ -1018,10 +1028,14 @@ public class DLXGenerator
 				popInst.rc = -4; // word size
 				popInst.encodedForm = encodeInstruction(popInst);
 				appendInstructionToBlock(edb, popInst);
+				offset++;
 			}
 		}
+		
+		edb.offsetSize = offset;
 	}
 
+	public boolean emitInstruction = true;
 	public void generateBlockTreeInstructons(DLXBasicBlock edb, PLIRBasicBlock b, Function func, boolean isMain, HashSet<Integer> visited)
 	{	
 		// Be sure to visit each block at most once
@@ -1033,16 +1047,14 @@ public class DLXGenerator
 			{
 				PLIRInstruction ssaInst = b.instructions.get(i);
 				
-				if (ssaInst.id == 58)
-				{
-					System.err.println("asd");
-				}
-				
+				emitInstruction = true;
 				if (ssaInst.refInst != null)
 				{
-					continue; // this instruction was eliminated via CSE and the original will already be generated
+					emitInstruction = false;
+//					continue; // this instruction was eliminated via CSE and the original will already be generated
 				}
 				
+				// Walk back to the original instruction operands if they were eliminated by CSE
 				while (ssaInst.op1 != null && ssaInst.op1.refInst != null)
 				{
 					ssaInst.op1 = ssaInst.op1.refInst;
@@ -1257,10 +1269,26 @@ public class DLXGenerator
 
 							checkForGlobalStore(edb, ssaInst, true, false);
 						}
-						else if (leftConst)
+						else if (leftConst) // X - Y = (Y * -1) + X
 						{
-							System.err.println("Invalid sub order");
-							System.exit(-1);
+							// ra = 0, i1
+							DLXInstruction preInst = new DLXInstruction();
+							preInst.opcode = InstructionType.MULI;
+							preInst.format = formatMap.get(InstructionType.MULI);
+							preInst.ra = ssaInst.regNum;
+							preInst.rb = ssaInst.op2.regNum;
+							preInst.rc = -1;
+
+							// ra = ra - i2 --> ra = i1 - i2
+							newInst.opcode = InstructionType.ADDI;
+							newInst.format = formatMap.get(InstructionType.ADDI);
+							newInst.ra = ssaInst.regNum;
+							newInst.rb = ssaInst.regNum;
+							newInst.rc = ssaInst.i1;
+
+							fixOffset(ssaInst.id, preInst);
+							appendInstructionToBlock(edb, preInst);
+							appendInstructionToBlock(edb, newInst);
 						}
 						else if (rightConst)
 						{

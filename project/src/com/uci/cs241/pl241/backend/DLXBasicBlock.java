@@ -6,6 +6,7 @@ public class DLXBasicBlock
 {
 	public int id = 0;
 	public int skipped = 0;
+	public int offsetSize = 0;
 	public ArrayList<DLXInstruction> instructions = new ArrayList<DLXInstruction>();
 	public ArrayList<DLXInstruction> startInstructions = new ArrayList<DLXInstruction>();
 	public ArrayList<DLXInstruction> endInstructions = new ArrayList<DLXInstruction>();

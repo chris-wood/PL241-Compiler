@@ -1,5 +1,5 @@
-# Simple CSE test
-# (I don't like the ones in Muchnick)
+// Simple CSE test
+// (I don't like the ones in Muchnick)
 main
 var a, b, c, d, e, f, g;
 {
