@@ -79,10 +79,25 @@ public class CSE
 			// Check for subexpression elimination on the parent
 			for (PLIRInstruction inst : block.instructions)
 			{
-				if (inst.id == 17)
+				if (inst.id == 34)
 	    		{
 	    			System.err.print("asd");;
 	    		}
+				
+				if (inst.op1 != null)
+				{
+					while (inst.op1.refInst != null)
+					{
+						inst.op1 = inst.op1.refInst;
+					}
+				}
+				if (inst.op2 != null)
+				{
+					while (inst.op2.refInst != null)
+					{
+						inst.op2 = inst.op2.refInst;
+					}
+				}
 				
 				if (domList.containsKey(inst.opcode))
 				{
@@ -131,88 +146,82 @@ public class CSE
 							}
 							switch (inst.opcode)
 					    	{
-//					    	case ADD:
-//					    		// case #1: add const const
-//					    		//          add const const
-//					    		if ((inst.op1type == OperandType.CONST && parentInst.op1type == OperandType.CONST) &&
-//					    			(inst.op2type == OperandType.CONST && parentInst.op2type == OperandType.CONST))	
-//					    		{
-//					    			if ((inst.i1 == parentInst.i1 && inst.i2 == parentInst.i2) ||
-//					    				((inst.i1 == parentInst.i2 && inst.i2 == parentInst.i1)))
-//					    			{
-//					    				inst.removeInstruction(EliminationReason.CSE, parentInst);
-//					    			}
-//					    		}
-//					    		
-//					    		// case #2: add inst inst
-//					    		//          add inst inst
-//					    		else if ((inst.op1type == OperandType.INST && parentInst.op1type == OperandType.INST) &&
-//						    			(inst.op2type == OperandType.INST && parentInst.op2type == OperandType.INST))	
-//						    	{
-//					    			if ((inst.op1.equals(parentInst.op1) && inst.op2.equals(parentInst.op2)) ||
-//					    				((inst.op1.equals(parentInst.op2) && inst.op2.equals(parentInst.op1))))
-//					    			{
-//					    				inst.removeInstruction(EliminationReason.CSE, parentInst);
-//					    			}
-//						    	}
-//					    		
-//					    		// case #3: add inst const
-//					    		//          add inst const
-//					    		else if ((inst.op1type == OperandType.INST && parentInst.op1type == OperandType.INST) &&
-//						    			(inst.op2type == OperandType.CONST && parentInst.op2type == OperandType.CONST))	
-//					    		{
-//					    			if ((inst.op1.equals(parentInst.op1) && inst.i2 == parentInst.i2 ) ||
-//					    				((inst.op1.equals(parentInst.op2) && inst.op2.equals(parentInst.op1))))
-//					    			{
-//					    				inst.removeInstruction(EliminationReason.CSE, parentInst);
-//					    			}
-//					    		}
-//					    		
-//					    		// case #4: add inst const
-//					    		//          add const inst
-//					    		else if ((inst.op1type == OperandType.INST && parentInst.op1type == OperandType.CONST) &&
-//						    			(inst.op2type == OperandType.CONST && parentInst.op2type == OperandType.INST))	
-//						    		{
-//					    				if ((inst.op1.equals(parentInst.op2) && inst.i2 == parentInst.i1 ) ||
-//						    				((inst.op2.equals(parentInst.op1) && inst.i1 == parentInst.i2)))
-//						    			{
-//						    				inst.removeInstruction(EliminationReason.CSE, parentInst);
-//						    			}
-//						    		}
-//					    		
-//					    		// case #5: add const inst
-//					    		//          add const inst
-//					    		else if ((inst.op1type == OperandType.CONST && parentInst.op1type == OperandType.CONST) &&
-//						    			(inst.op2type == OperandType.INST && parentInst.op2type == OperandType.INST))	
-//						    		{
-//					    				if ((inst.op1.equals(parentInst.op1) && inst.i2 == parentInst.i2 ) ||
-//						    				((inst.op2.equals(parentInst.op2) && inst.i1 == parentInst.i1)))
-//						    			{
-//						    				inst.removeInstruction(EliminationReason.CSE, parentInst);
-//						    			}
-//						    		}
-//					    		
-//					    		// case #6: add const inst
-//					    		//          add inst const
-//					    		else if ((inst.op1type == OperandType.CONST && parentInst.op1type == OperandType.INST) &&
-//						    			(inst.op2type == OperandType.INST && parentInst.op2type == OperandType.CONST))	
-//						    		{
-//					    				if ((inst.op2.equals(parentInst.op1) && inst.i1 == parentInst.i2 ) ||
-//						    				((inst.op1.equals(parentInst.op2) && inst.i2 == parentInst.i1)))
-//						    			{
-//						    				inst.removeInstruction(EliminationReason.CSE, parentInst);
-//						    			}
-//						    		}
-//					    		
-//					    		break;
+					    	case ADD:
+					    		// case #1: add const const
+					    		//          add const const
+					    		if ((inst.op1type == OperandType.CONST && parentInst.op1type == OperandType.CONST) &&
+					    			(inst.op2type == OperandType.CONST && parentInst.op2type == OperandType.CONST))	
+					    		{
+					    			if ((inst.i1 == parentInst.i1 && inst.i2 == parentInst.i2))
+					    			{
+					    				inst.removeInstruction(EliminationReason.CSE, parentInst);
+					    			}
+					    		}
+					    		
+					    		// case #2: add inst inst
+					    		//          add inst inst
+					    		else if ((inst.op1type == OperandType.INST && parentInst.op1type == OperandType.INST) &&
+						    			(inst.op2type == OperandType.INST && parentInst.op2type == OperandType.INST))	
+						    	{
+					    			if ((inst.op1.equals(parentInst.op1) && inst.op2.equals(parentInst.op2)) ||
+					    				((inst.op1.equals(parentInst.op2) && inst.op2.equals(parentInst.op1))))
+					    			{
+					    				inst.removeInstruction(EliminationReason.CSE, parentInst);
+					    			}
+						    	}
+					    		
+					    		// case #3: add inst const
+					    		//          add inst const
+					    		else if ((inst.op1type == OperandType.INST && parentInst.op1type == OperandType.INST) &&
+						    			(inst.op2type == OperandType.CONST && parentInst.op2type == OperandType.CONST))	
+					    		{
+					    			if ((inst.op1.equals(parentInst.op1) && inst.i2 == parentInst.i2 ))
+					    			{
+					    				inst.removeInstruction(EliminationReason.CSE, parentInst);
+					    			}
+					    		}
+					    		
+					    		// case #4: add inst const
+					    		//          add const inst
+					    		else if ((inst.op1type == OperandType.INST && parentInst.op1type == OperandType.CONST) &&
+						    			(inst.op2type == OperandType.CONST && parentInst.op2type == OperandType.INST))	
+						    		{
+					    				if ((inst.op1.equals(parentInst.op2) && inst.i2 == parentInst.i1 ))
+						    			{
+						    				inst.removeInstruction(EliminationReason.CSE, parentInst);
+						    			}
+						    		}
+					    		
+					    		// case #5: add const inst
+					    		//          add const inst
+					    		else if ((inst.op1type == OperandType.CONST && parentInst.op1type == OperandType.CONST) &&
+						    			(inst.op2type == OperandType.INST && parentInst.op2type == OperandType.INST))	
+						    		{
+					    				if ((inst.op2.equals(parentInst.op2) && inst.i1 == parentInst.i1))
+						    			{
+						    				inst.removeInstruction(EliminationReason.CSE, parentInst);
+						    			}
+						    		}
+					    		
+					    		// case #6: add const inst
+					    		//          add inst const
+					    		else if ((inst.op1type == OperandType.CONST && parentInst.op1type == OperandType.INST) &&
+						    			(inst.op2type == OperandType.INST && parentInst.op2type == OperandType.CONST))	
+						    		{
+					    				if ((inst.op2.equals(parentInst.op1) && inst.i1 == parentInst.i2 ))
+						    			{
+						    				inst.removeInstruction(EliminationReason.CSE, parentInst);
+						    			}
+						    		}
+					    		
+					    		break;
 					    	case MUL:
 					    		// case #1: mul const const
 					    		//          mul const const
 					    		if ((inst.op1type == OperandType.CONST && parentInst.op1type == OperandType.CONST) &&
 					    			(inst.op2type == OperandType.CONST && parentInst.op2type == OperandType.CONST))	
 					    		{
-					    			if ((inst.i1 == parentInst.i1 && inst.i2 == parentInst.i2) ||
-					    				((inst.i1 == parentInst.i2 && inst.i2 == parentInst.i1)))
+					    			if ((inst.i1 == parentInst.i1 && inst.i2 == parentInst.i2))
 					    			{
 					    				inst.removeInstruction(EliminationReason.CSE, parentInst);
 					    			}
@@ -235,11 +244,10 @@ public class CSE
 					    		else if ((inst.op1type == OperandType.INST && parentInst.op1type == OperandType.INST) &&
 						    			(inst.op2type == OperandType.CONST && parentInst.op2type == OperandType.CONST))	
 						    		{
-					    				if ((inst.op1.equals(parentInst.op1) && inst.i2 == parentInst.i2 ) ||
-						    				((inst.op1.equals(parentInst.op2) && inst.op2.equals(parentInst.op1))))
-						    			{
-						    				inst.removeInstruction(EliminationReason.CSE, parentInst);
-						    			}
+					    			if ((inst.op1.equals(parentInst.op1) && inst.i2 == parentInst.i2 ))
+					    			{
+					    				inst.removeInstruction(EliminationReason.CSE, parentInst);
+					    			}
 						    		}
 					    		
 					    		// case #4: mul inst const
@@ -247,11 +255,10 @@ public class CSE
 					    		else if ((inst.op1type == OperandType.INST && parentInst.op1type == OperandType.CONST) &&
 						    			(inst.op2type == OperandType.CONST && parentInst.op2type == OperandType.INST))	
 						    		{
-					    				if ((inst.op1.equals(parentInst.op2) && inst.i2 == parentInst.i1 ) ||
-						    				((inst.op2.equals(parentInst.op1) && inst.i1 == parentInst.i2)))
-						    			{
-						    				inst.removeInstruction(EliminationReason.CSE, parentInst);
-						    			}
+					    			if ((inst.op1.equals(parentInst.op2) && inst.i2 == parentInst.i1 ))
+					    			{
+					    				inst.removeInstruction(EliminationReason.CSE, parentInst);
+					    			}
 						    		}
 					    		
 					    		// case #5: mul const inst
@@ -259,11 +266,10 @@ public class CSE
 					    		else if ((inst.op1type == OperandType.CONST && parentInst.op1type == OperandType.CONST) &&
 						    			(inst.op2type == OperandType.INST && parentInst.op2type == OperandType.INST))	
 						    		{
-					    				if ((inst.op1.equals(parentInst.op1) && inst.i2 == parentInst.i2 ) ||
-						    				((inst.op2.equals(parentInst.op2) && inst.i1 == parentInst.i1)))
-						    			{
-						    				inst.removeInstruction(EliminationReason.CSE, parentInst);
-						    			}
+					    			if ((inst.op2.equals(parentInst.op2) && inst.i1 == parentInst.i1))
+					    			{
+					    				inst.removeInstruction(EliminationReason.CSE, parentInst);
+					    			}
 						    		}
 					    		
 					    		// case #6: mul const inst
@@ -271,11 +277,10 @@ public class CSE
 					    		else if ((inst.op1type == OperandType.CONST && parentInst.op1type == OperandType.INST) &&
 						    			(inst.op2type == OperandType.INST && parentInst.op2type == OperandType.CONST))	
 						    		{
-					    				if ((inst.op2.equals(parentInst.op1) && inst.i1 == parentInst.i2 ) ||
-						    				((inst.op1.equals(parentInst.op2) && inst.i2 == parentInst.i1)))
-						    			{
-						    				inst.removeInstruction(EliminationReason.CSE, parentInst);
-						    			}
+					    			if ((inst.op2.equals(parentInst.op1) && inst.i1 == parentInst.i2 ))
+					    			{
+					    				inst.removeInstruction(EliminationReason.CSE, parentInst);
+					    			}
 						    		}
 					    		
 					    		break;

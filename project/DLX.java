@@ -78,10 +78,22 @@ public class DLX {
 					// System.out.println(c);
 					// System.out.println(R[b]);
 					// System.out.println("R(" + a + ") = " + R[a]);
+					// System.out.println("----ADDI: " + c);
+					// for (int i = 0; i < 32; i++)
+					// {
+					// 	System.out.println("R" + i + ": " + R[i]);
+					// }
+					// System.out.println("----");
 					break;
 				case SUB:
 				case SUBI:
 					R[a] = R[b] - c;
+					// System.out.println("----SUBI: " + c);
+					// for (int i = 0; i < 32; i++)
+					// {
+					// 	System.out.println("R" + i + ": " + R[i]);
+					// }
+					// System.out.println("----");
 					break;
 				case CMP:
 				case CMPI:
@@ -92,6 +104,11 @@ public class DLX {
 					break;
 				case MUL:
 				case MULI:
+					// for (int i = 0; i < 32; i++)
+					// {
+					// 	System.out.println("R" + i + ": " + R[i]);
+					// }
+					// System.out.println("Storing: " + ((R[b]+c) / 4));
 					R[a] = R[b] * c;
 					break;
 				case DIV:

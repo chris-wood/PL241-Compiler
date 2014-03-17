@@ -1,3 +1,61 @@
+// test003
+main
+array[ 2 ][ 3 ][ 4 ] a;
+var b;
+var c;
+function foo( );
+{
+  call OutputNum(55);
+  let b <- 2;
+  let c <- 3;
+  return b + c
+};
+function bar( );
+{
+  call OutputNum(35);
+  let b <- 3;
+  let c <- 4;
+  return b + c
+};
+
+{
+  let a[ 0 ][ 2 ][ 3 ] <- 1;
+  let a[ 0 ][ 2 ][ 2 ] <- 2;
+  call OutputNum(call foo);
+  call OutputNum(a[ 0 ][ 2 ][ 3 ]);
+  call OutputNum(a[ 0 ][ 2 ][ 2 ]);
+  call OutputNewLine();
+  if a[ 0 ][ 2 ][ 3 ] > a[ 0 ][ 2 ][ 2 ] then
+    let a[ 0 ][ 2 ][ 1 ] <- call foo
+    //call OutputNum(a[ 0 ][ 2 ][ 1 ]);
+    //call OutputNewLine()
+  else
+    //let a[ 0 ][ 2 ][ 1 ] <- call foo
+    let a[ 0 ][ 2 ][ 1 ] <- call bar;
+    call OutputNum(a[ 0 ][ 2 ][ 1 ]);
+    call OutputNewLine()
+  fi;
+
+  let b <- a[ 0 ][ 2 ][ 1 ];
+  call OutputNum(b)
+}.
+
+// test020
+main
+array [ 5 ][ 10 ][ 15 ][ 20 ] a;
+var b, c, d;
+function foo( );
+{
+  return 13
+};
+{
+  let b <- 1;
+  let c <- 19;
+  let a[ 4 ][ 9 ][ 1 + call foo( ) ][ b * c ] <- 45;
+  let d <- a[ 4 ][ 9 ][ call foo( ) + 1 ][ c * b ] + 2
+}
+.
+
 // test015
 main
     var foo, too;
@@ -47,19 +105,15 @@ main
     }
 .
 
-// test020
+// CSE test
 main
-array [ 5 ][ 10 ][ 15 ][ 20 ] a;
-var b, c, d;
-function foo( );
+var a, b, c, d, e, f, g;
 {
-  return 14
-};
-{
-  let b <- 1;
-  let c <- 19;
-  let a[ 4 ][ 9 ][ 1 + call foo( ) ][ b * c ] <- 45;
-  let d <- a[ 4 ][ 9 ][ call foo( ) + 1 ][ c * b ] + 2
+  let a <- b + c;
+  let d <- c + b;
+  call OutputNum(a);
+  call OutputNum(d);
+  call OutputNewLine()
 }
 .
 
@@ -114,17 +168,7 @@ var a, b, c, d;
   call OutputNewLine()
 }.
 
-// CSE test
-main
-var a, b, c, d, e, f, g;
-{
-  let a <- b + c;
-  let d <- c + b;
-  call OutputNum(a);
-  call OutputNum(d);
-  call OutputNewLine()
-}
-.
+
 
 
 // test025
@@ -416,42 +460,6 @@ var a, b, c;
   call OutputNewLine()
 }
 .
-
-main
-array[ 2 ][ 3 ][ 4 ] a;
-var b;
-var c;
-function foo( );
-{
-  call OutputNum(55);
-  let b <- 2;
-  let c <- 3;
-  return b + c
-};
-function bar( );
-{
-  call OutputNum(35);
-  let b <- 3;
-  let c <- 4;
-  return b + c
-};
-
-{
-  let a[ 0 ][ 2 ][ 3 ] <- 1;
-  let a[ 0 ][ 2 ][ 2 ] <- 2;
-  call OutputNum(call foo);
-  call OutputNum(a[ 0 ][ 2 ][ 3 ]);
-  call OutputNum(a[ 0 ][ 2 ][ 2 ]);
-  if a[ 0 ][ 2 ][ 3 ] > a[ 0 ][ 2 ][ 2 ] then
-    let a[ 0 ][ 2 ][ 1 ] <- call foo
-  else
-    //let a[ 0 ][ 2 ][ 1 ] <- call foo
-    let a[ 0 ][ 2 ][ 1 ] <- call bar
-  fi;
-
-  let b <- a[ 0 ][ 2 ][ 1 ];
-  call OutputNum(b)
-}.
 
 // Simple CSE test
 // (I don't like the ones in Muchnick)

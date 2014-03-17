@@ -425,6 +425,7 @@ public class DLXGenerator
 				{
 					System.out.println(Long.toBinaryString(c));
 					System.out.println((c & 0xFFFF));
+					System.out.println((~c + 1) & 0xFFFF);
 					BigInteger cop = new BigInteger(Long.toBinaryString(c), 2);
 					System.out.println(cop.xor(new BigInteger("FFFF", 16)));
 					System.out.println(cop.longValue());
@@ -433,11 +434,17 @@ public class DLXGenerator
 						System.out.println("here");
 					}
 //					code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (~c + 1) & 0xFFFF;
-					code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (c & 0xFFFF);
+					code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (cop.longValue() & 0xFFFF);
 				}
 				else
 				{
-					code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (c & 0xFFFF);
+					System.out.println(Long.toBinaryString(c));
+					System.out.println((c & 0xFFFF));
+					System.out.println((~c + 1) & 0xFFFF);
+					BigInteger cop = new BigInteger(Long.toBinaryString(c), 2);
+					System.out.println(cop.xor(new BigInteger("FFFF", 16)));
+					System.out.println(cop.longValue());
+					code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (cop.longValue() & 0xFFFF);
 				}
 				break;
 			case F2:
@@ -1215,20 +1222,22 @@ public class DLXGenerator
 						}
 						else // addition for an array
 						{
-							newInst.opcode = InstructionType.ADDI;
-							newInst.format = formatMap.get(InstructionType.ADDI);
 							newInst.ra = ssaInst.regNum;
 
 							// Determine if this is a global thing or not...
 							String ident = ssaInst.op2address.substring(0, ssaInst.op2address.indexOf("_"));
 							if (globalArrayOffset.containsKey(ident)) 
 							{
+								newInst.opcode = InstructionType.SUBI;
+								newInst.format = formatMap.get(InstructionType.SUBI);
 								newInst.rb = GLOBAL_ADDRESS;
-								newInst.rc = -4 * (globalArrayOffset.get(ident));
+								newInst.rc = 4 * (globalArrayOffset.get(ident));
 //								newInst.rc = -(globalArrayOffset.get(ident));
 							}
 							else // local array on the stack
 							{
+								newInst.opcode = InstructionType.ADDI;
+								newInst.format = formatMap.get(InstructionType.ADDI);
 								newInst.rb = FP;
 								newInst.rc = func.getStackOffset(ident);
 							}
@@ -2206,6 +2215,8 @@ public class DLXGenerator
 
 						fixOffset(ssaInst.id, ldwInst);
 						appendInstructionToBlock(edb, ldwInst);
+						
+						checkForGlobalStore(edb, ssaInst, true, false);
 
 						System.err.println("TODO: LOAD");
 						break;
