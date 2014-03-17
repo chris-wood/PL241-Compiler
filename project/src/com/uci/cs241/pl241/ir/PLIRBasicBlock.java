@@ -369,6 +369,7 @@ public class PLIRBasicBlock
 					{
 						continue;
 					}
+//					if (var.equals(bInst.ident.get(scope.getCurrentScope())) == false)
 				}
 				
 //				if (phi.origIdent.equals("j"))
@@ -417,18 +418,7 @@ public class PLIRBasicBlock
 					}
 				}
 				else
-				{
-				
-					if ((bInst.opcode == InstructionType.PHI && bInst.op1 != null && bInst.op1.isConstant))
-					{
-						System.err.println("here");
-					}
-					
-					if (bInst.opcode == InstructionType.PHI)
-					{
-	//					continue;
-					}
-					
+				{	
 					// guard against constant overwriting
 					boolean couldHaveReplaced = false;
 					if (!(bInst.opcode == InstructionType.PHI && bInst.op1 != null && bInst.op1.isConstant) 
@@ -441,8 +431,16 @@ public class PLIRBasicBlock
 						{
 	//						if (!(replaced && bInst.opcode == InstructionType.PHI))
 							{
-								replaced  = bInst.replaceLeftOperand(scopeMap.get(var));
-								couldHaveReplaced = true;
+								if (bInst.opcode == InstructionType.PHI && bInst.guards.contains(var))
+								{
+									replaced  = bInst.replaceLeftOperand(phi);
+									couldHaveReplaced = true;
+								}
+								else
+								{
+									replaced  = bInst.replaceLeftOperand(scopeMap.get(var));
+									couldHaveReplaced = true;
+								}
 	//							replaced = true;
 							}
 						}
@@ -450,15 +448,31 @@ public class PLIRBasicBlock
 						{
 	//						if (!(replaced && bInst.opcode == InstructionType.PHI))
 							{
-								replaced = bInst.replaceLeftOperand(scopeMap.get(var));
-								couldHaveReplaced = true;
+								if (bInst.opcode == InstructionType.PHI && bInst.guards.contains(var))
+								{
+									replaced  = bInst.replaceLeftOperand(phi);
+									couldHaveReplaced = true;
+								}
+								else
+								{
+									replaced  = bInst.replaceLeftOperand(scopeMap.get(var));
+									couldHaveReplaced = true;
+								}
 	//							replaced = true;
 							}
 						}
 						else if (bInst.op1name != null && bInst.op1name.equals(var))
 						{
-							replaced = bInst.replaceLeftOperand(scopeMap.get(var));
-							couldHaveReplaced = true;
+							if (bInst.opcode == InstructionType.PHI && bInst.guards.contains(var))
+							{
+								replaced  = bInst.replaceLeftOperand(phi);
+								couldHaveReplaced = true;
+							}
+							else
+							{
+								replaced  = bInst.replaceLeftOperand(scopeMap.get(var));
+								couldHaveReplaced = true;
+							}
 	//						replaced = true;
 						}
 					}

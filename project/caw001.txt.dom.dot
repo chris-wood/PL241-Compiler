@@ -1,15 +1,25 @@
 digraph dom {
-BB7[shape = box, label = "BB(7)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := global #0\n" + "4 := global #0\n" + "5 := global #0\n" + "6 := phi({main=b}) (2) (15)\n" + "7 := phi({main=a}) (1) (14)\n" + "8 := phi({main=output}) (5) (29)\n" + "9 := phi({main=j}) (4) (39)\n" + "10 := phi({main=i}) (3) (40)\n" + "11 := cmp #1 #2\n" + "12 := beq (11) #48\n"];
-BB9[shape = box, label = "BB(9)\n" + "13 := wln\n" + "14 := read\n" + "15 := read\n" + "16 := read\n" + "17 := read\n" + "18 := add (14) (15)\n" + "19 := write (18)\n" + "20 := write (16)\n" + "21 := write (17)\n" + "22 := (18)\n" + "23 := mul #4 (17)\n" + "24 := add FP output_baseaddr\n" + "25 := adda (23) (24)\n" + "26 := mul #4 (16)\n" + "27 := mul (26) #10\n" + "28 := adda (27) (25)\n" + "29 := store (28) (18)\n" + "30 := (23)\n" + "31 := (24)\n" + "32 := adda (23) (24)\n" + "33 := (26)\n" + "34 := mul (26) #10\n" + "35 := adda (34) (32)\n" + "36 := load (35)\n" + "37 := write (36)\n" + "38 := wln\n" + "39 := phi({while0=j}) (9) (43)\n" + "40 := phi({while0=i}) #0 (57)\n" + "41 := cmp (40) #10\n" + "42 := bge (41) #17\n"];
-BB67[shape = box, label = "BB(67)\n" + "60 := end\n"];
-BB46[shape = box, label = "BB(46)\n" + "43 := phi({while1=j}) #0 (54)\n" + "44 := cmp (43) #10\n" + "45 := bge (44) #11\n"];
-BB66[shape = box, label = "BB(66)\n" + "59 := beq #0 #-53\n"];
-BB55[shape = box, label = "BB(55)\n" + "46 := mul #4 (43)\n" + "47 := (24)\n" + "48 := adda (46) (24)\n" + "49 := mul #4 (40)\n" + "50 := mul (49) #10\n" + "51 := adda (50) (48)\n" + "52 := load (51)\n" + "53 := write (52)\n" + "54 := add (43) #1\n" + "55 := beq #0 #-12\n"];
-BB60[shape = box, label = "BB(60)\n" + "56 := wln\n" + "57 := add (40) #1\n" + "58 := beq #0 #-19\n"];
-BB7 -> BB9;
-BB7 -> BB67;
-BB9 -> BB46;
-BB9 -> BB66;
-BB46 -> BB55;
-BB46 -> BB60;
+BB5[shape = box, label = "BB(5 [ bar ])\n" + "4 := loadparam 0\n" + "5 := add #0 #0\n" + "6 := (5)\n" + "7 := add #0 #3\n" + "8 := phi({bar=par}) #3 (22)\n" + "9 := phi({bar=q}) #9 (16)\n" + "10 := cmp #3 (8)\n" + "11 := bge (10) #13\n"];
+BB16[shape = box, label = "BB(16)\n" + "13 := cmp #2 #3\n" + "14 := bge (13) #1\n"];
+BB35[shape = box, label = "BB(35)\n" + "24 := add (8) (9)\n" + "25 := add #0 #4\n" + "26 := return (4)\n"];
+BB18[shape = box, label = "BB(18)\n" + "15 := add (8) (9)\n"];
+BB22[shape = box, label = "BB(22)\n" + "12 := add #0 #4\n" + "16 := phi({while0=q, while2=q}) #12 (16)\n" + "17 := phi({while0=q}) (9) (20)\n" + "18 := cmp #4 (16)\n" + "19 := blt (18) #3\n"];
+BB26[shape = box, label = "BB(26)\n" + "20 := sub (8) (16)\n" + "21 := beq #0 #-4\n"];
+BB30[shape = box, label = "BB(30)\n" + "22 := sub (16) #3\n" + "23 := beq #0 #-15\n"];
+BB5 -> BB16;
+BB5 -> BB35;
+BB16 -> BB18;
+BB16 -> BB22;
+BB22 -> BB26;
+BB22 -> BB30;
+BB44[shape = box, label = "BB(44 [ funcfoo ])\n" + "27 := loadparam 0\n" + "28 := add #0 #0\n" + "29 := (28)\n" + "30 := phi({funcfoo=par}) #3 (39)\n" + "31 := phi({funcfoo=q}) #9 (34)\n" + "32 := cmp #3 (30)\n" + "33 := bge (32) #8\n"];
+BB54[shape = box, label = "BB(54)\n" + "34 := phi({while3=q}) (31) (37)\n" + "35 := cmp #4 (34)\n" + "36 := blt (35) #3\n"];
+BB70[shape = box, label = "BB(70)\n" + "41 := add (30) (31)\n" + "42 := return (27)\n"];
+BB61[shape = box, label = "BB(61)\n" + "37 := sub (30) (34)\n" + "38 := beq #0 #-4\n"];
+BB65[shape = box, label = "BB(65)\n" + "39 := sub (34) #3\n" + "40 := beq #0 #-10\n"];
+BB44 -> BB54;
+BB44 -> BB70;
+BB54 -> BB61;
+BB54 -> BB65;
+BB76[shape = box, label = "BB(76)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := global #0\n" + "43 := add #3 (2)\n" + "44 := add (43) #6\n" + "45 := write (43)\n" + "46 := write (44)\n" + "47 := wln\n" + "48 := end\n"];
 }

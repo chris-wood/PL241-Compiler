@@ -2,60 +2,38 @@
 2 := global #0
 3 := global #0
 4 := global #0
-5 := global #0
-6 := phi({main=b}) (2) (15)
-7 := phi({main=a}) (1) (14)
-8 := phi({main=output}) (5) (29)
-9 := phi({main=j}) (4) (39)
-10 := phi({main=i}) (3) (40)
-11 := cmp #1 #2
-12 := beq (11) #48
-13 := wln
-14 := read
-15 := read
-16 := read
-17 := read
-18 := add (14) (15)
-19 := write (18)
-20 := write (16)
-21 := write (17)
-22 := add (14) (15)
-23 := mul #4 (17)
-24 := add FP output_baseaddr
-25 := adda (23) (24)
-26 := mul #4 (16)
-27 := mul (26) #10
-28 := adda (27) (25)
-29 := store (28) (22)
-30 := mul #4 (17)
-31 := add FP output_baseaddr
-32 := adda (30) (31)
-33 := mul #4 (16)
-34 := mul (33) #10
+5 := add #0 #14
+6 := return (5)
+7 := func foo
+8 := add #1 (7)
+9 := mul #4 #19
+10 := add FP a_baseaddr
+11 := adda (9) (10)
+12 := mul #4 (8)
+13 := mul (12) #20
+14 := adda (13) (11)
+15 := mul #4 #9
+16 := mul (15) #300
+17 := adda (16) (14)
+18 := mul #4 #4
+19 := mul (18) #3000
+20 := adda (19) (17)
+21 := store (20) #45
+22 := func foo
+23 := add (22) #1
+24 := mul #4 #19
+25 := add FP a_baseaddr
+26 := adda (24) (25)
+27 := mul #4 (23)
+28 := mul (27) #20
+29 := adda (28) (26)
+30 := mul #4 #9
+31 := mul (30) #300
+32 := adda (31) (29)
+33 := mul #4 #4
+34 := mul (33) #3000
 35 := adda (34) (32)
 36 := load (35)
-37 := write (36)
-38 := wln
-39 := phi({while0=j}) (9) (43)
-40 := phi({while0=i}) #0 (57)
-41 := cmp (40) #10
-42 := bge (41) #17
-43 := phi({while1=j}) #0 (54)
-44 := cmp (43) #10
-45 := bge (44) #11
-46 := mul #4 (43)
-47 := add FP output_baseaddr
-48 := adda (46) (47)
-49 := mul #4 (40)
-50 := mul (49) #10
-51 := adda (50) (48)
-52 := load (51)
-53 := write (52)
-54 := add (43) #1
-55 := beq #0 #-12
-56 := wln
-57 := add (40) #1
-58 := beq #0 #-19
-59 := beq #0 #-53
-60 := end
+37 := add (36) #2
+38 := end
 

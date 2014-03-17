@@ -1,3 +1,155 @@
+// test015
+main
+    var foo, too;
+    var af;
+    function bar(x);
+    var par, q;
+    {
+        let q <-9;
+        let par <- 3;
+        while 3 < par do
+            if 2 < 3 then
+                let q <- par+q
+                //let par <- 4
+            fi;
+            while 4 >= q do
+                let q <- par - q
+            od;
+            let par <- q-3
+        od;
+        let x <- par+q;
+        let af <- 4;
+    return x
+    };
+    function funcfoo(x);
+    var par, q;
+    {
+        let q <-9;
+        let par <- 3;
+        while 3 < par do
+            let q <- par+q;
+            while 4 >= q do
+                let q <- par - q
+            od;
+            let par <- q-3
+        od;
+        let x <- par+q;
+    return x
+    };
+    {
+        let foo <- 3+too;
+        let af <- foo+6;
+
+        call OutputNum(foo);
+        call OutputNum(af);
+        call OutputNewLine()
+
+    }
+.
+
+// test020
+main
+array [ 5 ][ 10 ][ 15 ][ 20 ] a;
+var b, c, d;
+function foo( );
+{
+  return 14
+};
+{
+  let b <- 1;
+  let c <- 19;
+  let a[ 4 ][ 9 ][ 1 + call foo( ) ][ b * c ] <- 45;
+  let d <- a[ 4 ][ 9 ][ call foo( ) + 1 ][ c * b ] + 2
+}
+.
+
+// test011
+main
+var a, b, c, d;
+{
+  let a <- 1;
+  let b <- 2;
+  let c <- 3;
+  let d <- 4;
+
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
+  call OutputNum(d);
+  call OutputNewLine();
+  
+  if a< b then
+    let a <- a + 1;
+    while c < d do
+      let c <- c + 2;
+      let d <- d + 1
+    od
+  else
+    let a <- a + 2;
+    while c < d do
+      let c <- c + 3;
+      let d <- d + 2
+    od
+  fi;
+
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
+  call OutputNum(d);
+  call OutputNewLine();
+  
+  while b < d do
+    call OutputNum(1337);
+    if a > d then
+      let b <- c
+    else
+      let c <- b
+    fi
+  od;
+
+  call OutputNum(a);
+  call OutputNum(b);
+  call OutputNum(c);
+  call OutputNum(d);
+  call OutputNewLine()
+}.
+
+// CSE test
+main
+var a, b, c, d, e, f, g;
+{
+  let a <- b + c;
+  let d <- c + b;
+  call OutputNum(a);
+  call OutputNum(d);
+  call OutputNewLine()
+}
+.
+
+
+// test025
+main
+var a, b, c, d, e, f, g;
+{
+  let a <- b + c;
+  let d <- b + c;
+  let e <- c + b + d;
+  
+  if a != d then
+    let e <- c + b + d;
+    let f <- a * d;
+    let g <- d * a + 4;
+    let b <- 5;
+    let e <- c + b + d
+  else
+    let f <- a / d;
+    let g <- d / a
+  fi;
+  
+  let f <- a * d;
+  let g <- d / a
+}
+.
 
 // multidimensional array test
 main 
@@ -384,50 +536,6 @@ var a, b, c, d, e, f, g, h;
   call foo
 }
 .
-
-// test011
-main
-var a, b, c, d;
-{
-  let a <- 1;
-  let b <- 2;
-  let c <- 3;
-  let d <- 4;
-
-  call OutputNum(a);
-  call OutputNum(b);
-  call OutputNum(c);
-  call OutputNum(d);
-  call OutputNewLine();
-  
-  if a< b then
-    let a <- a + 1;
-    while c < d do
-      let c <- c + 2;
-      let d <- d + 1
-    od
-  else
-    let a <- a + 2;
-    while c < d do
-      let c <- c + 3;
-      let d <- d + 2
-    od
-  fi;
-  
-  while b < d do
-    if a > d then
-      let b <- c
-    else
-      let c <- b
-    fi
-  od;
-
-  call OutputNum(a);
-  call OutputNum(b);
-  call OutputNum(c);
-  call OutputNum(d);
-  call OutputNewLine()
-}.
 
 
 // test012

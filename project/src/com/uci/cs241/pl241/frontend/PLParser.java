@@ -1932,12 +1932,25 @@ public class PLParser
 				System.out.println("Adding phis");
 				
 				// Update the current scope with these new PHIs
+				ArrayList<String> phiNames = new ArrayList<String>();
+				for (String var : phisToAdd.keySet())
+				{
+					phiNames.add(var);
+				}
 				for (String var : phisToAdd.keySet())
 				{
 					System.out.println("Adding: " + phisToAdd.get(var).toString());
 					scope.updateSymbol(var, phisToAdd.get(var));
 					entry.modifiedIdents.put(var, phisToAdd.get(var));
 					joinNode.modifiedIdents.put(var, phisToAdd.get(var));
+					
+					for (String otherName : phiNames)
+					{
+						if (var.equals(otherName) == false)
+						{
+							phisToAdd.get(var).guards.add(otherName);
+						}
+					}
 				}
 			}
 			else // there was no else block, so the right child becomes the join node

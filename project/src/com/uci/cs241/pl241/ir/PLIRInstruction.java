@@ -34,6 +34,8 @@ public class PLIRInstruction
 	
 	public ArrayList<PLIRInstruction> loadInstructions = new ArrayList<PLIRInstruction>();
 	
+	public ArrayList<String> guards = new ArrayList<String>();
+	
 	// used to indicate if this instruction is part of a designator
 //	public boolean isDesig = false;
 	
