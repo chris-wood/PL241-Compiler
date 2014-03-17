@@ -54,6 +54,8 @@ public class DLXGenerator
 	public HashMap<Integer, DLXBasicBlock> allBlocks = new HashMap<Integer, DLXBasicBlock>();
 	
 	public ArrayList<PLIRInstruction> noops = new ArrayList<PLIRInstruction>();
+	
+	public boolean[] regInUse = new boolean[32];
 
 	public int pc = 3; // account for the initial jump and SP/FP initialization stuff
 
@@ -65,6 +67,11 @@ public class DLXGenerator
 		this.globalRefMap = globalRefMap;
 		this.constants = constants;
 		this.arrays = arrays;
+		
+		for (int i = 0; i < regInUse.length; i++)
+		{
+			regInUse[i] = false;
+		}
 
 		opcodeMap.put(InstructionType.ADD, 0);
 		formatMap.put(InstructionType.ADD, InstructionFormat.F2);
