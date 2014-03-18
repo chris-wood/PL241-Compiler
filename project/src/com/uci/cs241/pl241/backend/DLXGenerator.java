@@ -217,39 +217,14 @@ public class DLXGenerator
 						offset = offsetMap.get(refInst.id).pc;
 						inst.rc = offset - inst.pc;
 					}
-
-//					int offset = offsetMap.get(refInst.id).pc;
-//					inst.rc = offset - inst.pc;
-					
-//					int offset = offsetMap.get(inst.ssaInst.jumpInst.id).pc;
-//					inst.rc = offset - inst.pc;
-					
-////					// Handle global load/stores in the branch offset
-//					if (inst.ssaInst.jumpInst.op1 != null)
-//					{
-//						if (inst.ssaInst.jumpInst.op1.isGlobalVariable)
-//						{
-//							inst.rc--;
-//						}
-//						else if (globalOffset.containsKey(inst.ssaInst.jumpInst.op1.id))
-//						{
-//							inst.rc--;
-//						}
-//					}
-//					if (inst.ssaInst.jumpInst.op2 != null)
-//					{
-//						if (inst.ssaInst.jumpInst.op2.isGlobalVariable)
-//						{
-//							inst.rc--;
-//						}
-//						else if (globalOffset.containsKey(inst.ssaInst.jumpInst.op2.id))
-//						{
-//							inst.rc--;
-//						}
-//					}
 				}
 				else // positive offset
 				{
+					if (inst.ssaInst.id == 63)
+						{
+						System.err.println("here");
+						}
+					
 					int refId = inst.ssaInst.id + inst.rc;
 					PLIRInstruction refInst = PLStaticSingleAssignment.getInstruction(refId);	
 					
@@ -496,7 +471,11 @@ public class DLXGenerator
 	public void fixOffset(DLXBasicBlock dlxBlock)
 	{
 		DLXInstruction dlxInst = null;
-		if (dlxBlock.instructions.size() == 0)
+		if (dlxBlock.instructions.isEmpty() && dlxBlock.endInstructions.isEmpty())
+		{
+			return;
+		}
+		else if (dlxBlock.instructions.isEmpty())
 		{
 			dlxInst = dlxBlock.endInstructions.get(0);
 		}
@@ -551,7 +530,7 @@ public class DLXGenerator
 	public void appendInstructionToBlock(DLXBasicBlock block, DLXInstruction inst)
 	{
 		inst.block = block;
-		if (emitInstruction)
+//		if (emitInstruction)
 		{
 		inst.encodedForm = encodeInstruction(inst);
 		block.instructions.add(inst);
@@ -569,12 +548,14 @@ public class DLXGenerator
 			lastLeftJumps.clear();
 		}
 		}
+		inst.emit = emitInstruction;
 	}
 	
 	public void appendInstructionToStartBlock(DLXBasicBlock block, DLXInstruction inst)
 	{
 		inst.block = block;
-		if (emitInstruction)
+		inst.emit = emitInstruction;
+//		if (emitInstruction)
 		{
 		inst.encodedForm = encodeInstruction(inst);
 		block.startInstructions.add(inst);
@@ -586,7 +567,8 @@ public class DLXGenerator
 	public void appendInstructionToEndBlock(DLXBasicBlock block, DLXInstruction inst)
 	{
 		inst.block = block;
-		if (emitInstruction)
+		inst.emit = emitInstruction;
+//		if (emitInstruction)
 		{
 		inst.encodedForm = encodeInstruction(inst);
 		block.endInstructions.add(inst);
@@ -598,7 +580,8 @@ public class DLXGenerator
 	public void appendInstructionToBlockFromOffset(DLXBasicBlock block, DLXInstruction inst, int offset)
 	{
 		inst.block = block;
-		if (emitInstruction)
+		inst.emit = emitInstruction;
+//		if (emitInstruction)
 		{
 		inst.encodedForm = encodeInstruction(inst);
 		block.instructions.add(block.instructions.size() + offset, inst);
@@ -684,6 +667,7 @@ public class DLXGenerator
 		return join;
 	}
 
+	DLXInstruction lastRefInst = null;
 	public ArrayList<DLXInstruction> convertToStraightLineCode(DLXBasicBlock entry, Function func, ArrayList<Integer> stopBlocks, HashSet<Integer> visited)
 	{
 		ArrayList<DLXInstruction> instructions = new ArrayList<DLXInstruction>();
@@ -1235,10 +1219,10 @@ public class DLXGenerator
 							String ident = ssaInst.op2address.substring(0, ssaInst.op2address.indexOf("_"));
 							if (globalArrayOffset.containsKey(ident)) 
 							{
-								newInst.opcode = InstructionType.SUBI;
-								newInst.format = formatMap.get(InstructionType.SUBI);
+								newInst.opcode = InstructionType.ADDI;
+								newInst.format = formatMap.get(InstructionType.ADDI);
 								newInst.rb = GLOBAL_ADDRESS;
-								newInst.rc = 4 * (globalArrayOffset.get(ident));
+								newInst.rc = -4 * (globalArrayOffset.get(ident));
 //								newInst.rc = -(globalArrayOffset.get(ident));
 							}
 							else // local array on the stack
@@ -1360,6 +1344,10 @@ public class DLXGenerator
 						}
 						else if (leftConst)
 						{
+							if (ssaInst.id == 61)
+								{
+								System.err.println("here");
+								}
 							newInst.opcode = InstructionType.MULI;
 							newInst.format = formatMap.get(InstructionType.MULI);
 							newInst.ra = ssaInst.regNum;
@@ -2033,7 +2021,8 @@ public class DLXGenerator
 					case PROC:
 					{
 						// Save priors if constants
-						for (String var : functionMap.get(ssaInst.funcName).constantsToSave.keySet())
+						Function callFunc = functionMap.get(ssaInst.funcName); 
+						for (String var : callFunc.constantsToSave.keySet())
 						{
 							int constant = functionMap.get(ssaInst.funcName).constantsToSave.get(var);
 							DLXInstruction preInst = new DLXInstruction();

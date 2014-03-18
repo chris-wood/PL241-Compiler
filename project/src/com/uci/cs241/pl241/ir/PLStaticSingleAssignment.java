@@ -35,6 +35,10 @@ public class PLStaticSingleAssignment
 	
 	public static void finish()
 	{
+		for (int i = 0; i < instructions.size(); i++)
+		{
+			instructions.get(i).id = i;
+		}
 		for (PLIRInstruction inst : instructions)
 		{
 			inst.cost = inst.depth * inst.uses;

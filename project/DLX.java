@@ -172,6 +172,11 @@ public class DLX {
 				case LDW:
 				case LDX: // remember: c == R[origc] because of F2 format
 					// System.out.println("Loading: " + ((R[b]+c) / 4));
+					// for (int i = 0; i < 32; i++)
+					// {
+					// 	System.out.println("R" + i + ": " + R[i]);
+					// }
+					// System.out.println("Loading: " + ((R[b]+c) / 4));
 					R[a] = M[(R[b]+c) / 4]; 
 					break;
 				case STW:

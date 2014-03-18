@@ -1,3 +1,171 @@
+// factorial
+main
+var input;
+
+function factIter(n);
+var i, f;
+{
+  let i <- 1;
+  let f <- 1;
+  while i <= n do
+    let f <- f * i;
+    let i <- i + 1
+  od;
+  return f
+};
+
+function factRec(n);
+var i;
+{
+  if n <= 1 then
+    return 1
+  fi;
+  return call factRec(n - 1) * n
+};
+
+{
+  let input <- call InputNum();
+  call OutputNum(input);
+  call OutputNewLine();
+
+  call OutputNum(call factIter(input));
+
+  call OutputNum(input);
+  call OutputNewLine();
+
+  call OutputNum(call factRec(input));
+
+  call OutputNum(input);
+  call OutputNewLine()
+}
+.
+
+// test...
+main
+array[82] data;
+array[2][2][2] rulebin;
+var colcount;
+var rowcount;
+var rule;
+
+function setnextbit(last, akt, next, bits);
+{
+  let rulebin[last][akt][next] <- bits - (bits / 2) * 2;
+  call OutputNum(rulebin[last][akt][next]);
+  return bits / 2
+};
+
+procedure initrulebin();
+var bits;
+{
+  let bits <- rule;
+  let bits <- call setnextbit(0, 0, 0, bits);
+  let bits <- call setnextbit(0, 0, 1, bits);
+  let bits <- call setnextbit(0, 1, 0, bits);
+  let bits <- call setnextbit(0, 1, 1, bits);
+  let bits <- call setnextbit(1, 0, 0, bits);
+  let bits <- call setnextbit(1, 0, 1, bits);
+  let bits <- call setnextbit(1, 1, 0, bits);
+  let bits <- call setnextbit(1, 1, 1, bits)
+};
+
+procedure cleardata();
+var i;
+{
+  let i <- 0;
+  while i < colcount + 2 do
+    let data[i] <- 0;
+    let i <- i + 1
+  od
+};
+
+procedure output();
+var i;
+{
+  let i <- 1;
+  while i <= colcount do
+    //call OutputNum(data[i]);
+    if data[i] == 0 then
+      call OutputNum(1)
+    else
+        if data[i] == 1 then
+                call OutputNum(8)
+        else
+                call OutputNum(0)
+        fi
+    fi;
+    let i <- i + 1
+  od;
+  call OutputNewLine()
+};
+
+procedure calcnext();
+var i;
+var last, akt, next;
+{
+//  let i <- 1;
+//  while i <= colcount do
+//    call OutputNum(data[i+1]);
+//    let i <- i + 1
+//  od;
+
+  let data[0] <- data[1];
+  let data[colcount + 1] <- data[colcount];
+
+  let last <- data[0];
+  let akt <- data[1];
+
+  let i <- 1;
+  while i <= colcount do
+    let next <- data[i + 1];
+    //call OutputNum(i);
+    //call OutputNum(data[i + 1]);
+    //call OutputNum(last);
+    //call OutputNum(akt);
+    //call OutputNum(next);
+    //call OutputNum(rulebin[last][akt][next]);
+    //call OutputNewLine();
+    let data[i] <- rulebin[last][akt][next];
+
+    let last <- akt;
+    let akt <- next;
+    let i <- i + 1
+  od;
+  call OutputNewLine()
+};
+
+procedure run();
+var i;
+{
+  let i <- 0;
+  while i < rowcount do
+    call output();
+    call calcnext();
+    let i <- i + 1
+  od
+};
+
+{
+  call OutputNum(22);
+  let colcount <- 80;
+  let rowcount <- 10; 
+  // 60
+
+  call OutputNum(colcount);
+  call OutputNum(rowcount);
+
+  call cleardata();
+  let data[40] <- 1;
+  call OutputNum(data[40]);
+  call OutputNewLine();
+  let rule <- 45;
+
+  call initrulebin();
+  call OutputNewLine();
+
+  call run()
+}.
+
 // test026
 main
 var i, j, k, w, z, x, y;
@@ -290,47 +458,7 @@ var i, j, e;
   call OutputNum(c)
 }.
 
-// factorial
-main
-var input;
 
-function factIter(n);
-var i, f;
-{
-  let i <- 1;
-  let f <- 1;
-  while i <= n do
-    let f <- f * i;
-    let i <- i + 1
-  od;
-  return f
-};
-
-function factRec(n);
-var i;
-{
-  if n <= 1 then
-    return 1
-  fi;
-  return call factRec(n - 1) * n
-};
-
-{
-  let input <- call InputNum();
-  call OutputNum(input);
-  call OutputNewLine();
-
-  call OutputNum(call factIter(input));
-
-  call OutputNum(input);
-  call OutputNewLine();
-
-  call OutputNum(call factRec(input));
-
-  call OutputNum(input);
-  call OutputNewLine()
-}
-.
 
 main
 array[5] input;

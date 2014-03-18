@@ -514,7 +514,7 @@ public class PLIRInstruction
 			}
 			
 	//		if (op2 != null && op2.equals(newOp) == false && op2.opcode != InstructionType.PHI)
-			if (op2 != null && !(newOp.opcode == InstructionType.PHI && opcode == InstructionType.PHI) && branch == 2)
+			if (op2 != null && !(newOp.opcode == InstructionType.PHI && opcode == InstructionType.PHI && branch == 2))
 			{
 //				if (op2.origIdent.equals(newOp.origIdent))
 				String thisIdent = op2.ident.get(table.getCurrentScope());
@@ -654,7 +654,7 @@ public class PLIRInstruction
 			generated = true;
 		}
 		
-		if ((!generated || overrideGenerate) && (id == 0))
+		if ((!generated || overrideGenerate) && id == 0)
 		{
 			kind = ResultKind.VAR;
 			generated = true;

@@ -14,6 +14,7 @@ public class Function
 	public ArrayList<String> scope;
 	public HashMap<String, Integer> constantsToSave = new HashMap<String, Integer>(); 
 	public HashMap<PLIRInstruction, PLIRInstruction> modifiedGlobals;
+	public HashMap<PLIRInstruction, PLIRInstruction> usedGlobals;
 	public HashMap<String, ArrayList<Integer>> arraySizes;
 	public String name;
 	
@@ -24,6 +25,7 @@ public class Function
 		this.params = new ArrayList<PLIRInstruction>();
 		this.vars = new ArrayList<PLIRInstruction>();
 		this.modifiedGlobals = new HashMap<PLIRInstruction, PLIRInstruction>();
+		this.usedGlobals = new HashMap<PLIRInstruction, PLIRInstruction>();
 		this.scope = new ArrayList<String>();
 		this.arraySizes = new HashMap<String, ArrayList<Integer>>();
 		for (PLIRInstruction s : parameters)
@@ -39,6 +41,7 @@ public class Function
 		this.params = new ArrayList<PLIRInstruction>();
 		this.vars = new ArrayList<PLIRInstruction>();
 		this.modifiedGlobals = new HashMap<PLIRInstruction, PLIRInstruction>();
+		this.usedGlobals = new HashMap<PLIRInstruction, PLIRInstruction>();
 		this.scope = new ArrayList<String>();
 		this.arraySizes = new HashMap<String, ArrayList<Integer>>();
 		for (PLIRInstruction s : parameters)
@@ -87,6 +90,11 @@ public class Function
 		}
 		
 		return offset;
+	}
+	
+	public void addUsedGlobal(PLIRInstruction glob, PLIRInstruction inst)
+	{
+		usedGlobals.put(glob, inst);
 	}
 	
 	public void addModifiedGlobal(PLIRInstruction glob, PLIRInstruction inst)

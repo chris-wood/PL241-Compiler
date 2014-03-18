@@ -13,6 +13,7 @@ public class DLXInstruction
 	
 	public String refFunc; 
 	public boolean jumpNeedsFix = false;
+	public boolean emit = true;
 	
 	public int fixupLocation;
 	public int pc = -1;

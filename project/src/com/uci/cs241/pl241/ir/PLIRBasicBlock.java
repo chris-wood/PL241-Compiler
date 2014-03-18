@@ -349,6 +349,11 @@ public class PLIRBasicBlock
 				PLIRInstruction bInst = sortedInstructions.get(i);
 				boolean replaced = false;
 				
+				if (i == 16)
+				{
+					System.err.println("asd");
+				}
+				
 				if (bInst.id != 0 && phi.id > bInst.id || (bInst.isConstant))
 				{
 					continue;
@@ -421,11 +426,35 @@ public class PLIRBasicBlock
 				{	
 					// guard against constant overwriting
 					boolean couldHaveReplaced = false;
+					
 					if (!(bInst.opcode == InstructionType.PHI && bInst.op1 != null && bInst.op1.isConstant) 
 							&& !(bInst.opcode == InstructionType.PHI && branch == 2))
-	//				if (!(bInst.opcode == InstructionType.PHI && branch == 2))
 					{
-	//					if (bInst.op1 != null && bInst.op1.origIdent.equals(var))
+						
+						PLIRInstruction dependent = bInst.op1;
+//						while (dependent.op1 != null)
+//						{
+//							if (!(dependent.opcode == InstructionType.PHI && dependent.op1 != null && dependent.op1.isConstant) 
+//									&& !(dependent.opcode == InstructionType.PHI && branch == 2))
+//							{
+//								if (dependent.op1 != null &&  dependent.op1.ident.get(scope.getCurrentScope()) != null && dependent.op1.ident.get(scope.getCurrentScope()).equals(var))
+//								{
+//									replaced = dependent.replaceLeftOperand(phi);
+//								}
+//							}
+//						}
+//						while (dependent.op2 != null)
+//						{
+//							if (!(dependent.opcode == InstructionType.PHI && dependent.op2 != null && dependent.op2.isConstant) 
+//									&& !(dependent.opcode == InstructionType.PHI && branch == 2))
+//							{
+//								if (bInst.op1 != null &&  bInst.op1.ident.get(scope.getCurrentScope()) != null && bInst.op1.ident.get(scope.getCurrentScope()).equals(var))
+//								{
+//									
+//								}
+//							}
+//						}
+						
 						System.out.println(scope.getCurrentScope());
 						if (bInst.op1 != null &&  bInst.op1.ident.get(scope.getCurrentScope()) != null && bInst.op1.ident.get(scope.getCurrentScope()).equals(var))
 						{
@@ -511,6 +540,7 @@ public class PLIRBasicBlock
 						System.out.println("here");
 					}
 					
+					// ALWAYS re-evaluate! Make our lives so much easier...
 					if (replaced && bInst.opcode != InstructionType.STORE) // && !couldHaveReplaced)
 					{
 						ArrayList<PLIRInstruction> visitedInsts = new ArrayList<PLIRInstruction>();

@@ -90,6 +90,7 @@ public class PLC
 			PLScanner scanner = new PLScanner(sourceFile);
 			PLParser parser = new PLParser();
 			ArrayList<PLIRBasicBlock> blocks = parser.parse(scanner);
+//			PLStaticSingleAssignment.finish();
 			
 			// Filter basic blocks...
 			ArrayList<PLIRInstruction> globals = new ArrayList<PLIRInstruction>(); 
@@ -176,7 +177,7 @@ public class PLC
 					
 					// Perform CSE, starting at the root
 					CSE cse = new CSE();
-					cse.performCSE(entry);
+//					cse.performCSE(entry);
 				}
 				
 				// Display the instructions AFTER CSE
@@ -189,7 +190,7 @@ public class PLC
 				instWriter.close();
 				System.out.println("End Instructions\n");
 				
-				// Display the DU chain
+//				// Display the DU chain
 //				System.out.println("\nDU chain");
 //				for (PLIRInstruction def : parser.duChain.keySet())
 //				{

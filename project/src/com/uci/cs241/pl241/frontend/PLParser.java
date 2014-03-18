@@ -644,19 +644,42 @@ public class PLParser
 				Function func = scope.functions.get(funcName);
 				for (PLIRInstruction glob : func.modifiedGlobals.keySet())
 				{
-					String name = glob.ident.get(scope.getCurrentScope());
-					if (scope.getCurrentValue(name).kind == ResultKind.CONST)
+					if (glob != null)
 					{
-						func.constantsToSave.put(name, scope.getCurrentValue(name).tempVal);
+						String name = glob.ident.get(scope.getCurrentScope());
+						if (scope.getCurrentValue(name).kind == ResultKind.CONST)
+						{
+							func.constantsToSave.put(name, scope.getCurrentValue(name).tempVal);
+						}
+//						glob.overrideGenerate = true;
+//						glob.forceGenerate(scope);
+						glob.type = OperandType.INST;
+						glob.kind = ResultKind.VAR;
+						glob.overrideGenerate = true;
+						glob.forceGenerate(scope);
+						scope.updateSymbol(name, glob);
+						debug(glob.toString());
 					}
-//					glob.overrideGenerate = true;
-//					glob.forceGenerate(scope);
-					glob.type = OperandType.INST;
-					glob.kind = ResultKind.VAR;
-					glob.overrideGenerate = true;
-					glob.forceGenerate(scope);
-					scope.updateSymbol(name, glob);
-					debug(glob.toString());
+				}
+				
+				for (PLIRInstruction glob : func.usedGlobals.keySet())
+				{
+					if (glob != null)
+					{
+						String name = glob.ident.get(scope.getCurrentScope());
+						if (scope.getCurrentValue(name).kind == ResultKind.CONST)
+						{
+							func.constantsToSave.put(name, scope.getCurrentValue(name).tempVal);
+						}
+//						glob.overrideGenerate = true;
+//						glob.forceGenerate(scope);
+						glob.type = OperandType.INST;
+						glob.kind = ResultKind.VAR;
+						glob.overrideGenerate = true;
+						glob.forceGenerate(scope);
+						scope.updateSymbol(name, glob);
+						debug(glob.toString());
+					}
 				}
 			}
 			
@@ -1157,7 +1180,8 @@ public class PLParser
 //					{
 //						storeInst.saveName = varName;
 //					}
-					if (storeInst == null || (storeInst != null && storeInst.isArray) || result.arrayName != null)
+//					if (storeInst == null || (storeInst != null && storeInst.isArray) || result.arrayName != null)
+					if (storeInst == null || result.arrayName != null)
 					{
 						ArrayList<PLIRInstruction> offsetInstructions = null;
 						if (result.instructions.get(0).opcode == InstructionType.STORE)
@@ -1239,6 +1263,14 @@ public class PLParser
 						
 						scope.updateSymbol(varName, storeInst); // (SSA ID) := expr
 						duChain.put(storeInst, new HashSet<PLIRInstruction>());
+						
+						if (storeInst.isGlobalVariable || storeInst.opcode == InstructionType.GLOBAL)
+						{
+							String currScope = scope.getCurrentScope();
+							Function func = scope.functions.get(funcName);
+							System.out.println("Adding used global: " + storeInst.ident.get(currScope));
+							func.addModifiedGlobal(globalVariables.get(storeInst.ident.get(currScope)), storeInst);
+						}
 						
 						storeInst.ident.put(scope.getCurrentScope(), varName);
 						result.addModifiedValue(varName, storeInst);
@@ -1418,6 +1450,11 @@ public class PLParser
 			String funcName = sym;
 			result = parse_ident(in);
 			callStack.add(funcName); // add to call stack
+			
+			if (funcName.equals("initrulebin"))
+			{
+				System.err.println("here");
+			}
 			
 			if (funcName.equals("max"))
 			{
@@ -1667,6 +1704,24 @@ public class PLParser
 						scope.updateSymbol(name, glob);
 						debug(glob.toString());
 //						debug(scope.getCurrentValue("x").toString());
+					}
+				}
+				
+				for (PLIRInstruction glob : func.usedGlobals.keySet())
+				{
+					if (glob != null) // if the key is null, then we modified an array, and that code is always generated on demand
+					{
+						String name = glob.ident.get(scope.getCurrentScope());
+						if (scope.getCurrentValue(name).kind == ResultKind.CONST)
+						{
+							func.constantsToSave.put(name, scope.getCurrentValue(name).tempVal);
+						}
+						glob.type = OperandType.INST;
+						glob.kind = ResultKind.VAR;
+						glob.overrideGenerate = true;
+						glob.forceGenerate(scope);
+						scope.updateSymbol(name, glob);
+						debug(glob.toString());
 					}
 				}
 			}
@@ -2019,7 +2074,14 @@ public class PLParser
 				lastEntryInst.i2 = uncond.id - lastEntryInst.id + 1;
 //				FixupExact(uncond.tempPosition - numInstructions, PLStaticSingleAssignment.globalSSAIndex - uncond.tempPosition - offset);
 //				uncond.i2 = PLStaticSingleAssignment.globalSSAIndex - uncond.tempPosition + offset;
-				uncond.i2 = joinNode.instructions.get(0).id - uncond.id - offset + 1;
+				if (joinNode.instructions.isEmpty())
+				{
+					uncond.i2 = PLStaticSingleAssignment.globalSSAIndex - uncond.id - offset + 1;
+				}
+				else
+				{
+					uncond.i2 = joinNode.instructions.get(0).id - uncond.id - offset + 1;
+				}
 			}
 			else
 			{
