@@ -234,15 +234,11 @@ public class PLIRBasicBlock
 			}
 		}
 		
-		// Add the dominator sets
+		// Absorb the dominator sets
 		for (PLIRBasicBlock block : newBlock.dominatorSet)
 		{
-//			oldBlock.dominatorSet.add(block);
 			leftJoin.dominatorSet.add(block);
 		}
-		
-//		oldBlock.fixSpot();
-		leftJoin.fixSpot();
 		
 		PLIRBasicBlock join = newBlock;
 		ArrayList<Integer> seen = new ArrayList<Integer>();
@@ -296,22 +292,16 @@ public class PLIRBasicBlock
 		}
 	}
 	
-	public boolean terminateAtNextPhi = false;
-	public void propagatePhi(String var, int offset, PLIRInstruction phi, ArrayList<PLIRBasicBlock> visited, PLSymbolTable scope, int branch)
-	{
-		HashMap<String, PLIRInstruction> scopeMap = new HashMap<String, PLIRInstruction>();
-		
+//	public boolean terminateAtNextPhi = false;
+	public void propagatePhi(int offset, ArrayList<PLIRBasicBlock> visited, PLSymbolTable scope, int branch, HashMap<String, PLIRInstruction> scopeMap, String scopeName)
+	{	
 //		if (visited.contains(this) == false)
-		{
-//			visited.add(this);
-			
-			PLIRInstruction findPhi = phi;
-			PLIRInstruction replacePhi = phi;
-			
-			int p1id = phi.op1 != null ? phi.op1.id : -1;
-			int p2id = phi.op2 != null ? phi.op2.id : -1;
-			
-			scopeMap.put(var, phi);
+		{	
+//			PLIRInstruction findPhi = phi;
+//			PLIRInstruction replacePhi = phi;
+//			
+//			int p1id = phi.op1 != null ? phi.op1.id : -1;
+//			int p2id = phi.op2 != null ? phi.op2.id : -1;
 			
 			// Sort instructions in the BB by their ID
 			ArrayList<PLIRInstruction> sortedInstructions = new ArrayList<PLIRInstruction>();
@@ -343,317 +333,207 @@ public class PLIRBasicBlock
 			
 			
 			// Propagate through the main instructions in this block's body
-//			for (PLIRInstruction bInst : sortedInstructions)
 			for (int i = 0; i < sortedInstructions.size(); i++)
 			{
 				PLIRInstruction bInst = sortedInstructions.get(i);
 				boolean replaced = false;
 				
-				if (i == 16)
+				// Check all replaced variables
+				for (String var : scopeMap.keySet())
 				{
-					System.err.println("asd");
-				}
-				
-				if (bInst.id != 0 && phi.id > bInst.id || (bInst.isConstant))
-				{
-					continue;
-				}
-				
-				if (bInst.opcode == InstructionType.BEQ) continue;
-				
-				if (bInst.opcode == InstructionType.PHI || bInst.opcode == InstructionType.CMP)
-				{
-					System.err.println("asd");
-//					return;
-				}
-				
-				if (bInst.opcode == InstructionType.PHI)
-				{
-//					continue;
-					if ((bInst.id == p1id || bInst.id == p2id) && phi.id > bInst.id)
+					PLIRInstruction replacement = scopeMap.get(var);
+
+					if (bInst.id == 118)
+					{
+						System.err.println("asd");
+					}
+					
+					// Short circuits
+					if (bInst.id != 0 && replacement.id > bInst.id || (bInst.isConstant))
 					{
 						continue;
 					}
-//					if (var.equals(bInst.ident.get(scope.getCurrentScope())) == false)
-				}
-				
-//				if (phi.origIdent.equals("j"))
-//				{
-//					System.out.println("here");
-//				}
-				
-				if (bInst.opcode == InstructionType.CMP)
-				{
-					PLIRInstruction cmpInst = bInst;
-					System.err.println("here");
-					if (cmpInst.op1 != null)
+					if (bInst.opcode == InstructionType.BEQ) continue;
+					
+					// Handle comparisons specially since their dependencies are embedded in the instruction
+					if (bInst.opcode == InstructionType.CMP)
 					{
-						boolean innerReplaced = false;
-						for (int ii = 0; ii < cmpInst.op1.dependents.size(); ii++)
+						if (bInst.op1 != null && bInst.op1.checkForReplace(replacement, var, scopeName))
 						{
-							PLIRInstruction dependent = cmpInst.op1.dependents.get(ii);
-//							if (dependent.origIdent.equals(var))
-							if (dependent.ident.get(scope.getCurrentScope()) != null && dependent.ident.get(scope.getCurrentScope()).equals(var))
-							{
-								// OK, we need to unfold cmpInst.op1, but how?...
-								innerReplaced = true;
-							}
+							bInst.evaluate(-1, offset, replacement, scope, new ArrayList<PLIRInstruction>(), branch);
 						}
-						if (innerReplaced)
+						
+						if (bInst.op2 != null && bInst.op2.checkForReplace(replacement, var, scopeName))
 						{
-							cmpInst.evaluate(cmpInst.id - 1, offset, scopeMap.get(var), scope, new ArrayList<PLIRInstruction>(), branch);
+							bInst.evaluate(-1, offset, replacement, scope, new ArrayList<PLIRInstruction>(), branch);
 						}
 					}
-					
-					if (cmpInst.op2 != null)
-					{
-						boolean innerReplaced = false;
-						for (PLIRInstruction dependent : cmpInst.op2.dependents)
+					else
+					{	
+						// guard against constant overwriting
+						boolean couldHaveReplaced = false;
+						
+						if (!(bInst.opcode == InstructionType.PHI && bInst.op1 != null && bInst.op1.isConstant) 
+								&& !(bInst.opcode == InstructionType.PHI && branch == 2))
 						{
-//							if (dependent.origIdent.equals(var))
-							if (dependent.ident.get(scope.getCurrentScope()) != null && dependent.ident.get(scope.getCurrentScope()).equals(var))
+							if (bInst.op1 != null &&  bInst.op1.ident.get(scopeName) != null && bInst.op1.ident.get(scopeName).equals(var))
 							{
-								innerReplaced = true;
+		//						if (!(replaced && bInst.opcode == InstructionType.PHI))
+								{
+									if (bInst.opcode == InstructionType.PHI && bInst.guards.contains(var))
+									{
+										replaced  = bInst.replaceLeftOperand(replacement);
+										couldHaveReplaced = true;
+									}
+									else
+									{
+										replaced  = bInst.replaceLeftOperand(replacement);
+										couldHaveReplaced = true;
+									}
+		//							replaced = true;
+								}
 							}
-						}
-						if (innerReplaced)
-						{
-							cmpInst.evaluate(cmpInst.id - 1, offset, scopeMap.get(var), scope, new ArrayList<PLIRInstruction>(), branch);
-						}
-					}
-				}
-				else
-				{	
-					// guard against constant overwriting
-					boolean couldHaveReplaced = false;
-					
-					if (!(bInst.opcode == InstructionType.PHI && bInst.op1 != null && bInst.op1.isConstant) 
-							&& !(bInst.opcode == InstructionType.PHI && branch == 2))
-					{
-						
-						PLIRInstruction dependent = bInst.op1;
-//						while (dependent.op1 != null)
-//						{
-//							if (!(dependent.opcode == InstructionType.PHI && dependent.op1 != null && dependent.op1.isConstant) 
-//									&& !(dependent.opcode == InstructionType.PHI && branch == 2))
-//							{
-//								if (dependent.op1 != null &&  dependent.op1.ident.get(scope.getCurrentScope()) != null && dependent.op1.ident.get(scope.getCurrentScope()).equals(var))
-//								{
-//									replaced = dependent.replaceLeftOperand(phi);
-//								}
-//							}
-//						}
-//						while (dependent.op2 != null)
-//						{
-//							if (!(dependent.opcode == InstructionType.PHI && dependent.op2 != null && dependent.op2.isConstant) 
-//									&& !(dependent.opcode == InstructionType.PHI && branch == 2))
-//							{
-//								if (bInst.op1 != null &&  bInst.op1.ident.get(scope.getCurrentScope()) != null && bInst.op1.ident.get(scope.getCurrentScope()).equals(var))
-//								{
-//									
-//								}
-//							}
-//						}
-						
-						System.out.println(scope.getCurrentScope());
-						if (bInst.op1 != null &&  bInst.op1.ident.get(scope.getCurrentScope()) != null && bInst.op1.ident.get(scope.getCurrentScope()).equals(var))
-						{
-	//						if (!(replaced && bInst.opcode == InstructionType.PHI))
+							else if (bInst.op1 != null && bInst.op1.equals(replacement))
+							{
+		//						if (!(replaced && bInst.opcode == InstructionType.PHI))
+								{
+									if (bInst.opcode == InstructionType.PHI && bInst.guards.contains(var))
+									{
+										replaced  = bInst.replaceLeftOperand(replacement);
+										couldHaveReplaced = true;
+									}
+									else
+									{
+										replaced  = bInst.replaceLeftOperand(replacement);
+										couldHaveReplaced = true;
+									}
+		//							replaced = true;
+								}
+							}
+							else if (bInst.op1name != null && bInst.op1name.equals(var))
 							{
 								if (bInst.opcode == InstructionType.PHI && bInst.guards.contains(var))
 								{
-									replaced  = bInst.replaceLeftOperand(phi);
+									replaced  = bInst.replaceLeftOperand(replacement);
 									couldHaveReplaced = true;
 								}
 								else
 								{
-									replaced  = bInst.replaceLeftOperand(scopeMap.get(var));
+									replaced  = bInst.replaceLeftOperand(replacement);
 									couldHaveReplaced = true;
 								}
-	//							replaced = true;
+		//						replaced = true;
 							}
 						}
-						else if (bInst.op1 != null && bInst.op1.equals(findPhi))
-						{
-	//						if (!(replaced && bInst.opcode == InstructionType.PHI))
-							{
-								if (bInst.opcode == InstructionType.PHI && bInst.guards.contains(var))
-								{
-									replaced  = bInst.replaceLeftOperand(phi);
-									couldHaveReplaced = true;
-								}
-								else
-								{
-									replaced  = bInst.replaceLeftOperand(scopeMap.get(var));
-									couldHaveReplaced = true;
-								}
-	//							replaced = true;
-							}
-						}
-						else if (bInst.op1name != null && bInst.op1name.equals(var))
-						{
-							if (bInst.opcode == InstructionType.PHI && bInst.guards.contains(var))
-							{
-								replaced  = bInst.replaceLeftOperand(phi);
-								couldHaveReplaced = true;
-							}
-							else
-							{
-								replaced  = bInst.replaceLeftOperand(scopeMap.get(var));
-								couldHaveReplaced = true;
-							}
-	//						replaced = true;
-						}
-					}
-					
-	//				if (bInst.opcode != InstructionType.PHI && bInst.opcode != InstructionType.STORE)
-					if (bInst.opcode != InstructionType.STORE && !(bInst.whilePhi && branch == 1))
-					{
-	//					if (bInst.op2 != null && bInst.op2.origIdent.equals(var) && !replaced)
-						if (bInst.op2 != null && bInst.op2.ident.get(scope.getCurrentScope()) != null && bInst.op2.ident.get(scope.getCurrentScope()).equals(var) && !replaced)
-						{
-	//						if (!(replaced && bInst.opcode == InstructionType.PHI))
-							{
-								replaced = bInst.replaceRightOperand(scopeMap.get(var));
-	//							replaced = true;
-							}
-						}
-						else if (bInst.op2 != null && bInst.op2.equals(findPhi) && !replaced)
-						{
-	//						if (!(replaced && bInst.opcode == InstructionType.PHI))
-							{
-								replaced = bInst.replaceRightOperand(scopeMap.get(var));
-	//							replaced = true;
-							}
-						}
-						else if (bInst.op2name != null && bInst.op2name.equals(var) && !replaced)
-						{
-	//						if (!(replaced && bInst.opcode == InstructionType.PHI))
-							{
-								replaced = bInst.replaceRightOperand(scopeMap.get(var));
-	//							replaced = true;
-							}
-						}
-					}
-					else if (bInst.opcode == InstructionType.PHI && branch == 2)
-					{
-						System.out.println("here");
-					}
-					
-					// ALWAYS re-evaluate! Make our lives so much easier...
-					if (replaced && bInst.opcode != InstructionType.STORE) // && !couldHaveReplaced)
-					{
-						ArrayList<PLIRInstruction> visitedInsts = new ArrayList<PLIRInstruction>();
 						
-						int target = bInst.id - 1;
-						if (bInst.id == 0 && bInst.tempPosition == 0)
+						if (bInst.opcode != InstructionType.STORE && !(bInst.whilePhi && branch == 1))
 						{
-							for (int j = i + 1; j < sortedInstructions.size(); j++)
+							if (bInst.op2 != null && bInst.op2.ident.get(scopeName) != null && bInst.op2.ident.get(scopeName).equals(var) && !replaced)
 							{
-								if (sortedInstructions.get(j).id > 0)
-								{
-									target = sortedInstructions.get(j).id - 1;
-									break;
-								}
+								replaced = bInst.replaceRightOperand(replacement);
+							}
+							else if (bInst.op2 != null && bInst.op2.equals(replacement) && !replaced)
+							{
+								replaced = bInst.replaceRightOperand(replacement);
+							}
+							else if (bInst.op2name != null && bInst.op2name.equals(var) && !replaced)
+							{
+								replaced = bInst.replaceRightOperand(replacement);
 							}
 						}
-						PLIRInstruction replacement = scopeMap.get(var);
-						bInst.evaluate(target, offset, replacement, scope, visitedInsts, branch);
-					}
-					
-					// Don't propagate past the phi, since it essentially replaces the current value
-	//				if (replaced && bInst.opcode == InstructionType.PHI)
-	//				{
-	//					findPhi = bInst; 
-	//					scopeMap.put(var, bInst);
-	//				}
-					
-					if (replaced && couldHaveReplaced && bInst.opcode == InstructionType.PHI)
-					{
-						findPhi = bInst; 
-						scopeMap.put(var, bInst);
-					}
-					
-					// If the phi value was used to replace some operand, and this same expression was used to save a result, replace
-					// with the newly generated result
-	//				else if (replaced && (bInst.origIdent.equals(phi.origIdent) || bInst.saveName.equals(phi.origIdent)) && bInst.kind != ResultKind.CONST)
-					else if (replaced && ((bInst.ident.get(scope.getCurrentScope()) != null && phi.ident.get(scope.getCurrentScope()) != null 
-							&& bInst.ident.get(scope.getCurrentScope()).equals(phi.ident.get(scope.getCurrentScope())))
-							|| (bInst.saveName.get(scope.getCurrentScope()) != null && phi.ident.get(scope.getCurrentScope()) != null && 
-							bInst.saveName.get(scope.getCurrentScope()).equals(phi.ident.get(scope.getCurrentScope())))) 
-							&& bInst.kind != ResultKind.CONST)
-					{
-	//					System.out.println("now replacing " + phi.origIdent + " with : " + bInst.toString());
-						scopeMap.put(var, bInst);
-					}
-					
-	//				// If there is an assignment that matches this PHI variable, use its value...
-	//				if (bInst.id > 0 && bInst.generated && (bInst.origIdent != null && bInst.origIdent.equals(var)))
-					if (bInst.id > 0 && bInst.generated && (bInst.ident.get(scope.getCurrentScope()) != null && bInst.ident.get(scope.getCurrentScope()).equals(var)))
-					{
-						if (bInst.opcode == InstructionType.LOAD)
+						else if (bInst.opcode == InstructionType.PHI && branch == 2)
 						{
-							// Need to reload based on the value of the phi...?
-							scopeMap.put(var, bInst);
+							System.out.println("here");
+						}
+						
+						// Check for replacement...
+						if (replaced && bInst.opcode != InstructionType.STORE) // && !couldHaveReplaced)
+						{
+							ArrayList<PLIRInstruction> visitedInsts = new ArrayList<PLIRInstruction>();
+							
+							int target = bInst.id - 1;
+							if (bInst.id == 0 && bInst.tempPosition == 0)
+							{
+								for (int j = i + 1; j < sortedInstructions.size(); j++)
+								{
+									if (sortedInstructions.get(j).id > 0)
+									{
+										target = sortedInstructions.get(j).id - 1;
+										break;
+									}
+								}
+							}
+							
+							// Re-evaluate this instruction since one of its operands was replaced
+							bInst.evaluate(target, offset, replacement, scope, visitedInsts, branch);
+							System.out.println("Replaced: " + bInst);
+							
+							// Check to see if this is a new variable
+							String instName = bInst.ident.get(scopeName);
+							System.out.println(bInst.ident);
+							if (instName != null && instName.equals(var) == false)
+							{
+								scopeMap.put(instName, bInst);
+							}
 						}
 						else
 						{
+							if (bInst.op1 != null && bInst.op1.checkForReplace(replacement, var, scopeName))
+							{
+								bInst.evaluate(-1, offset, replacement, scope, new ArrayList<PLIRInstruction>(), branch);
+							}
+							
+							if (bInst.op2 != null && bInst.op2.checkForReplace(replacement, var, scopeName))
+							{
+								bInst.evaluate(-1, offset, replacement, scope, new ArrayList<PLIRInstruction>(), branch);
+							}
+						}
+						
+						if (replaced && couldHaveReplaced && bInst.opcode == InstructionType.PHI)
+						{
 							scopeMap.put(var, bInst);
+						}
+						
+						// If the phi value was used to replace some operand, and this same expression was used to save a result, replace
+						// with the newly generated result
+						else if (replaced && ((bInst.ident.get(scopeName) != null && replacement.ident.get(scopeName) != null 
+								&& bInst.ident.get(scopeName).equals(replacement.ident.get(scopeName)))
+								|| (bInst.saveName.get(scopeName) != null && replacement.ident.get(scopeName) != null && 
+								bInst.saveName.get(scopeName).equals(replacement.ident.get(scopeName)))) 
+								&& bInst.kind != ResultKind.CONST)
+						{
+							scopeMap.put(var, bInst);
+						}
+						
+						// If there is an assignment that matches this PHI variable, use its value...
+						if (bInst.id > 0 && bInst.generated && (bInst.ident.get(scopeName) != null && bInst.ident.get(scopeName).equals(var)))
+						{
+							if (bInst.opcode == InstructionType.LOAD)
+							{
+								// Need to reload based on the value of the phi...?
+								scopeMap.put(var, bInst);
+							}
+							else
+							{
+								scopeMap.put(var, bInst);
+							}
 						}
 					}
 				}
-				
-				// If for some reason the phi value was prematurely re-assigned, perhaps because of a READ, then don't propogate further
-//				if (bInst.origIdent.equals(phi.origIdent))
-//				{
-//					terminateAtNextPhi = true;
-//					return; // in this case, we short circuit since the value has been reasssigned without making use of the phi
-//				}
 			}
 		
 			// Now propagate down the tree
 			if (leftChild != null && visited.contains(leftChild) == false)
 			{
-//				visited.add(leftChild);
-				
-				leftChild.propagatePhi(var, offset, scopeMap.get(var), visited, scope, 1);
+				leftChild.propagatePhi(offset, visited, scope, 1, scopeMap, scopeName);
 			}
 			if (rightChild != null && visited.contains(rightChild) == false && rightChild.isWhileEntry == false)
 			{
 				visited.add(rightChild);
 				
-				rightChild.propagatePhi(var, offset, scopeMap.get(var), visited, scope, 2);
+				rightChild.propagatePhi(offset, visited, scope, 2, scopeMap, scopeName);
 			}
-			
-//			for (PLIRBasicBlock child : children)
-//			{
-//				if (visited.contains(child) == false)
-//				{
-//					visited.add(child);
-//					child.propagatePhi(var, scopeMap.get(var), visited, scopeMap);
-//				}
-//			}
-			
-			
-//			if (this.joinNode != null)
-//			{
-//				if (visited.contains(this.joinNode) == false)
-//				{
-//					visited.add(this.joinNode);
-//					joinNode.propagatePhi(var, scopeMap.get(var), visited, scopeMap);
-//				}
-//			}
 		}
-	}
-	
-	public void fixSpot()
-	{
-		// noop
-//		if (!fixed)
-//		{
-//			fixed = true;
-////			id = bbid++;
-//		}
 	}
 	
 	public void addUsedValue(String ident, PLIRInstruction inst)

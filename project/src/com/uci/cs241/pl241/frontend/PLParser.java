@@ -746,6 +746,21 @@ public class PLParser
 				leftInst = load;
 				termNode.addInstruction(load);
 			}
+			else
+			{
+				for (PLIRInstruction li : factor.instructions)
+				{
+					if (li.op1 != null)
+					{
+						leftInst.dependents.add(li.op1);
+					}
+					if (li.op2 != null)
+					{
+						leftInst.dependents.add(li.op2);
+					}
+					leftInst.dependents.add(li);
+				}
+			}
 			
 			PLIRInstruction rightInst = rightNode.getLastInst();
 			if (rightInst.isArray)
@@ -777,6 +792,21 @@ public class PLParser
 				load.isArray = true;
 				rightInst = load;
 				termNode.addInstruction(load);
+			}
+			else
+			{
+				for (PLIRInstruction li : rightNode.instructions)
+				{
+					if (li.op1 != null)
+					{
+						rightInst.dependents.add(li.op1);
+					}
+					if (li.op2 != null)
+					{
+						rightInst.dependents.add(li.op2);
+					}
+					rightInst.dependents.add(li);
+				}
 			}
 			
 			InstructionType opcode = operator == PLToken.timesToken ? InstructionType.MUL : InstructionType.DIV;
@@ -872,7 +902,22 @@ public class PLParser
 				load.isArray = true;
 				leftInst = load;
 				exprNode.addInstruction(load);
-			} 
+			}
+			else
+			{
+				for (PLIRInstruction li : term.instructions)
+				{
+					if (li.op1 != null)
+					{
+						leftInst.dependents.add(li.op1);
+					}
+					if (li.op2 != null)
+					{
+						leftInst.dependents.add(li.op2);
+					}
+					leftInst.dependents.add(li);
+				}
+			}
 			
 			PLIRInstruction rightInst = rightNode.getLastInst();
 			if (rightInst.isArray || rightNode.arrayName != null)
@@ -899,6 +944,21 @@ public class PLParser
 				load.isArray = true;
 				rightInst = load;
 				exprNode.addInstruction(load);
+			}
+			else
+			{
+				for (PLIRInstruction li : rightNode.instructions)
+				{
+					if (li.op1 != null)
+					{
+						rightInst.dependents.add(li.op1);
+					}
+					if (li.op2 != null)
+					{
+						rightInst.dependents.add(li.op2);
+					}
+					rightInst.dependents.add(li);
+				}
 			}
 			
 			InstructionType opcode = operator == PLToken.plusToken ? InstructionType.ADD : InstructionType.SUB;
@@ -1835,13 +1895,11 @@ public class PLParser
 						join = join.joinNode;
 					}
 					join.rightChild = joinNode;
-					join.fixSpot();
 					joinNode.parents.add(join);
 				}
 				else
 				{
 					elseBlock.rightChild = joinNode;
-					elseBlock.fixSpot();
 					joinNode.parents.add(elseBlock);
 				}
 				entry.rightChild = elseBlock;
@@ -2088,9 +2146,6 @@ public class PLParser
 				Fixup(lastEntryInst.fixupLocation, -offset);
 			}
 			
-			// Fix the join BB index
-			joinNode.fixSpot();
-			
 			// Configure the dominator tree connections
 			entry.dominatorSet.add(thenBlock);
 			if (elseBlock != null)
@@ -2116,7 +2171,8 @@ public class PLParser
 			advance(in);
 			int entryStartLocation = PLStaticSingleAssignment.globalSSAIndex;
 			
-			scope.pushNewScope("while" + (blockDepth++));
+			String whileScopeName = "while" + (blockDepth++);
+			scope.pushNewScope(whileScopeName);
 			
 			// Parse the condition (relation) for the loop
 			PLIRBasicBlock entry = parse_relation(in);
@@ -2179,12 +2235,10 @@ public class PLParser
 					join = join.joinNode;
 				}
 				join.rightChild = entry;
-				join.fixSpot();
 			}
 			else
 			{
 				body.rightChild = entry;
-				body.fixSpot();
 			}
 			entry.leftChild = body;
 			body.parents.add(entry);
@@ -2206,8 +2260,10 @@ public class PLParser
 			debug("(while loop) Inserting " + modded.size() + " phis");
 			int offset = 0;
 			ArrayList<PLIRInstruction> phisGenerated = new ArrayList<PLIRInstruction>();
-			for (String var : modded)
+//			for (String var : modded)
+			for (int mi = modded.size() - 1; mi >= 0; mi--)
 			{
+				String var = modded.get(mi);
 				PLIRInstruction bodyInst = body.modifiedIdents.get(var);
 //				bodyInst.generated = false;
 //				bodyInst.forceGenerate(scope, bodyInst.tempPosition);
@@ -2311,10 +2367,6 @@ public class PLParser
 								}
 							}
 						}
-						else if (entryInst.opcode == InstructionType.PHI)
-						{
-							System.out.println("here");
-						}
 						
 						if (replacedLeft && entryInst.opcode != InstructionType.STORE && entryInst.opcode != InstructionType.PHI) // && !couldHaveReplaced)
 						{
@@ -2367,71 +2419,46 @@ public class PLParser
 				
 				// Now loop through the entry and fix instructions as needed
 				// Those fixed are replaced with the result of this phi if they have used or modified the sym...
-				if (cmpInst.op1 != null)
+				if (cmpInst.op1 != null && cmpInst.op1.checkForReplace(replacement, var, scope.getCurrentScope()))
 				{
-					boolean replaced = false;
-					for (int i = 0; i < cmpInst.op1.dependents.size(); i++)
-					{
-						PLIRInstruction dependent = cmpInst.op1.dependents.get(i);
-//						if (dependent.origIdent.equals(var))
-						if (dependent.ident.get(scope.getCurrentScope()) != null && dependent.ident.get(scope.getCurrentScope()).equals(var))
-						{
-							// OK, we need to unfold cmpInst.op1, but how?...
-							replaced = true;
-						}
-					}
-					if (replaced)
-					{
-						cmpInst.evaluate(cmpInst.id - 1, offset, replacement, scope, new ArrayList<PLIRInstruction>(), 1);
-					}
+					cmpInst.evaluate(-1, offset, replacement, scope, new ArrayList<PLIRInstruction>(), 1);
 				}
-				
-				if (cmpInst.op2 != null)
+				if (cmpInst.op2 != null && cmpInst.op2.checkForReplace(replacement, var, scope.getCurrentScope()))
 				{
-					boolean replaced = false;
-					for (PLIRInstruction dependent : cmpInst.op2.dependents)
-					{
-//						if (dependent.origIdent.equals(var))
-						if (dependent.ident.get(scope.getCurrentScope()) != null && dependent.ident.get(scope.getCurrentScope()).equals(var))
-						{
-							replaced = true;
-						}
-					}
-					if (replaced)
-					{
-						cmpInst.evaluate(cmpInst.id - 1, offset, replacement, scope, new ArrayList<PLIRInstruction>(), 2);
-					}
+					cmpInst.evaluate(-1, offset, replacement, scope, new ArrayList<PLIRInstruction>(), 2);
 				}
 				
 				// Propagate the PHI through the body of the loop
 				ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
 				visited.add(entry);
 				System.out.println("Propogating: " + replacement.toString());
-				body.propagatePhi(var, offset + innerOffset, replacement, visited, scope, 1);
+				HashMap<String, PLIRInstruction> scopeMap = new HashMap<String, PLIRInstruction>();
+				scopeMap.put(var, replacement);
+				if (var.equals("i") || var.equals("j"))
+				{
+					System.err.println("here");
+				}
+//				body.propagatePhi(offset + innerOffset, visited, scope, 1, scopeMap, whileScopeName);
+				body.propagatePhi(offset + innerOffset, visited, scope, 1, scopeMap, scope.getCurrentScope());
 				
 				// The current value in scope needs to be updated now with the result of the phi
-//				scope.updateSymbol(var, phi);
 				scope.updateSymbol(var, replacement);
 				
 				// Add to this block's list of modified identifiers
 				// Rationale: since we added a phi, the value potentially changes (is modified), 
 				// 	so the latest value in the current scope needs to be modified
-//				entry.modifiedIdents.put(var, phi);
 				entry.modifiedIdents.put(var, replacement);
 			}
 			
 			// Go through the phis and make sure we adjusted the values accordingly
-			// Second pass, really..
 			for (PLIRInstruction phi : phisGenerated)
 			{
 				for (String var : modded)
 				{
-//					if (var.equals(phi.origIdent))
 					if (var.equals(phi.ident.get(scope.getCurrentScope())))
 					{
 						PLIRInstruction bodyInst = body.modifiedIdents.get(var);
 						bodyInst.overrideGenerate = true;
-//						bodyInst.tempPosition = PLStaticSingleAssignment.globalSSAIndex;
 						bodyInst.forceGenerate(scope);
 						phi.op2type = OperandType.INST;
 						phi.op2 = bodyInst;
@@ -2617,7 +2644,6 @@ public class PLParser
 		}
 		
 		// Fix the spot of the basic block (since we're leaving a statement sequence) and call it a day
-		result.fixSpot();
 		result.scopeName = scope.getCurrentScope();
 		
 		return result;

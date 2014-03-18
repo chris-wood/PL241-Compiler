@@ -100,7 +100,7 @@ var i;
 };
 
 procedure calcnext();
-var i;
+var i, j;
 var last, akt, next;
 {
 //  let i <- 1;
@@ -117,16 +117,9 @@ var last, akt, next;
 
   let i <- 1;
   while i <= colcount do
-    let next <- data[i + 1];
-    //call OutputNum(i);
-    //call OutputNum(data[i + 1]);
-    //call OutputNum(last);
-    //call OutputNum(akt);
-    //call OutputNum(next);
-    //call OutputNum(rulebin[last][akt][next]);
-    //call OutputNewLine();
+    let j <- i + 1;
+    let next <- data[j];
     let data[i] <- rulebin[last][akt][next];
-
     let last <- akt;
     let akt <- next;
     let i <- i + 1
@@ -165,6 +158,8 @@ var i;
 
   call run()
 }.
+
+
 
 // test026
 main

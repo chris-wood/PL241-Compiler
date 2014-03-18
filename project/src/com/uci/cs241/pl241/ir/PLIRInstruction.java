@@ -647,6 +647,20 @@ public class PLIRInstruction
 		return this;
 	}
 	
+	public boolean checkForReplace(PLIRInstruction replacement, String var, String scope)
+	{
+		for (int ii = 0; ii < dependents.size(); ii++)
+		{
+			PLIRInstruction dependent = dependents.get(ii);
+			if (dependent.ident.get(scope) != null && dependent.ident.get(scope).equals(var))
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
 	public void forceGenerate(PLSymbolTable table)
 	{
 		if (kind == ResultKind.CONST)

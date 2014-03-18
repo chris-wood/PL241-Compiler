@@ -235,110 +235,89 @@ public class DLXGenerator
 					{
 						if (inst.ssaInst.branchDirection == 1)
 						{
-							if (leftOffsetMap.containsKey(refInst.id) && false)
+							if (inst.block.left.instructions.size() > 0)
 							{
-								offset = leftOffsetMap.get(refInst.id).pc;
-								jumpToBlock = leftOffsetMap.get(refInst.id).block;
+								offset = inst.block.left.instructions.get(0).pc;
+								jumpToBlock = inst.block.left;
+							}
+							else if (inst.block.left.endInstructions.size() > 0)
+							{
+								offset = inst.block.left.endInstructions.get(0).pc;
+								jumpToBlock = inst.block.left;
 							}
 							else
 							{
-//								offset = inst.block.left.instructions.get(0).pc;
-								if (inst.block.left.instructions.size() > 0)
+								ArrayList<DLXBasicBlock> queue = new ArrayList<DLXBasicBlock>();
+								queue.add(inst.block.left);
+								while (queue.isEmpty() == false)
 								{
-									offset = inst.block.left.instructions.get(0).pc;
-									jumpToBlock = inst.block.left;
-								}
-								else if (inst.block.left.endInstructions.size() > 0)
-								{
-									offset = inst.block.left.endInstructions.get(0).pc;
-									jumpToBlock = inst.block.left;
-								}
-								else
-								{
-									ArrayList<DLXBasicBlock> queue = new ArrayList<DLXBasicBlock>();
-									queue.add(inst.block.left);
-									while (queue.isEmpty() == false)
+									DLXBasicBlock curr = queue.get(0);
+									queue.remove(0);
+									while (curr == null)
 									{
-										DLXBasicBlock curr = queue.get(0);
+										curr = queue.get(0);
 										queue.remove(0);
-										while (curr == null)
-										{
-											curr = queue.get(0);
-											queue.remove(0);
-										}
-										if (curr.instructions.size() > 0)
-										{
-											offset = curr.instructions.get(0).pc;
-											jumpToBlock = curr;
-										}
-										else if (curr.endInstructions.size() > 0)
-										{
-											offset = curr.endInstructions.get(0).pc;
-											jumpToBlock = curr;
-										}
-										else
-										{
-											queue.add(curr.left);
-											queue.add(curr.right);
-										}
 									}
-//									offset = inst.block.left.left.endInstructions.get(0).pc;
+									if (curr.instructions.size() > 0)
+									{
+										offset = curr.instructions.get(0).pc;
+										jumpToBlock = curr;
+									}
+									else if (curr.endInstructions.size() > 0)
+									{
+										offset = curr.endInstructions.get(0).pc;
+										jumpToBlock = curr;
+									}
+									else
+									{
+										queue.add(curr.left);
+										queue.add(curr.right);
+									}
 								}
 							}
-//							offset = rightOffsetMap.get(refInst.id).pc;
 						}
 						else
 						{
-							if (rightOffsetMap.containsKey(refInst.id) && false)
+							if (inst.block.right.instructions.size() > 0)
 							{
-								offset = rightOffsetMap.get(refInst.id).pc;
-								jumpToBlock = rightOffsetMap.get(refInst.id).block;
+								offset = inst.block.right.instructions.get(0).pc;
+								jumpToBlock = inst.block.right;
 							}
-							else
+							else if (inst.block.right.endInstructions.size() > 0)
 							{
-								if (inst.block.right.instructions.size() > 0)
+								offset = inst.block.right.endInstructions.get(0).pc;
+								jumpToBlock = inst.block.right;
+							}
+							else // DFS to find start of next non-empty block
+							{
+								ArrayList<DLXBasicBlock> queue = new ArrayList<DLXBasicBlock>();
+								queue.add(inst.block.right);
+								while (queue.isEmpty() == false)
 								{
-									offset = inst.block.right.instructions.get(0).pc;
-									jumpToBlock = inst.block.right;
-								}
-								else if (inst.block.right.endInstructions.size() > 0)
-								{
-									offset = inst.block.right.endInstructions.get(0).pc;
-									jumpToBlock = inst.block.right;
-								}
-								else // DFS to find start of next non-empty block
-								{
-									ArrayList<DLXBasicBlock> queue = new ArrayList<DLXBasicBlock>();
-									queue.add(inst.block.right);
-									while (queue.isEmpty() == false)
+									DLXBasicBlock curr = queue.get(0);
+									queue.remove(0);
+									while (curr == null)
 									{
-										DLXBasicBlock curr = queue.get(0);
+										curr = queue.get(0);
 										queue.remove(0);
-										while (curr == null)
-										{
-											curr = queue.get(0);
-											queue.remove(0);
-										}
-										if (curr.instructions.size() > 0)
-										{
-											offset = curr.instructions.get(0).pc;
-											jumpToBlock = curr;
-										}
-										else if (curr.endInstructions.size() > 0)
-										{
-											offset = curr.endInstructions.get(0).pc;
-											jumpToBlock = curr;
-										}
-										else
-										{
-											queue.add(curr.left);
-											queue.add(curr.right);
-										}
 									}
-//									offset = inst.block.right.left.instructions.get(0).pc;
+									if (curr.instructions.size() > 0)
+									{
+										offset = curr.instructions.get(0).pc;
+										jumpToBlock = curr;
+									}
+									else if (curr.endInstructions.size() > 0)
+									{
+										offset = curr.endInstructions.get(0).pc;
+										jumpToBlock = curr;
+									}
+									else
+									{
+										queue.add(curr.left);
+										queue.add(curr.right);
+									}
 								}
 							}
-//							offset = leftOffsetMap.get(refInst.id).pc;
 						}
 					}
 					else

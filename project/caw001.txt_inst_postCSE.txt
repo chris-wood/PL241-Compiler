@@ -2,14 +2,14 @@
 2 := loadparam 0
 3 := add #0 #0
 4 := add #0 #0
-5 := phi({factIter=f}) #1 (10)
-6 := phi({factIter=i}) #1 (9)
-7 := cmp (6) (2)
+5 := phi({factIter=i}) #1 (9)
+6 := phi({factIter=f}) #1 (10)
+7 := cmp (5) (2)
 8 := bgt (7) #4
-9 := add (6) #1
-10 := mul (5) (6)
+9 := add (5) #1
+10 := mul (6) (5)
 11 := beq #0 #-6
-12 := return (5)
+12 := return (6)
 13 := loadparam 0
 14 := add #0 #0
 15 := cmp (13) #1
