@@ -29,6 +29,7 @@ public class PLIRInstruction
 	public String op2name;
 	
 	public boolean isConstant = false;
+	public boolean stale = true;
 	
 	public ArrayList<PLIRInstruction> dependents = new ArrayList<PLIRInstruction>();
 	

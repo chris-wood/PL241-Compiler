@@ -1329,7 +1329,11 @@ public class PLParser
 							String currScope = scope.getCurrentScope();
 							Function func = scope.functions.get(funcName);
 							System.out.println("Adding used global: " + storeInst.ident.get(currScope));
-							func.addModifiedGlobal(globalVariables.get(storeInst.ident.get(currScope)), storeInst);
+							
+							if (func != null && storeInst.ident.get(currScope) != null)
+							{
+								func.addModifiedGlobal(globalVariables.get(storeInst.ident.get(currScope)), storeInst);
+							}
 						}
 						
 						storeInst.ident.put(scope.getCurrentScope(), varName);
@@ -1338,8 +1342,11 @@ public class PLParser
 						if (markToSave)
 						{
 							Function func = scope.functions.get(funcName);
-							func.addModifiedGlobal(globalVariables.get(varName), storeInst);
-							func.hasReturn = func.hasReturn;
+							if (func != null)
+							{
+								func.addModifiedGlobal(globalVariables.get(varName), storeInst);
+								func.hasReturn = func.hasReturn;
+							}
 						}
 					}
 					else // array!

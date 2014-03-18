@@ -466,6 +466,7 @@ public class PLIRBasicBlock
 							
 							// Re-evaluate this instruction since one of its operands was replaced
 							bInst.evaluate(target, offset, replacement, scope, visitedInsts, branch);
+							bInst.stale = true;
 							System.out.println("Replaced: " + bInst);
 							
 							// Check to see if this is a new variable
@@ -482,10 +483,20 @@ public class PLIRBasicBlock
 							{
 								bInst.evaluate(-1, offset, replacement, scope, new ArrayList<PLIRInstruction>(), branch);
 							}
+							else if (bInst.op1 != null && bInst.op1.stale)
+							{
+								bInst.evaluate(-1, offset, replacement, scope, new ArrayList<PLIRInstruction>(), branch);
+								bInst.stale = false;
+							}
 							
 							if (bInst.op2 != null && bInst.op2.checkForReplace(replacement, var, scopeName))
 							{
 								bInst.evaluate(-1, offset, replacement, scope, new ArrayList<PLIRInstruction>(), branch);
+							}
+							else if (bInst.op2 != null && bInst.op2.stale)
+							{
+								bInst.evaluate(-1, offset, replacement, scope, new ArrayList<PLIRInstruction>(), branch);
+								bInst.stale = false;
 							}
 						}
 						

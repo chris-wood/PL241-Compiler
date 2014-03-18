@@ -1,45 +1,3 @@
-// factorial
-main
-var input;
-
-function factIter(n);
-var i, f;
-{
-  let i <- 1;
-  let f <- 1;
-  while i <= n do
-    let f <- f * i;
-    let i <- i + 1
-  od;
-  return f
-};
-
-function factRec(n);
-var i;
-{
-  if n <= 1 then
-    return 1
-  fi;
-  return call factRec(n - 1) * n
-};
-
-{
-  let input <- call InputNum();
-  call OutputNum(input);
-  call OutputNewLine();
-
-  call OutputNum(call factIter(input));
-
-  call OutputNum(input);
-  call OutputNewLine();
-
-  call OutputNum(call factRec(input));
-
-  call OutputNum(input);
-  call OutputNewLine()
-}
-.
-
 // test...
 main
 array[82] data;
@@ -117,14 +75,13 @@ var last, akt, next;
 
   let i <- 1;
   while i <= colcount do
-    let j <- i + 1;
-    let next <- data[j];
+    let next <- data[i + 1];
     let data[i] <- rulebin[last][akt][next];
+
     let last <- akt;
     let akt <- next;
     let i <- i + 1
-  od;
-  call OutputNewLine()
+  od
 };
 
 procedure run();
@@ -141,7 +98,7 @@ var i;
 {
   call OutputNum(22);
   let colcount <- 80;
-  let rowcount <- 10; 
+  let rowcount <- 60; 
   // 60
 
   call OutputNum(colcount);
@@ -159,6 +116,79 @@ var i;
   call run()
 }.
 
+// multidimensional array test
+main 
+var a, b, i, j;
+array[10][10] output;
+{
+  while 1 != 2 do
+    call OutputNewLine();
+    let a <- call InputNum();
+    let b <- call InputNum();
+    let i <- call InputNum();
+    let j <- call InputNum();
+
+    call OutputNum(a + b);
+    call OutputNum(i);
+    call OutputNum(j);
+    let output[i][j] <- a + b;
+    call OutputNum(output[i][j]);
+    call OutputNewLine();
+    
+    let i <- 0;
+    while i < 10 do
+      let j <- 0;
+      while j < 10 do
+        call OutputNum(output[i][j]);
+        let j <- j + 1
+      od;
+      call OutputNewLine();
+      let i <- i + 1
+    od
+  od
+}.
+
+// factorial
+main
+var input;
+
+function factIter(n);
+var i, f;
+{
+  let i <- 1;
+  let f <- 1;
+  while i <= n do
+    let f <- f * i;
+    let i <- i + 1
+  od;
+  return f
+};
+
+function factRec(n);
+var i;
+{
+  if n <= 1 then
+    return 1
+  fi;
+  return call factRec(n - 1) * n
+};
+
+{
+  let input <- call InputNum();
+  call OutputNum(input);
+  call OutputNewLine();
+
+  call OutputNum(call factIter(input));
+
+  call OutputNum(input);
+  call OutputNewLine();
+
+  call OutputNum(call factRec(input));
+
+  call OutputNum(input);
+  call OutputNewLine()
+}
+.
 
 
 // test026
@@ -375,38 +405,6 @@ var a, b, c, d, e, f, g;
   let g <- d / a
 }
 .
-
-// multidimensional array test
-main 
-var a, b, i, j;
-array[10][10] output;
-{
-  while 1 != 2 do
-    call OutputNewLine();
-    let a <- call InputNum();
-    let b <- call InputNum();
-    let i <- call InputNum();
-    let j <- call InputNum();
-
-    call OutputNum(a + b);
-    call OutputNum(i);
-    call OutputNum(j);
-    let output[i][j] <- a + b;
-    call OutputNum(output[i][j]);
-    call OutputNewLine();
-    
-    let i <- 0;
-    while i < 10 do
-      let j <- 0;
-      while j < 10 do
-        call OutputNum(output[i][j]);
-        let j <- j + 1
-      od;
-      call OutputNewLine();
-      let i <- i + 1
-    od
-  od
-}.
 
 // test002
 main

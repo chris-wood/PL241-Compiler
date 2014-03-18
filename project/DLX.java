@@ -275,7 +275,7 @@ public class DLX {
 					R[a] = Integer.parseInt(line);
 					break;
 				case WRD:
-					System.out.print(R[b] + "  ");
+					System.out.print(R[b] + "");
 					break;
 				case WRH:
 					System.out.print("0x" + Integer.toHexString(R[b]) + "  ");
