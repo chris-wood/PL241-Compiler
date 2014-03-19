@@ -254,6 +254,7 @@ public class PLC
 				}
 				
 				DLXGenerator dlxGen = new DLXGenerator(globalOffset, globalArrayOffset, globalRefMap, ra.constants, ra.arrays);
+				dlxGen.optimizeForLocals = blocks.size() == 1;
 				for (int i = 0; i < blocks.size() - 1; i++)
 				{
 					dlxGen.functionMap.put(blocks.get(i).label, parser.scope.functions.get(blocks.get(i).label));

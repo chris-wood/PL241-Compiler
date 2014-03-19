@@ -52,6 +52,7 @@ public class DLXGenerator
 	
 	// Flag to determine if instructions are emitted (false for CSE-eliminated instructions)
 	public boolean emitInstruction = true;
+	public boolean optimizeForLocals = false;
 
 	// Metadata about each instruction
 	public HashMap<InstructionType, Integer> opcodeMap = new HashMap<InstructionType, Integer>();
@@ -601,6 +602,9 @@ public class DLXGenerator
 
 	public boolean checkForGlobalLoad(DLXBasicBlock edb, PLIRInstruction usingInst, int refId, int regNum, int offset, boolean fixOffset)
 	{
+		// Check for functions without procedures
+		if (optimizeForLocals) return false;
+		
 		// Short circuit for arrays
 		String name, saveName;
 		if (usingInst.block == null || (usingInst.block != null && usingInst.block.label == null))
@@ -674,6 +678,9 @@ public class DLXGenerator
 
 	public boolean checkForGlobalStore(DLXBasicBlock edb, PLIRInstruction usingInst, boolean appendToStart, boolean reallyStart)
 	{
+		// Check for functions without procedures
+		if (optimizeForLocals) return false;
+		
 		// Short circuit for arrays
 		String name, saveName;
 		if (usingInst.block == null || (usingInst.block != null && usingInst.block.label == null))
@@ -888,7 +895,6 @@ public class DLXGenerator
 								newInst.opcode = InstructionType.ADDI;
 								newInst.format = formatMap.get(InstructionType.ADDI);
 								newInst.ra = ssaInst.regNum;
-//								newInst.rb = ssaInst.regNum;
 								newInst.rb = constants.get(ssaInst.i1).regNum;
 								newInst.rc = ssaInst.i2;
 
@@ -904,7 +910,6 @@ public class DLXGenerator
 								newInst.opcode = InstructionType.ADDI;
 								newInst.format = formatMap.get(InstructionType.ADDI);
 								newInst.ra = ssaInst.regNum;
-//								newInst.rb = ssaInst.regNum;
 								newInst.rb = 0;
 								newInst.rc = ssaInst.i2;
 
@@ -931,10 +936,7 @@ public class DLXGenerator
 								fixOffset(ssaInst.id, newInst);
 								appendInstructionToBlock(edb, newInst);
 							}
-
-//							fixOffset(ssaInst.id, newInst);
-//							appendInstructionToBlock(edb, newInst);
-
+							
 							checkForGlobalStore(edb, ssaInst, true, false);
 						}
 						else if (rightConst)
@@ -954,10 +956,7 @@ public class DLXGenerator
 								fixOffset(ssaInst.id, newInst);
 								appendInstructionToBlock(edb, newInst);
 							}
-
-//							fixOffset(ssaInst.id, newInst);
-//							appendInstructionToBlock(edb, newInst);
-
+							
 							checkForGlobalStore(edb, ssaInst, true, false);
 						}
 						else if (!isArrayAdd)
@@ -983,15 +982,6 @@ public class DLXGenerator
 							}
 							appendInstructionToBlock(edb, newInst);
 
-//							fixOffset(ssaInst.id, newInst);
-//							appendInstructionToBlock(edb, newInst);
-							
-							
-							if (newInst.ra == 2 && newInst.rb == 0 && newInst.rc == 3)
-							{
-								System.out.println("where is this going");
-							}
-
 							checkForGlobalStore(edb, ssaInst, true, false);
 						}
 						else // addition for an array
@@ -1006,7 +996,6 @@ public class DLXGenerator
 								newInst.format = formatMap.get(InstructionType.ADDI);
 								newInst.rb = GLOBAL_ADDRESS;
 								newInst.rc = -4 * (globalArrayOffset.get(ident));
-//								newInst.rc = -(globalArrayOffset.get(ident));
 							}
 							else // local array on the stack
 							{
@@ -1019,11 +1008,6 @@ public class DLXGenerator
 							// Store the offset
 							fixOffset(ssaInst.id, newInst);
 							appendInstructionToBlock(edb, newInst);
-						}
-						
-						if (newInst.ra == 2 && newInst.rb == 0 && newInst.rc == 3)
-						{
-							System.out.println("where is this going");
 						}
 
 						break;
