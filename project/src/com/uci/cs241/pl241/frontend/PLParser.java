@@ -2397,9 +2397,11 @@ public class PLParser
 		PLIRBasicBlock result = parse_typeDecl(in);
 		result = parse_ident(in);
 		String symName = result.getLastInst().ident.get(scope.getCurrentScope());
+		
+		ArrayList<Integer> size = arrayDimensionMap.get(symName);
 		if (!globalVariableParsing && this.arrayDimensionMap.containsKey(symName))
 		{
-			func.arraySizes.put(symName, arrayDimensionMap.get(symName));
+			func.arraySizes.put(symName, size);
 		}
 		
 		// Parse any other related declarations
@@ -2410,9 +2412,8 @@ public class PLParser
 			
 			if (!globalVariableParsing && this.arrayDimensionMap.containsKey(sym))
 			{
-				func.arraySizes.put(sym, arrayDimensionMap.get(sym));
+				func.arraySizes.put(sym, size);
 			}
-			
 			identTypeMap.put(sym, type);
 			result = parse_ident(in);
 		}
