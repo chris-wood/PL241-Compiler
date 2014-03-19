@@ -79,11 +79,6 @@ public class CSE
 			// Check for subexpression elimination on the parent
 			for (PLIRInstruction inst : block.instructions)
 			{
-				if (inst.id == 34)
-	    		{
-	    			System.err.print("asd");;
-	    		}
-				
 				if (inst.op1 != null)
 				{
 					while (inst.op1.refInst != null)
@@ -103,7 +98,6 @@ public class CSE
 				{
 					for (PLIRInstruction parentInst : domList.get(inst.opcode))
 					{
-						System.err.println(block.id +  ") " + "Trying CSE with " + inst.id + " " + parentInst.id + ", " + parentInst.toString());
 						if (inst.equals(parentInst) && inst.id > parentInst.id) // really shouldn't have to do this, but just in case
 						{
 							inst.removeInstruction(EliminationReason.CSE, parentInst);

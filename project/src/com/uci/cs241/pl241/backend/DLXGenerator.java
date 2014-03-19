@@ -182,7 +182,6 @@ public class DLXGenerator
 		for (DLXInstruction inst : instructions)
 		{
 			inst.pc = localPc++;
-			System.out.println(inst);
 		}
 
 		// Fix branches
@@ -852,11 +851,6 @@ public class DLXGenerator
 				{
 					ssaInst.op2 = ssaInst.op2.refInst;
 				}
-				
-				if (ssaInst.id == 15)
-				{
-					System.err.println("here");
-				}
 
 				// Dummy instruction to generate
 				DLXInstruction newInst = new DLXInstruction();
@@ -1111,10 +1105,6 @@ public class DLXGenerator
 						}
 						else if (leftConst)
 						{
-							if (ssaInst.id == 61)
-								{
-								System.err.println("here");
-								}
 							newInst.opcode = InstructionType.MULI;
 							newInst.format = formatMap.get(InstructionType.MULI);
 							newInst.ra = ssaInst.regNum;
@@ -1179,8 +1169,22 @@ public class DLXGenerator
 						}
 						else if (leftConst)
 						{
-							System.err.println("Invalid div order");
-							System.exit(-1);
+							DLXInstruction preInst = new DLXInstruction();
+							preInst.opcode = InstructionType.ADDI;
+							preInst.format = formatMap.get(InstructionType.ADDI);
+							preInst.ra = constants.get(ssaInst.i1).regNum;
+							preInst.rb = 0;
+							preInst.rc = ssaInst.i1;
+							
+							newInst.opcode = InstructionType.DIV;
+							newInst.format = formatMap.get(InstructionType.DIV);
+							newInst.ra = ssaInst.regNum;
+							newInst.rb = preInst.ra;
+							newInst.rc = ssaInst.op2.regNum;
+
+							fixOffset(ssaInst.id, preInst);
+							appendInstructionToBlock(edb, preInst);
+							appendInstructionToBlock(edb, newInst);
 						}
 						else if (rightConst)
 						{
@@ -1211,37 +1215,16 @@ public class DLXGenerator
 						break;
 
 					case ADDA:
-//						if (leftConst)
-//						{
-//							newInst.opcode = InstructionType.ADDI;
-//							newInst.format = formatMap.get(InstructionType.ADDI);
-//							newInst.ra = ssaInst.regNum;
-//							newInst.rb = ssaInst.op2.regNum;
-//							newInst.rc = ssaInst.i1;
-//
-////							fixOffset(ssaInst.id, newInst);
-////							appendInstructionToBlock(edb, newInst);
-//
-//							checkForGlobalStore(edb, ssaInst, true);
-//						}
-//						else
-//						{
-							newInst.opcode = InstructionType.ADD;
-							newInst.format = formatMap.get(InstructionType.ADD);
-							newInst.ra = ssaInst.regNum;						
-							newInst.rb = ssaInst.op1.regNum;
-							newInst.rc = ssaInst.op2.regNum;
-
-							// TODO: why (or how?) would we ever store an offset in
-							// a global variable?
-							// checkForGlobalStore(edb, ssaInst, true);
-//						}
+						newInst.opcode = InstructionType.ADD;
+						newInst.format = formatMap.get(InstructionType.ADD);
+						newInst.ra = ssaInst.regNum;						
+						newInst.rb = ssaInst.op1.regNum;
+						newInst.rc = ssaInst.op2.regNum;
 						
 						// Store the offset
 						fixOffset(ssaInst.id, newInst);
 						appendInstructionToBlock(edb, newInst);
 
-						System.err.println("TODO: ADDA");
 						break;
 
 					case WRITE:
@@ -1264,8 +1247,6 @@ public class DLXGenerator
 							}
 						}
 						else
-						// constant, push regNum onto stack, load constant into
-						// rb, pop off of stack
 						{
 							DLXInstruction pushInst = new DLXInstruction();
 							pushInst.opcode = InstructionType.PSH;
@@ -1283,14 +1264,12 @@ public class DLXGenerator
 							loadInst.rc = ssaInst.i1;
 							loadInst.encodedForm = encodeInstruction(loadInst);
 
-							newInst.rb = ssaInst.regNum; // the actual write
-															// instruction
+							newInst.rb = ssaInst.regNum; // the actual write instruction
 
 							DLXInstruction popInst = new DLXInstruction();
 							popInst.opcode = InstructionType.POP;
 							popInst.format = formatMap.get(InstructionType.POP);
-							popInst.ra = ssaInst.regNum; // save contents of
-															// ssaInst.regNum
+							popInst.ra = ssaInst.regNum; // save contents of ssaInst.regNum
 							popInst.rb = SP;
 							popInst.rc = -4; // word size
 							popInst.encodedForm = encodeInstruction(popInst);
@@ -1360,8 +1339,6 @@ public class DLXGenerator
 						}
 						else if (leftConst)
 						{
-							System.err.println("left const in comparison");
-
 							DLXInstruction preInst = new DLXInstruction();
 							preInst.opcode = InstructionType.ADDI;
 							preInst.format = formatMap.get(InstructionType.ADDI);
@@ -1379,18 +1356,8 @@ public class DLXGenerator
 							// Check for loading global
 							fixOffset(ssaInst.id, preInst);
 							appendInstructionToBlock(edb, preInst);
-							if (checkForGlobalLoad(edb, ssaInst.op2, ssaInst.op2.id, ssaInst.op2.regNum, ssaInst.id,
-									false))
-							{
-//								appendInstructionToBlock(edb, newInst);
-							}
-							else
-							{
-								
-							}
+							checkForGlobalLoad(edb, ssaInst.op2, ssaInst.op2.id, ssaInst.op2.regNum, ssaInst.id, false);
 							appendInstructionToBlock(edb, newInst);
-
-							// System.exit(-1);
 						}
 						else if (rightConst)
 						{
@@ -1401,11 +1368,7 @@ public class DLXGenerator
 							newInst.rc = ssaInst.i2;
 
 							// Check for loading global
-							if (checkForGlobalLoad(edb, ssaInst.op1, ssaInst.op1.id, ssaInst.op1.regNum, ssaInst.id, true))
-							{
-//								appendInstructionToBlock(edb, newInst);
-							}
-							else
+							if (!(checkForGlobalLoad(edb, ssaInst.op1, ssaInst.op1.id, ssaInst.op1.regNum, ssaInst.id, true)))
 							{
 								fixOffset(ssaInst.id, newInst);
 							}
@@ -1424,13 +1387,11 @@ public class DLXGenerator
 							if (checkForGlobalLoad(edb, ssaInst.op1, ssaInst.op1.id, ssaInst.op1.regNum, ssaInst.id, fixOffset))
 							{
 								fixOffset = false;
-//								appendInstructionToBlock(edb, newInst);
 							}
 
 							if (checkForGlobalLoad(edb, ssaInst.op2, ssaInst.op2.id, ssaInst.op2.regNum, ssaInst.id, fixOffset))
 							{
 								fixOffset = false;
-//								appendInstructionToBlock(edb, newInst);
 							}
 
 							if (fixOffset)
@@ -1527,8 +1488,6 @@ public class DLXGenerator
 							retParamInst.ra = ssaInst.op1.regNum;
 							retParamInst.rb = SP;
 
-							// TODO: handle case of constant returns or nothing
-							// (control flow termination)
 							fixOffset(ssaInst.id, retParamInst);
 							retParamInst.rc = 4;
 							savedReturn = true;
@@ -1549,8 +1508,6 @@ public class DLXGenerator
 							retParamInst.ra = ssaInst.op1.regNum;
 							retParamInst.rb = SP;
 
-							// TODO: handle case of constant returns or nothing
-							// (control flow termination)
 							fixOffset(ssaInst.id, retParamInst);
 							retParamInst.rc = 4;
 							savedReturn = true;
@@ -1620,8 +1577,7 @@ public class DLXGenerator
 						fixOffset(ssaInst.id, push1);
 						appendInstructionToBlock(edb, push1);
 
-						// Push all operands onto the stack (callee recovers the
-						// proper order)
+						// Push all operands onto the stack (callee recovers the proper order)
 						for (int opIndex = ssaInst.callOperands.size() - 1; opIndex >= 0; opIndex--)
 						{	
 							PLIRInstruction operand = ssaInst.callOperands.get(opIndex);
@@ -1644,15 +1600,12 @@ public class DLXGenerator
 								appendInstructionToBlock(edb, preInst);
 							}
 							
-							System.out.println("pushing: " + operand);
 							DLXInstruction push3 = new DLXInstruction();
 							push3.opcode = InstructionType.PSH;
 							push3.format = formatMap.get(InstructionType.PSH);
 
-							// TODO: do check to see if this is a global variable
-
 							push3.ra = srcReg; // save contents of ssaInst.regNum
-							push3.rb = SP; //
+							push3.rb = SP; 
 							push3.rc = 4; // word size
 							push3.encodedForm = encodeInstruction(push3);
 							appendInstructionToBlock(edb, push3);
@@ -1663,7 +1616,7 @@ public class DLXGenerator
 						push2.opcode = InstructionType.PSH;
 						push2.format = formatMap.get(InstructionType.PSH);
 						push2.ra = FP; // save contents of ssaInst.regNum
-						push2.rb = SP; //
+						push2.rb = SP; 
 						push2.rc = 4; // word size
 						push2.encodedForm = encodeInstruction(push2);
 						appendInstructionToBlock(edb, push2);
@@ -1677,17 +1630,6 @@ public class DLXGenerator
 						fpChange.rc = SP;
 						fpChange.encodedForm = encodeInstruction(fpChange);
 						appendInstructionToBlock(edb, fpChange);
-
-//						// FP = FP - 2, equating to FP = SP - FP - 2
-//						DLXInstruction push5 = new DLXInstruction();
-//						push5.opcode = InstructionType.SUBI;
-//						push5.format = formatMap.get(InstructionType.SUBI);
-//						push5.ra = FP;
-//						push5.rb = FP;
-//						push5.rc = 2; // subtract 2, one for FP and one for RA
-//										// register on the stack
-//						push5.encodedForm = encodeInstruction(push5);
-//						appendInstructionToBlock(edb, push5);
 
 						// Add the JSR routine
 						DLXInstruction jsrInst = new DLXInstruction();
@@ -1707,8 +1649,7 @@ public class DLXGenerator
 						fixOffset(ssaInst.id, jsrInst);
 						appendInstructionToBlock(edb, jsrInst);
 
-						// Store the result, which is expected to be saved in
-						// R27
+						// Store the result, which is expected to be saved in R27
 						DLXInstruction retPop = new DLXInstruction();
 						retPop.opcode = InstructionType.POP;
 						retPop.format = formatMap.get(InstructionType.POP);
@@ -1732,13 +1673,10 @@ public class DLXGenerator
 						for (int opIndex = 0; opIndex < ssaInst.callOperands.size(); opIndex++)
 						{
 							PLIRInstruction operand = ssaInst.callOperands.get(opIndex);
-							System.out.println("popping: " + operand);
 							DLXInstruction pop2 = new DLXInstruction();
 							pop2.opcode = InstructionType.POP;
 							pop2.format = formatMap.get(InstructionType.POP);
-							pop2.ra = operand.regNum; // toss away the operands
-														// that were passed onto
-														// the stack
+							pop2.ra = operand.regNum; // toss away the operands that were passed onto the stack
 							pop2.rb = SP;
 							pop2.rc = -4; // word size
 							pop2.encodedForm = encodeInstruction(pop2);
@@ -1816,7 +1754,7 @@ public class DLXGenerator
 							regPush.opcode = InstructionType.PSH;
 							regPush.format = formatMap.get(InstructionType.PSH);
 							regPush.ra = ri; // save contents of ssaInst.regNum
-							regPush.rb = SP; //
+							regPush.rb = SP; 
 							regPush.rc = 4; // word size
 							regPush.encodedForm = encodeInstruction(regPush);
 							fixOffset(ssaInst.id, regPush);
@@ -1860,9 +1798,6 @@ public class DLXGenerator
 							DLXInstruction push3 = new DLXInstruction();
 							push3.opcode = InstructionType.PSH;
 							push3.format = formatMap.get(InstructionType.PSH);
-
-							// TODO: do check to see if this is a constant global variable
-
 							push3.ra = srcReg; 
 							push3.rb = SP; 
 							push3.rc = 4; // word size
@@ -1914,13 +1849,10 @@ public class DLXGenerator
 						for (int opIndex = 0; opIndex < ssaInst.callOperands.size(); opIndex++)
 						{
 							PLIRInstruction operand = ssaInst.callOperands.get(opIndex);
-							System.out.println("popping: " + operand);
 							DLXInstruction pop2 = new DLXInstruction();
 							pop2.opcode = InstructionType.POP;
 							pop2.format = formatMap.get(InstructionType.POP);
-							pop2.ra = operand.regNum; // toss away the operands
-														// that were passed onto
-														// the stack
+							pop2.ra = operand.regNum; // toss away the operands that were passed onto the stack
 							pop2.rb = SP;
 							pop2.rc = -4; // word size
 							pop2.encodedForm = encodeInstruction(pop2);
@@ -1981,7 +1913,6 @@ public class DLXGenerator
 						
 						checkForGlobalStore(edb, ssaInst, true, false);
 
-						System.err.println("TODO: LOAD");
 						break;
 
 					case STORE:
@@ -2021,7 +1952,6 @@ public class DLXGenerator
 						}
 						appendInstructionToBlock(edb, stwInst);
 
-						System.err.println("TODO: STORE");
 						break;
 
 					case SAVEGLOBAL:
@@ -2034,7 +1964,6 @@ public class DLXGenerator
 
 						fixOffset(ssaInst.id, storeInst);
 						appendInstructionToBlock(edb, storeInst);
-						System.err.println("TODO: SAVEGLOBAL");
 						break;
 
 					case PHI:
@@ -2083,9 +2012,7 @@ public class DLXGenerator
 								leftInst.rb = 0;
 								leftInst.rc = ssaInst.i1;
 
-//								fixOffset(ssaInst.id, leftInst);
 								leftOffsetMap.put(ssaInst.id, leftInst);
-//								lastLeftJumps.add(ssaInst);
 								appendInstructionToBlock(edb, leftInst);
 								checkForGlobalStore(edb, ssaInst, true, false);
 
@@ -2099,9 +2026,6 @@ public class DLXGenerator
 								rightOffsetMap.put(ssaInst.id, rightInst);
 								appendInstructionToEndBlock(insertBlock, rightInst);
 								checkForGlobalStore(insertBlock, ssaInst, false, false);
-								
-//								appendInstructionToStartBlock(edb.right, rightInst);
-//								checkForGlobalStore(edb.right, ssaInst, false, true);
 							}
 							else if (ssaInst.op1type == OperandType.CONST) // left side is a constant
 							{
@@ -2112,10 +2036,7 @@ public class DLXGenerator
 								leftInst.rb = 0;
 								leftInst.rc = ssaInst.i1;
 
-//								fixOffset(ssaInst.id, leftInst);
 								leftOffsetMap.put(ssaInst.id, leftInst);
-//								lastLeftJump = ssaInst.id;
-//								lastLeftJumps.add(ssaInst);
 								appendInstructionToBlock(edb, leftInst);
 								checkForGlobalStore(edb, ssaInst, true, false);
 
@@ -2132,9 +2053,6 @@ public class DLXGenerator
 									rightOffsetMap.put(ssaInst.id, rightInst);
 									appendInstructionToEndBlock(insertBlock, rightInst);
 									checkForGlobalStore(insertBlock, ssaInst, false, false);
-									
-//									appendInstructionToStartBlock(edb.right, rightInst);
-//									checkForGlobalStore(edb.right, ssaInst, false, true);
 								}
 							}
 							else if (ssaInst.op2type == OperandType.CONST) // right side is a constant
@@ -2149,10 +2067,7 @@ public class DLXGenerator
 									leftInst.rb = 0;
 									leftInst.rc = ssaInst.op1.regNum;
 
-//									fixOffset(ssaInst.id, leftInst);
 									leftOffsetMap.put(ssaInst.id, leftInst);
-//									lastLeftJump = ssaInst.id;
-//									lastLeftJumps.add(ssaInst);
 									
 									appendInstructionToBlock(edb, leftInst);
 									checkForGlobalStore(edb, ssaInst, true, false);
@@ -2169,14 +2084,10 @@ public class DLXGenerator
 
 								if (!fixedOffset)
 								{
-//									fixOffset(ssaInst.id, rightInst);
 									rightOffsetMap.put(ssaInst.id, rightInst);
 								}						
 								appendInstructionToEndBlock(insertBlock, rightInst);
 								checkForGlobalStore(insertBlock, ssaInst, false, false);
-								
-//								appendInstructionToStartBlock(edb.right, rightInst);
-//								checkForGlobalStore(edb.right, ssaInst, false, true);
 							}
 							else // both sides are registers.
 							{
@@ -2191,10 +2102,7 @@ public class DLXGenerator
 									leftInst.rc = ssaInst.op1.regNum;
 
 									fixedOffset = true;
-//									fixOffset(ssaInst.id, leftInst);
 									leftOffsetMap.put(ssaInst.id, leftInst);
-//									lastLeftJump = ssaInst.id;
-//									lastLeftJumps.add(ssaInst);
 									appendInstructionToBlock(edb, leftInst);
 									checkForGlobalStore(edb, ssaInst, true, false);
 									insertBlock.skipped++;
@@ -2213,17 +2121,12 @@ public class DLXGenerator
 									appendInstructionToEndBlock(insertBlock, rightInst);
 									checkForGlobalStore(insertBlock, ssaInst, false, false);
 									
-//									appendInstructionToStartBlock(edb.right, rightInst);
-//									checkForGlobalStore(edb.right, ssaInst, false, true);
-									
 									insertBlock.skipped++;
 								}
 							}
 						}
 						else // PHI for an if-statement, contained in the join node
-						{
-							System.out.println("if phi encountered: " + ssaInst);
-							
+						{	
 							// Determine left and right parents and offsets
 							DLXBasicBlock leftParent = edb.parents.get(0);
 							DLXBasicBlock rightParent = edb.parents.get(1);
@@ -2238,7 +2141,6 @@ public class DLXGenerator
 								leftInst.rb = 0;
 								leftInst.rc = ssaInst.i1;
 								
-//								lastLeftJumps.add(ssaInst);
 								leftOffsetMap.put(ssaInst.id, leftInst);
 								appendInstructionToEndBlock(leftParent, leftInst);
 								checkForGlobalStore(leftParent, ssaInst, false, false);
@@ -2263,7 +2165,6 @@ public class DLXGenerator
 								leftInst.rb = 0;
 								leftInst.rc = ssaInst.i1;
 
-//								lastLeftJumps.add(ssaInst);
 								leftOffsetMap.put(ssaInst.id, leftInst);
 								appendInstructionToEndBlock(leftParent, leftInst);
 								checkForGlobalStore(leftParent, ssaInst, false, false);
@@ -2294,7 +2195,6 @@ public class DLXGenerator
 									leftInst.rb = 0;
 									leftInst.rc = ssaInst.op1.regNum;
 
-//									lastLeftJumps.add(ssaInst);
 									leftOffsetMap.put(ssaInst.id, leftInst);
 									appendInstructionToEndBlock(leftParent, leftInst);
 									checkForGlobalStore(leftParent, ssaInst, false, false);
@@ -2324,7 +2224,6 @@ public class DLXGenerator
 									leftInst.rb = 0;
 									leftInst.rc = ssaInst.op1.regNum;
 
-//									lastLeftJumps.add(ssaInst);
 									leftOffsetMap.put(ssaInst.id, leftInst);
 									appendInstructionToEndBlock(leftParent, leftInst);
 									checkForGlobalStore(leftParent, ssaInst, false, false);
@@ -2348,6 +2247,7 @@ public class DLXGenerator
 				}
 			}
 
+			// Continue walking the basic block tree and generating instructions
 			if (b.leftChild != null)
 			{
 				generateBlockTreeInstructons(edb.left, b.leftChild, func, isMain, visited);
@@ -2391,5 +2291,4 @@ public class DLXGenerator
 
 		return block;
 	}
-
 }

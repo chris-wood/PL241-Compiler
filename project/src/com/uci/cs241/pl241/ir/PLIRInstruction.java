@@ -31,14 +31,10 @@ public class PLIRInstruction
 	public boolean isConstant = false;
 	public boolean stale = true;
 	
+	// Pointers to other instructions that need to be considered when this is generated
 	public ArrayList<PLIRInstruction> dependents = new ArrayList<PLIRInstruction>();
-	
 	public ArrayList<PLIRInstruction> loadInstructions = new ArrayList<PLIRInstruction>();
-	
 	public ArrayList<String> guards = new ArrayList<String>();
-	
-	// used to indicate if this instruction is part of a designator
-//	public boolean isDesig = false;
 	
 	// boolean to flag if phi instruction is for IF or while
 	public boolean whilePhi = false;
@@ -48,14 +44,20 @@ public class PLIRInstruction
 	public String dummyName;
 	public int paramNumber;
 	
-	public int branchDirection = 1; // assume this branch goes to the left unless otherwise specified...
+	// assume this branch goes to the left unless otherwise specified...
+	public int branchDirection = 1; 
 	
 	// Wrapping BB
 	public PLIRBasicBlock block;
 	
+	// Flags to help in parsing
 	public boolean globalMark = false; 
 	public boolean isGlobalVariable = false;
 	public boolean isReturn = false;
+	public boolean leftProtected = false;
+	public boolean leftWasPhiReplaced = false;
+	public boolean rightProtected = false;
+	public boolean rightWasPhiReplaced = false;
 	
 	// Register allocation information
 	public int regNum;
@@ -79,13 +81,9 @@ public class PLIRInstruction
 	public int condcode;
 	public int fixupLocation;
 	public boolean wasIdent = false;
-//	public String origIdent = "";
 	
 	public HashMap<String, String> ident = new HashMap<String, String>();
-	
 	public String funcName;
-	
-//	public String saveName = "";
 	public HashMap<String, String> saveName = new HashMap<String, String>();
 	
 	// Elimination information
@@ -94,49 +92,9 @@ public class PLIRInstruction
 	public boolean isRemoved = false;
 	public PLIRInstruction refInst = null;
 	
-	public static PLIRInstruction copy(PLSymbolTable scope, PLIRInstruction inst)
-	{
-		PLIRInstruction copyInst = new PLIRInstruction(scope);
-		copyInst.id = inst.id;
-		copyInst.opcode = inst.opcode;
-		copyInst.type = inst.type;
-//		copyInst.origIdent = inst.origIdent;
-//		copyInst.saveName = inst.saveName;
-		copyInst.op1 = inst.op1;
-		copyInst.op1type = inst.op1type;
-		copyInst.i1 = inst.i1;
-		copyInst.op2 = inst.op2;
-		copyInst.op2type = inst.op2type;
-		copyInst.i2 = inst.i2;
-		copyInst.op2address = inst.op2address;
-		copyInst.op2name = inst.op2name;
-		copyInst.branchDirection = inst.branchDirection;
-		copyInst.condcode = inst.condcode;
-		copyInst.cost = inst.cost;
-		copyInst.depth = inst.depth;
-		copyInst.dummyName = inst.dummyName;
-		copyInst.elimReason = inst.elimReason;
-		copyInst.funcName = inst.funcName;
-		copyInst.globalMark = inst.globalMark;
-		copyInst.isConstant = inst.isConstant;
-		copyInst.isGlobalVariable = inst.isGlobalVariable;
-		copyInst.isArray = inst.isArray;
-		copyInst.isRemoved = inst.isRemoved;
-		copyInst.jumpInst = inst.jumpInst;
-		copyInst.paramNumber = inst.paramNumber;
-		copyInst.refInst = inst.refInst;
-		copyInst.storedValue = inst.storedValue;
-		copyInst.tempVal = inst.tempPosition;
-		copyInst.uses = inst.uses;
-		copyInst.wasIdent = inst.wasIdent;
-		copyInst.whilePhi = inst.whilePhi;
-		return copyInst;
-	}
-	
 	public void removeInstruction(EliminationReason reason, PLIRInstruction ref)
 	{
 		PLStaticSingleAssignment.displayInstructions();
-		System.err.println("CSE: " + this.id + " referencing " + ref.id);
 		
 		isRemoved = true;
 		elimReason = reason;
@@ -155,9 +113,6 @@ public class PLIRInstruction
 		{
 			ident.put(scope, prev.ident.get(scope));
 		}
-//		this.origIdent = prev.origIdent;
-		
-		System.err.println("CSE: " + this.id + " referencing " + ref.id);
 	}
 	
 	public enum InstructionType 
@@ -207,9 +162,9 @@ public class PLIRInstruction
 		CONST, INST, NULL, ADDRESS, FP, BASEADDRESS, FUNC_PARAM, LOCALVARIABLE
 	};
 	
+	// blank slate to be filled in by the parser or static factory methods in this class
 	public PLIRInstruction(PLSymbolTable table)
-	{
-		// blank slate to be filled in by the parser or static factory methods in this class	
+	{	
 	}
 	
 	public PLIRInstruction(PLSymbolTable table, InstructionType opcode)
@@ -233,15 +188,7 @@ public class PLIRInstruction
 			op1type = OperandType.CONST;
 			i1 = singleOperand.tempVal;
 		}
-//		if (singleOperand.wasIdent)
-//		{
-//			System.err.println("WAS AN IDENTIFIER!!!: " + singleOperand.origIdent);
-//			op1type = OperandType.INST;
-//			this.wasIdent = true;
-//			this.origIdent = singleOperand.origIdent;
-//		}
-		
-//		id = PLStaticSingleAssignment.addInstruction(this); 
+		 
 		forceGenerate(table); // always generate right away...
 	}
 	
@@ -254,13 +201,11 @@ public class PLIRInstruction
 		
 		if (left.kind == ResultKind.CONST)
 		{
-			System.err.println("left operand is a constant: " +  left.toString());
 			op1type = OperandType.CONST;
 			i1 = left.tempVal;
 		}
 		if (right.kind == ResultKind.CONST)
 		{
-//			System.err.println("right operand is a constant");
 			op2type = OperandType.CONST;
 			i2 = right.tempVal;
 		}
@@ -478,171 +423,144 @@ public class PLIRInstruction
 	
 	public PLIRInstruction evaluate(int placement, int offset, PLIRInstruction newOp, PLSymbolTable table, ArrayList<PLIRInstruction> visitedInsts, int branch)
 	{
-		System.out.println("Reevaluation " + this + "," + id);
-		
-		if (this.opcode == InstructionType.MUL || this.opcode == InstructionType.CMP)
+		if (op1 != null && branch == 1)
 		{
-			System.out.println("asd");
+			String thisIdent = op1.ident.get(table.getCurrentScope());
+			String thatIdent = newOp.ident.get(table.getCurrentScope());
+			if (thisIdent != null && thatIdent != null && thisIdent.equals(thatIdent))
+			{
+				newOp.overrideGenerate = true;
+				newOp.tempPosition += offset;
+				newOp.forceGenerate(table);
+				op1type = OperandType.INST;
+				op1 = newOp;
+			}
+			else if (visitedInsts.contains(op1) == false)
+			{
+				visitedInsts.add(op1);
+				op1 = op1.evaluate(placement, offset, newOp, table, visitedInsts, branch);
+				op1type = op1.type == OperandType.FUNC_PARAM ? OperandType.INST : op1.type;
+			}
+		}
+			
+		if (op2 != null && !(newOp.opcode == InstructionType.PHI && opcode == InstructionType.PHI && branch == 2))
+		{
+			String thisIdent = op2.ident.get(table.getCurrentScope());
+			String thatIdent = newOp.ident.get(table.getCurrentScope());
+			if (thisIdent != null && thatIdent != null && thisIdent.equals(thatIdent))
+			{
+				newOp.overrideGenerate = true;
+				newOp.tempPosition += offset;
+				newOp.forceGenerate(table);
+				op2type = OperandType.INST;
+				op2 = newOp;
+			}
+			else if (visitedInsts.contains(op2) == false)
+			{
+				visitedInsts.add(op2);
+				op2 = op2.evaluate(placement, offset, newOp, table, visitedInsts, branch);
+				op2type = op2.type == OperandType.FUNC_PARAM ? OperandType.INST : op2.type;
+			}
+		}
+			
+		// re-evaluate the node
+		if (op1 != null)
+		{
+			if (op1.kind == ResultKind.CONST || op1type == OperandType.CONST)
+			{
+				op1type = OperandType.CONST;
+				i1 = op1.tempVal;
+			}
+		}
+		if (op2 != null)
+		{
+			if (op2.kind == ResultKind.CONST || op2type == OperandType.CONST)
+			{
+				op2type = OperandType.CONST;
+				i2 = op2.tempVal;
+			}
 		}
 		
-//		if (this.opcode == InstructionType.LOAD)
-//		{
-//		
-//		}
-//		else
+		// handle computation...
+		if (op1 != null && op2 != null)
 		{
-	//		if (op1 != null && op1.equals(newOp) == false && op1.opcode != InstructionType.PHI)
-			if (op1 != null && branch == 1)
+			if (op1.kind == ResultKind.CONST && op2.kind == ResultKind.CONST)
 			{
-//				if (op1.origIdent.equals(newOp.origIdent))
-				String thisIdent = op1.ident.get(table.getCurrentScope());
-				String thatIdent = newOp.ident.get(table.getCurrentScope());
-				if (thisIdent != null && thatIdent != null && thisIdent.equals(thatIdent))
+				i1 = op1.tempVal;
+				i2 = op2.tempVal;
+				kind = ResultKind.CONST;
+				switch (opcode)
 				{
-					newOp.overrideGenerate = true;
-					newOp.tempPosition += offset;
-					newOp.forceGenerate(table);
-					op1type = OperandType.INST;
-					op1 = newOp;
-				}
-				else if (visitedInsts.contains(op1) == false)
-				{
-					visitedInsts.add(op1);
-					System.out.println("left: " + op1);
-					op1 = op1.evaluate(placement, offset, newOp, table, visitedInsts, branch);
-					op1type = op1.type == OperandType.FUNC_PARAM ? OperandType.INST : op1.type;
-				}
-			}
-			
-	//		if (op2 != null && op2.equals(newOp) == false && op2.opcode != InstructionType.PHI)
-			if (op2 != null && !(newOp.opcode == InstructionType.PHI && opcode == InstructionType.PHI && branch == 2))
-			{
-//				if (op2.origIdent.equals(newOp.origIdent))
-				String thisIdent = op2.ident.get(table.getCurrentScope());
-				String thatIdent = newOp.ident.get(table.getCurrentScope());
-				if (thisIdent != null && thatIdent != null && thisIdent.equals(thatIdent))
-				{
-					newOp.overrideGenerate = true;
-					newOp.tempPosition += offset;
-					newOp.forceGenerate(table);
-					op2type = OperandType.INST;
-					op2 = newOp;
-				}
-				else if (visitedInsts.contains(op2) == false)
-				{
-					visitedInsts.add(op2);
-					System.out.println("right: " + op2);
-					op2 = op2.evaluate(placement, offset, newOp, table, visitedInsts, branch);
-					op2type = op2.type == OperandType.FUNC_PARAM ? OperandType.INST : op2.type;
-				}
-			}
-			
-			// re-evaluate the node
-			if (op1 != null)
-			{
-				if (op1.kind == ResultKind.CONST || op1type == OperandType.CONST)
-				{
-					op1type = OperandType.CONST;
-					i1 = op1.tempVal;
-				}
-			}
-			if (op2 != null)
-			{
-				if (op2.kind == ResultKind.CONST || op2type == OperandType.CONST)
-				{
-					op2type = OperandType.CONST;
-					i2 = op2.tempVal;
-				}
-			}
-			
-			// handle computation...
-			if (op1 != null && op2 != null)
-			{
-				if (op1.kind == ResultKind.CONST && op2.kind == ResultKind.CONST)
-				{
-					i1 = op1.tempVal;
-					i2 = op2.tempVal;
+				case ADD:
+					tempVal = i1 + i2;
 					kind = ResultKind.CONST;
-					switch (opcode)
-					{
-					case ADD:
-						tempVal = i1 + i2;
-						kind = ResultKind.CONST;
-						break;
-					case SUB:
-						tempVal = i1 - i2;
-						kind = ResultKind.CONST;
-						break;
-					case MUL:
-						tempVal = i1 * i2;
-						kind = ResultKind.CONST;
-						break;
-					case DIV:
-						tempVal = i1 / i2;
-						kind = ResultKind.CONST;
-						break;
-					}
-				}
-				else if (op1.kind == ResultKind.CONST && op2.opcode != InstructionType.GLOBAL) // right is not constant
-				{
-					type = OperandType.INST;
-					kind = ResultKind.VAR;
-					
-//					op2.tempPosition = this.id - 1;
-					op2.overrideGenerate = true;
-					op2.forceGenerate(table);
-					
-					int pos = placement < 0 ? tempPosition + offset : placement;
-					this.tempPosition = pos;
-//					this.id = 0;
-					op1.overrideGenerate = true;
-					forceGenerate(table);
-				}
-				else if (op2.kind == ResultKind.CONST && op1.opcode != InstructionType.GLOBAL)
-				{
-					type = OperandType.INST;
-					kind = ResultKind.VAR;
-					
-//					op1.tempPosition = this.id - 1;
-					op1.overrideGenerate = true;
-					op1.forceGenerate(table);
-					
-					int pos = placement < 0 ? tempPosition + offset : placement;
-					this.tempPosition = pos;
-//					this.id = 0;
-					this.overrideGenerate = true;
-					forceGenerate(table);
-				}
-				else if (op2.opcode != InstructionType.GLOBAL && op1.opcode != InstructionType.GLOBAL)
-				{
-					type = OperandType.INST;
-					kind = ResultKind.VAR;
-					
-//					op1.tempPosition = this.id - 1;
-					op1.overrideGenerate = true;
-					op1.forceGenerate(table);
-//					op2.tempPosition = this.id - 1;
-					op2.overrideGenerate = true;
-					op2.forceGenerate(table);
-					
-					int pos = placement < 0 ? tempPosition + offset : placement;
-					this.tempPosition = pos;
-//					this.id = 0;
-					op1.overrideGenerate = true;
-					forceGenerate(table);
+					break;
+				case SUB:
+					tempVal = i1 - i2;
+					kind = ResultKind.CONST;
+					break;
+				case MUL:
+					tempVal = i1 * i2;
+					kind = ResultKind.CONST;
+					break;
+				case DIV:
+					tempVal = i1 / i2;
+					kind = ResultKind.CONST;
+					break;
 				}
 			}
-			
-			if (opcode == InstructionType.CMP)
+			else if (op1.kind == ResultKind.CONST && op2.opcode != InstructionType.GLOBAL) // right is not constant
 			{
-				kind = ResultKind.COND;
+				type = OperandType.INST;
+				kind = ResultKind.VAR;
+				
+				op2.overrideGenerate = true;
+				op2.forceGenerate(table);
+				
+				int pos = placement < 0 ? tempPosition + offset : placement;
+				this.tempPosition = pos;
+				op1.overrideGenerate = true;
 				forceGenerate(table);
 			}
-			
-			if (kind == ResultKind.CONST)
+			else if (op2.kind == ResultKind.CONST && op1.opcode != InstructionType.GLOBAL)
 			{
+				type = OperandType.INST;
+				kind = ResultKind.VAR;
+				
+				op1.overrideGenerate = true;
+				op1.forceGenerate(table);
+				
+				int pos = placement < 0 ? tempPosition + offset : placement;
+				this.tempPosition = pos;
+				this.overrideGenerate = true;
 				forceGenerate(table);
 			}
+			else if (op2.opcode != InstructionType.GLOBAL && op1.opcode != InstructionType.GLOBAL)
+			{
+				type = OperandType.INST;
+				kind = ResultKind.VAR;
+				
+				op1.overrideGenerate = true;
+				op1.forceGenerate(table);
+				op2.overrideGenerate = true;
+				op2.forceGenerate(table);
+				
+				int pos = placement < 0 ? tempPosition + offset : placement;
+				this.tempPosition = pos;
+				op1.overrideGenerate = true;
+				forceGenerate(table);
+			}
+		}
+		
+		if (opcode == InstructionType.CMP)
+		{
+			kind = ResultKind.COND;
+			forceGenerate(table);
+		}
+		
+		if (kind == ResultKind.CONST)
+		{
+			forceGenerate(table);
 		}
 		
 		return this;
@@ -685,8 +603,6 @@ public class PLIRInstruction
 		}
 	}
 	
-	private boolean leftProtected = false;
-	public boolean leftWasPhiReplaced = false;
 	public boolean replaceLeftOperand(PLIRInstruction newLeft)
 	{
 		if (!leftProtected)
@@ -704,14 +620,8 @@ public class PLIRInstruction
 		return false;
 	}
 	
-	private boolean rightProtected = false;
-	public boolean rightWasPhiReplaced = false;
 	public boolean replaceRightOperand(PLIRInstruction newRight)
 	{
-		if (leftWasPhiReplaced)
-		{
-			System.out.println("asd");
-		}
 		if (!rightProtected && !(leftWasPhiReplaced && opcode == InstructionType.PHI))
 		{
 			op2 = newRight;
@@ -725,20 +635,6 @@ public class PLIRInstruction
 	public boolean isNotLiveInstruction()
 	{
 		return false;
-//		switch (opcode)
-//		{
-//		case BEQ:
-//		case BNE:
-//		case BLT:
-//		case BGT:
-//		case BGE:
-//		case BLE:
-////		case MOVE:
-////		case CMP:
-//			return true;
-//		default:
-//			return false;
-//		}
 	}
 	
 	public static PLIRInstruction create_cmp(PLSymbolTable table, PLIRInstruction left, PLIRInstruction right)
@@ -781,9 +677,6 @@ public class PLIRInstruction
 		PLIRInstruction inst = new PLIRInstruction(table);
 		inst.opcode = InstructionType.PHI;
 		inst.kind = ResultKind.VAR;
-		
-//		inst.origIdent = b1.origIdent; // use either b1 or b2 origIndent, they will match at this point
-//		inst.ident.put(table.getCurrentScope(), b1.ident.get(table.getCurrentScope())); // use either b1 or b2 origIndent, they will match at this point
 		inst.ident.put(table.getCurrentScope(), var);
 		inst.saveName.put(table.getCurrentScope(), var);
 		
@@ -830,7 +723,6 @@ public class PLIRInstruction
 		
 		inst.op1type = OperandType.ADDRESS;
 		inst.op1 = cmp;
-//		inst.i1 = cmp.id;
 		
 		// We negate the logic in order to make fall-through work correctly
 		switch (token)
@@ -855,7 +747,6 @@ public class PLIRInstruction
 			break;
 		}
 		
-//		inst.id = PLStaticSingleAssignment.addInstruction(inst);
 		inst.forceGenerate(table);
 		return inst;
 	}
@@ -864,7 +755,6 @@ public class PLIRInstruction
 	{	
 		PLIRInstruction inst = new PLIRInstruction(table);
 		inst.i2 = loc;
-//		inst.i1 = cmp.fixupLocation;
 		inst.op1 = inst.op2 = null;
 		inst.op1type = OperandType.CONST; // op1 will be 0
 		inst.op2type = OperandType.CONST; // op2 will be an offset
@@ -925,11 +815,6 @@ public class PLIRInstruction
 	    if (!(o instanceof PLIRInstruction)) return false;
 	    PLIRInstruction other = (PLIRInstruction)o;
 	    
-	    if (op1type == OperandType.FP && other.op1type == OperandType.FP)
-	    {
-	    	System.err.println("asd");
-	    }
-	    
 	    // the wonderful benefit of SSA :-)
 	    if (this.id == other.id)
 	    {
@@ -952,11 +837,7 @@ public class PLIRInstruction
 			return "(" + this.refInst.id + ")";
 		}
 		
-		if (opcode == null)
-		{
-//			System.err.println("Dummy placeholder variable encountered: " + dummyName);
-		}
-		else
+		if (opcode != null)
 		{
 			switch (opcode)
 			{

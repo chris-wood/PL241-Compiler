@@ -17,7 +17,8 @@ public class PLSymbolTable
 	public String name;
 	public ArrayList<PLIRInstruction> globalVariables;
 	
-	public HashMap<String, HashMap<InstructionType, ArrayList<PLIRInstruction>>> instTypeMap = new HashMap<String, HashMap<InstructionType, ArrayList<PLIRInstruction>>>();
+	public HashMap<String, HashMap<InstructionType, ArrayList<PLIRInstruction>>> instTypeMap = 
+			new HashMap<String, HashMap<InstructionType, ArrayList<PLIRInstruction>>>();
 	
 	public PLSymbolTable()
 	{
@@ -36,7 +37,6 @@ public class PLSymbolTable
 		{
 			String ident = glob.ident.get(getCurrentScope());
 			if (ident.equals(v)) return glob;
-//			if (glob.origIdent.equals(v)) return glob;
 		}
 		return null;
 	}
@@ -47,7 +47,6 @@ public class PLSymbolTable
 		{
 			String ident = glob.ident.get("main");
 			if (ident.equals(v)) return true;
-//			if (glob.origIdent.equals(v)) return true;
 		}
 		return false;
 	}
@@ -79,8 +78,6 @@ public class PLSymbolTable
 			String lastScope = currentScope.get(currentScope.size() - 2);
 			for (String value : symTable.get(lastScope).keySet())
 			{
-				System.err.println("Adding " + value + " from scope " + lastScope + " to " + scope);
-//				symTable.get(scope).put(value, PLIRInstruction.copy(this, symTable.get(lastScope).get(value)));
 				symTable.get(scope).put(value, symTable.get(lastScope).get(value));
 				
 				// Idents carry through to new scopes
@@ -146,8 +143,7 @@ public class PLSymbolTable
 		}
 		else
 		{
-			System.err.println("Trying to update symbol value of something " + 
-					"out of scope: " + scope + ", " + sym);
+			System.err.println("Trying to update symbol value of something out of scope: " + scope + ", " + sym);
 			System.exit(-1);
 		}
 		
@@ -208,7 +204,6 @@ public class PLSymbolTable
 		else
 		{
 			return symTable.get(getCurrentScope()).get(sym);
-//			return PLIRInstruction.copy(this, symTable.get(getCurrentScope()).get(sym));
 		}
 	}
 	

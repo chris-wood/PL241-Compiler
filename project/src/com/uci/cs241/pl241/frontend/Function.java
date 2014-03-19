@@ -2,8 +2,6 @@ package com.uci.cs241.pl241.frontend;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-
 import com.uci.cs241.pl241.ir.PLIRInstruction;
 
 public class Function 
@@ -121,10 +119,10 @@ public class Function
 	{
 		for (PLIRInstruction s : vars)
 		{
-			for (String scope : s.ident.keySet()){
+			for (String scope : s.ident.keySet())
+			{
 				if (s.ident.get(scope).equals(v)) return true;
 			}
-//			if (s.origIdent.equals(v)) return true;
 		}
 		return false;
 	}
@@ -133,10 +131,10 @@ public class Function
 	{
 		for (PLIRInstruction s : params)
 		{
-			for (String scope : s.ident.keySet()){
+			for (String scope : s.ident.keySet())
+			{
 				if (s.ident.get(scope).equals(p)) return true;
 			}
-//			if (s.origIdent.equals(p)) return true;
 			if (s.dummyName.equals(p)) return true;
 		}
 		return false;
@@ -146,10 +144,10 @@ public class Function
 	{
 		for (PLIRInstruction inst : params)
 		{
-			for (String scope : inst.ident.keySet()){
+			for (String scope : inst.ident.keySet())
+			{
 				if (inst.ident.get(scope).equals(name)) return inst;
 			}
-//			if (inst.origIdent.equals(name)) return inst;;
 			if (inst.dummyName.equals(name)) return inst;
 		}
 		return null;
@@ -159,10 +157,10 @@ public class Function
 	{
 		for (PLIRInstruction inst : vars)
 		{
-			for (String scope : inst.ident.keySet()){
+			for (String scope : inst.ident.keySet())
+			{
 				if (inst.ident.get(scope).equals(name)) return inst;
 			}
-//			if (inst.origIdent.equals(name)) return inst;
 		}
 		return null;
 	}

@@ -53,8 +53,6 @@ public class RegisterAllocator
 
 		// Add x and its edges back to G
 		ig.addVertex(x, neighbors);
-		
-		System.out.println("Coloring: " + x);
 
 		// choose a color for x that is different from its neighbors
 		HashSet<Integer> neighborColors = new HashSet<Integer>();
@@ -106,7 +104,6 @@ public class RegisterAllocator
 		}
 		else if (visited.contains(b.id) == false)
 		{
-//			visited.add(b.id);
 			if (b.visitNumber >= pass)
 			{
 				live.addAll(b.liveAtEnd);
@@ -245,7 +242,6 @@ public class RegisterAllocator
 								ig.addVertex(constInst.id);
 								PLStaticSingleAssignment.addInstruction(scope, constInst);
 								
-//								System.out.println("New constant: " + inst.i2 + " -> " + constInst.id);
 								constants.put(inst.i2, constInst);
 								live.add(constInst);
 							}
@@ -256,7 +252,6 @@ public class RegisterAllocator
 						{
 							for (PLIRInstruction op : inst.callOperands)
 							{
-//								live.add(op);
 								if (op.kind == ResultKind.CONST)
 								{
 									if (constants.containsKey(op.i1) && op.i1 != 0)
@@ -270,7 +265,6 @@ public class RegisterAllocator
 										ig.addVertex(constInst.id);
 										PLStaticSingleAssignment.addInstruction(scope, constInst);
 										
-//										System.out.println("New constant: " + op.i1 + " -> " + constInst.id);
 										constants.put(op.i1, constInst);
 										live.add(constInst);
 									}
@@ -286,7 +280,6 @@ public class RegisterAllocator
 										ig.addVertex(constInst.id);
 										PLStaticSingleAssignment.addInstruction(scope, constInst);
 										
-//										System.out.println("New constant: " + op.i2 + " -> " + constInst.id);
 										constants.put(op.i2, constInst);
 										live.add(constInst);
 									}
@@ -302,7 +295,6 @@ public class RegisterAllocator
 										ig.addVertex(constInst.id);
 										PLStaticSingleAssignment.addInstruction(scope, constInst);
 										
-//										System.out.println("New constant: " + op.tempVal + " -> " + constInst.id);
 										constants.put(op.tempVal, constInst);
 										live.add(constInst);
 									}
@@ -359,7 +351,6 @@ public class RegisterAllocator
 							ig.addVertex(constInst.id);
 							PLStaticSingleAssignment.addInstruction(scope, constInst);
 							
-//							System.out.println("New constant: " + op.tempVal + " -> " + constInst.id);
 							constants.put(inst.i1, constInst);
 							live.add(constInst);
 						}
@@ -387,7 +378,6 @@ public class RegisterAllocator
 							ig.addVertex(constInst.id);
 							PLStaticSingleAssignment.addInstruction(scope, constInst);
 							
-//							System.out.println("New constant: " + op.tempVal + " -> " + constInst.id);
 							constants.put(inst.i2, constInst);
 							live.add(constInst);
 						}

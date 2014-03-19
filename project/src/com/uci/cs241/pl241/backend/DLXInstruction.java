@@ -8,9 +8,7 @@ public class DLXInstruction
 	public InstructionType opcode;
 	public InstructionFormat format;
 	public long encodedForm;
-	
 	public DLXBasicBlock block;
-	
 	public String refFunc; 
 	public boolean jumpNeedsFix = false;
 	public boolean emit = true;

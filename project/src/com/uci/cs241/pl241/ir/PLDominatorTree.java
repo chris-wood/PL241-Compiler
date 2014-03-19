@@ -25,10 +25,6 @@ public class PLDominatorTree
 	HashMap<PLIRBasicBlock, PLIRBasicBlock> forestLabel = new HashMap<PLIRBasicBlock, PLIRBasicBlock>();
 	HashMap<PLIRBasicBlock, ArrayList<PLIRBasicBlock>> bucket = new HashMap<PLIRBasicBlock, ArrayList<PLIRBasicBlock>>(); // adjacency list for the forest
 	
-//	PLIRBasicBlock[] pred; // = new PLIRBasicBlock[root.treeSize];
-//	PLIRBasicBlock[] bucket; // = new PLIRBasicBlock[root.treeSize];
-//	PLIRBasicBlock[] dom; // = new PLIRBasicBlock[root.treeSize];
-	
 	// FOr the DFS
 	ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
 	int nid = 0;
@@ -48,11 +44,7 @@ public class PLDominatorTree
 		
 		// Populate successors...
 		succ.put(v, new ArrayList<PLIRBasicBlock>());
-//		for (PLIRBasicBlock block : v.children)
-//		{
-//			succ.get(v).add(block);
-//		}
-		
+
 		// Continue onwards
 		for (PLIRBasicBlock w : succ.get(nid))
 		{

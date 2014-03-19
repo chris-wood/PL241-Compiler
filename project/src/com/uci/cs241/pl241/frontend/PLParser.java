@@ -1062,11 +1062,9 @@ public class PLParser
 				offsetInstructions = new ArrayList<PLIRInstruction>();
 				for (PLIRInstruction inst : leftInst.loadInstructions)
 				{
-					PLIRInstruction copyInst = PLIRInstruction.copy(scope, inst);
-					copyInst.forceGenerate(scope);
-					relation.addInstruction(copyInst);
-					leftInst.dependents.add(copyInst);
-					offsetInstructions.add(copyInst);
+					relation.addInstruction(inst);
+					leftInst.dependents.add(inst);
+					offsetInstructions.add(inst);
 				}
 			}
 			else
@@ -1131,11 +1129,9 @@ public class PLParser
 				offsetInstructions = new ArrayList<PLIRInstruction>();
 				for (PLIRInstruction inst : rightInst.loadInstructions)
 				{
-					PLIRInstruction copyInst = PLIRInstruction.copy(scope, inst);
-					relation.addInstruction(copyInst);
-					rightInst.dependents.add(copyInst);
-					copyInst.forceGenerate(scope);
-					offsetInstructions.add(copyInst);
+					relation.addInstruction(inst);
+					rightInst.dependents.add(inst);
+					offsetInstructions.add(inst);
 				}
 			}
 			else

@@ -13,26 +13,7 @@ public class PLStaticSingleAssignment
 	public static void init()
 	{
 	}
-	
-//	public static void endInstructions()
-//	{
-//		boolean remove = false;
-//		ArrayList<Integer> toRemove = new ArrayList<Integer>(); 
-//		for (int i = 0; i < instructions.size(); i++)
-//		{
-//			if (remove) toRemove.add(i);
-//			if (instructions.get(i).opcode == InstructionType.END)
-//			{
-//				remove = true;
-//			}
-//		}
-//		for (Integer i : toRemove)
-//		{
-//			System.out.println("Removing: " + instructions.get(i));
-//			instructions.remove(i);
-//		}
-//	}
-	
+
 	public static void finish()
 	{
 		for (int i = 0; i < instructions.size(); i++)
@@ -43,8 +24,6 @@ public class PLStaticSingleAssignment
 		{
 			inst.cost = inst.depth * inst.uses;
 		}
-		
-		// put any other finalization logic here 
 	}
 	
 	public static boolean isIncluded(int id)
@@ -69,12 +48,10 @@ public class PLStaticSingleAssignment
 			}
 		}
 		return null;
-//		return instructions.get(id - 1);
 	}
 	
 	public static int addInstruction(PLSymbolTable table, PLIRInstruction inst)
 	{
-		System.out.println("Adding " + inst);
 		inst.depth = table.scopeDepth();
 		boolean success = instructions.add(inst);
 		if (!success) return -1;
@@ -105,7 +82,6 @@ public class PLStaticSingleAssignment
 	
 	public static void updateInstruction(int id, PLIRInstruction inst)
 	{
-		System.err.println("Replacing: " + instructions.get(id).toString() + " with " + inst.toString());
 		instructions.set(id, inst);
 	}
 	

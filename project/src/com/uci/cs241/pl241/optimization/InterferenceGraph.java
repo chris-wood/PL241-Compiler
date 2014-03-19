@@ -17,7 +17,6 @@ public class InterferenceGraph
 		for (PLIRInstruction inst : instructions)
 		{
 			adjList.put(inst.id, new ArrayList<Integer>());
-			System.out.println("IG: " + inst);
 			costMap.put(inst.id, inst.cost);
 		}
 	}
@@ -98,7 +97,6 @@ public class InterferenceGraph
 	
 	public ArrayList<Integer> removeVertex(int v)
 	{
-		System.err.println("Removing vertex: " + v);
 		ArrayList<Integer> neighbors = adjList.get(v);
 		
 		// Drop v from the set
@@ -141,11 +139,6 @@ public class InterferenceGraph
 	
 	public void addEdge(int u, int v)
 	{
-		if (u == 0 || v == 0)
-		{
-			System.err.println("here");
-		}
-		
 		if (adjList.containsKey(u))
 		{
 			for (Integer t : adjList.get(u))
@@ -161,7 +154,6 @@ public class InterferenceGraph
 			}
 		}
 		
-//		System.out.println("Adding: " + u + "," + v);
 		adjList.get(u).add(v);
 		adjList.get(v).add(u);
 	}

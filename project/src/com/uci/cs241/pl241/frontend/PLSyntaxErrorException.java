@@ -9,6 +9,11 @@ package com.uci.cs241.pl241.frontend;
 public class PLSyntaxErrorException extends Exception
 {
 	/**
+	 * Default
+	 */
+	private static final long serialVersionUID = 1L;
+
+	/**
 	 * Default constructor for the exception. There is no special
 	 * functionality - just call the parent constructor. 
 	 * 

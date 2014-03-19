@@ -46,7 +46,6 @@ public class PLInputStream
 		// Determine the type of the new symbol
 		try
 		{
-			int val = Integer.parseInt(sym);
 			type = PLInputTokenType.NUMBER;
 		}
 		catch (NumberFormatException e)
