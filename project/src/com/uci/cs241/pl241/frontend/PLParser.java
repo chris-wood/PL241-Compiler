@@ -538,7 +538,7 @@ public class PLParser
 				{
 					if (glob != null)
 					{
-						String name = glob.ident.get(scope.getCurrentScope());
+						String name = glob.ident.get("main");
 						if (scope.getCurrentValue(name).kind == ResultKind.CONST)
 						{
 							func.constantsToSave.put(name, scope.getCurrentValue(name).tempVal);
@@ -555,7 +555,7 @@ public class PLParser
 				{
 					if (glob != null)
 					{
-						String name = glob.ident.get(scope.getCurrentScope());
+						String name = glob.ident.get("main");
 						if (scope.getCurrentValue(name).kind == ResultKind.CONST)
 						{
 							func.constantsToSave.put(name, scope.getCurrentValue(name).tempVal);
@@ -1551,7 +1551,7 @@ public class PLParser
 				{
 					if (glob != null) // if the key is null, then we modified an array, and that code is always generated on demand
 					{
-						String name = glob.ident.get(scope.getCurrentScope());
+						String name = glob.ident.get("main");
 						if (scope.getCurrentValue(name).kind == ResultKind.CONST)
 						{
 							func.constantsToSave.put(name, scope.getCurrentValue(name).tempVal);
