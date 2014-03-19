@@ -1,0 +1,3 @@
+digraph dom {
+BB3[shape = box, label = "BB(3)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := write #102\n" + "4 := end\n"];
+}

@@ -1,0 +1,5 @@
+1 := global #0
+2 := global #0
+3 := write #102
+4 := end
+
