@@ -93,9 +93,7 @@ public class PLIRInstruction
 	public PLIRInstruction refInst = null;
 	
 	public void removeInstruction(EliminationReason reason, PLIRInstruction ref)
-	{
-		PLStaticSingleAssignment.displayInstructions();
-		
+	{	
 		isRemoved = true;
 		elimReason = reason;
 		refInst = ref;

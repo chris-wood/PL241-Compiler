@@ -524,11 +524,11 @@ public class DLXGenerator
 			visited.add(entry.id);
 			for (DLXInstruction inst : entry.startInstructions)
 			{
-				instructions.add(inst);
+				if (inst.emit) instructions.add(inst);
 			}
 			for (DLXInstruction inst : entry.instructions)
 			{
-				instructions.add(inst);
+				if (inst.emit) instructions.add(inst);
 			}
 			int index = instructions.size() - 1;
 			if (entry.instructions.size() > 0 && DLXInstruction.isBranch(entry.instructions.get(entry.instructions.size() - 1)) == false)
@@ -539,12 +539,15 @@ public class DLXGenerator
 			{
 				if (instructions.size() > 0)
 				{
-					instructions.add(index++, inst);
+					if (inst.emit) instructions.add(index++, inst);
 				}
 				else
 				{
-					instructions.add(inst);
-					index = 1;
+					if (inst.emit)
+					{
+						instructions.add(inst);
+						index = 1;
+					}
 				}
 			}
 			if (instructions.size() > 0)
@@ -838,8 +841,8 @@ public class DLXGenerator
 				emitInstruction = true;
 				if (ssaInst.refInst != null)
 				{
-					emitInstruction = false;
-					continue;
+//					emitInstruction = false;
+//					continue;
 				}
 				
 				// Walk back to the original instruction operands if they were eliminated by CSE

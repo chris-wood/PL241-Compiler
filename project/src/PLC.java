@@ -60,7 +60,7 @@ public class PLC
 		
 		if (cmd.hasOption("f")) 
 		{
-			System.out.println("Running on: " + cmd.getOptionValue("f"));
+			System.out.println("Compiling: " + cmd.getOptionValue("f"));
 		}
 		else
 		{
@@ -68,7 +68,6 @@ public class PLC
 			formatter.printHelp("see the options below", options );
 			System.exit(-1);
 		}
-		
 		
 		// Extract pass flags
 		boolean runAll = cmd.hasOption("all");
@@ -88,10 +87,10 @@ public class PLC
 			ArrayList<PLIRBasicBlock> blocks = parser.parse(scanner);
 			
 			// Filter basic blocks...
-			ArrayList<PLIRInstruction> globals = new ArrayList<PLIRInstruction>(); 
+			ArrayList<PLIRInstruction> globals = new ArrayList<PLIRInstruction>();
+			HashSet<Integer> seenInst = new HashSet<Integer>();
 			for (PLIRBasicBlock entry : blocks)
 			{
-				HashSet<Integer> seenInst = new HashSet<Integer>();
 				HashSet<PLIRBasicBlock> seenBlocks = new HashSet<PLIRBasicBlock>();
 				ArrayList<PLIRBasicBlock> stack = new ArrayList<PLIRBasicBlock>();
 				stack.add(entry);

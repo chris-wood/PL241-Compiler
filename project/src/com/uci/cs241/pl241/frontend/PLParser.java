@@ -18,20 +18,28 @@ import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
 public class PLParser
 {
 	// Current symbol/token values used for parsing
-	private String sym;
-	private int toksym;
-	private PLIRBasicBlock root;
+	public String sym;
+	public int toksym;
+	public PLIRBasicBlock root;
 	
 	// BB depth (to uniquify scopes)
-	private int blockDepth = 0;
+	public int blockDepth = 0;
 	
-	// Useful things to help the parser
-	private boolean globalVariableParsing;
-	private boolean globalFunctionParsing; 
+	// Control flags 
+	public boolean globalVariableParsing = false;
+	public boolean globalFunctionParsing = false; 
+	public boolean parseVariableDeclaration = false;
+	public boolean isFunction = false;
+	public boolean parsingFunctionBody = false;
 	
-	// Other necessary things
+	// For array and variable parsing
+	public ArrayList<PLIRInstruction> params;
+	public ArrayList<PLIRInstruction> variables;
+	
+	// The scope symbol table
 	public PLSymbolTable scope;
 	
+	// Identifier/array map
 	public enum IdentType {VAR, ARRAY, FUNC};
 	public HashMap<String, IdentType> identTypeMap = new HashMap<String, IdentType>();
 	public HashMap<String, ArrayList<Integer>> arrayDimensionMap = new HashMap<String, ArrayList<Integer>>();
@@ -39,11 +47,11 @@ public class PLParser
 	public HashMap<String, PLIRInstruction> globalVariables = new HashMap<String, PLIRInstruction>();
 	private ArrayList<String> deferredPhiIdents = new ArrayList<String>();
 	
-	private String funcName = "";
-	private ArrayList<String> callStack = new ArrayList<String>();
-	private HashMap<String, PLIRBasicBlock> funcBlockMap = new HashMap<String, PLIRBasicBlock>();
-	private HashMap<String, PLIRBasicBlock> procBlockMap = new HashMap<String, PLIRBasicBlock>();
-	private HashMap<String, Integer> paramMap = new HashMap<String, Integer>();
+	public String funcName = "";
+	public ArrayList<String> callStack = new ArrayList<String>();
+	public HashMap<String, PLIRBasicBlock> funcBlockMap = new HashMap<String, PLIRBasicBlock>();
+	public HashMap<String, PLIRBasicBlock> procBlockMap = new HashMap<String, PLIRBasicBlock>();
+	public HashMap<String, Integer> paramMap = new HashMap<String, Integer>();
 	public HashMap<String, Boolean> funcFlagMap = new HashMap<String, Boolean>();
 	
 	// def-use chain data structure
@@ -162,12 +170,6 @@ public class PLParser
 				result = PLIRBasicBlock.merge(result, parse_varDecl(in)); 
 			}
 			globalVariableParsing = false;
-			
-			System.out.println("Global variables");
-			for (String v : globalVariables.keySet())
-			{
-				System.out.println("\t" + v);
-			}
 			
 			// Parse global functions and procedures
 			globalFunctionParsing = true;
@@ -428,10 +430,6 @@ public class PLParser
 				return block;
 			}
 		}
-		else
-		{
-			debug("Previously unencountered variable: " + sym);
-		}
 		
 		PLIRInstruction inst = scope.getCurrentValue(sym);
 		
@@ -470,24 +468,19 @@ public class PLParser
 		while (toksym == PLToken.openBracketToken)
 		{
 			isArray = true;
-			debug(sym);
 			if (result.arrayOperands == null)
 			{
 				result.arrayOperands = new ArrayList<PLIRInstruction>();
 			}
 			advance(in);
-			debug(sym);
 			
 			result = PLIRBasicBlock.merge(result, parse_expression(in));
 			result.arrayOperands.add(result.getLastInst());
-			debug(sym);
-			
 			if (toksym != PLToken.closeBracketToken)
 			{
 				SyntaxError("']' missing from designator non-terminal.");
 			}
 			advance(in);
-			debug(sym);
 		}
 		
 		if (isArray)
@@ -1067,11 +1060,6 @@ public class PLParser
 			advance(in);
 			String varName = sym;
 			
-			if (varName.equals("maxnumber"))
-			{
-				System.out.println("here");
-			}
-			
 			// Check to make sure these variables are in scope before being used
 			if (scope.isVarInScope(varName))
 			{
@@ -1167,7 +1155,6 @@ public class PLParser
 						{
 							String currScope = scope.getCurrentScope();
 							Function func = scope.functions.get(funcName);
-							System.out.println("Adding used global: " + storeInst.ident.get(currScope));
 							
 							if (func != null && storeInst.ident.get(currScope) != null)
 							{
@@ -1552,10 +1539,9 @@ public class PLParser
 		else if (toksym == PLToken.callToken)
 		{
 			result = parse_funcCall(in);
-			result.isEntry = false;// caw
+			result.isEntry = false;
 			
 			String funcName = callStack.get(callStack.size() - 1);
-			debug("returning from: " + funcName);
 			
 			// Handle replacement of global variables 
 			if (funcName.equals("OutputNum") == false && funcName.equals("OutputNewLine") == false && funcName.equals("InputNum") == false)
@@ -1975,16 +1961,6 @@ public class PLParser
 			}
 			advance(in);
 			
-			String ss = scope.getCurrentScope();
-			System.out.println("Scope = " + ss);
-			for (String var : scope.symTable.get(ss).keySet())
-			{
-				PLIRInstruction inst = scope.symTable.get(ss).get(var);
-				System.out.println("Var: " + var + " => " + 
-					scope.symTable.get(ss).get(var).id + ":= " + 
-					scope.symTable.get(ss).get(var));
-			}
-			
 			// Build the BB of the statement sequence
 			PLIRBasicBlock body = parse_statSequence(in);
 			deferredPhiIdents.clear();
@@ -2023,7 +1999,6 @@ public class PLParser
 			// We've passed through the body and know what variables are updated, now we need to insert phis
 			// Phis are inserted when variables in the relation are modified in the loop body
 			// Left phi value is entry instruction, right phi value is instruction computed in loop body
-			
 			ArrayList<String> modded = new ArrayList<String>();
 			for (String i1 : body.modifiedIdents.keySet())
 			{
@@ -2050,6 +2025,7 @@ public class PLParser
 				offset++;
 				
 				// Propogate through the start of the while header
+				// -> check for replacement in the while loop header (i.e. all instructions leading up to the CMP)
 				PLIRInstruction replacement = phi;
 				for (int i = 1; i < entry.instructions.size(); i++)
 				{
@@ -2061,113 +2037,74 @@ public class PLParser
 					
 					boolean replacedLeft = false;
 					boolean replacedRight = false;
-//					if (entryInst.origIdent.equals(var))
+					boolean couldHaveReplaced = false;
+					if (!(entryInst.opcode == InstructionType.PHI && entryInst.op1 != null && entryInst.op1.isConstant) 
+							&& !(entryInst.opcode == InstructionType.PHI))
 					{
-						// guard against constant overwriting
-						boolean couldHaveReplaced = false;
-						if (!(entryInst.opcode == InstructionType.PHI && entryInst.op1 != null && entryInst.op1.isConstant) 
-								&& !(entryInst.opcode == InstructionType.PHI))
+						if (entryInst.op1 != null && entryInst.op1.ident.get(scope.getCurrentScope()) != null && entryInst.op1.ident.get(scope.getCurrentScope()).equals(var))
 						{
-//							if (entryInst.op1 != null && entryInst.op1.origIdent.equals(var))
-							if (entryInst.op1 != null && entryInst.op1.ident.get(scope.getCurrentScope()) != null && entryInst.op1.ident.get(scope.getCurrentScope()).equals(var))
-							{
-//								if (!(replaced && entryInst.opcode == InstructionType.PHI))
-								{
-									replacedLeft  = entryInst.replaceLeftOperand(replacement);
-									couldHaveReplaced = true;
-//									replaced = true;
-								}
-							}
-							if (entryInst.op1 != null && entryInst.op1.equals(phi))
-							{
-//								if (!(replaced && entryInst.opcode == InstructionType.PHI))
-								{
-									replacedLeft = entryInst.replaceLeftOperand(replacement);
-									couldHaveReplaced = true;
-//									replaced = true;
-								}
-							}
-							if (entryInst.op1name != null && entryInst.op1name.equals(var))
-							{
-								replacedLeft = entryInst.replaceLeftOperand(replacement);
-								couldHaveReplaced = true;
-//								replaced = true;
-							}
+							replacedLeft  = entryInst.replaceLeftOperand(replacement);
+							couldHaveReplaced = true;
 						}
-						
-//						if (entryInst.opcode != InstructionType.PHI && entryInst.opcode != InstructionType.STORE)
-						if (entryInst.opcode != InstructionType.STORE && !(entryInst.opcode == InstructionType.PHI))
+						if (entryInst.op1 != null && entryInst.op1.equals(phi))
 						{
-//							if (entryInst.op2 != null && entryInst.op2.origIdent.equals(var) && !replaced)
-							if (entryInst.op2 != null && entryInst.op2.ident.get(scope.getCurrentScope()) != null && entryInst.op2.ident.get(scope.getCurrentScope()).equals(var) && !replacedLeft)
-							{
-//								if (!(replaced && entryInst.opcode == InstructionType.PHI))
-								{
-									replacedRight = entryInst.replaceRightOperand(replacement);
-//									replaced = true;
-								}
-							}
-							if (entryInst.op2 != null && entryInst.op2.equals(phi) && !replacedLeft)
-							{
-//								if (!(replaced && entryInst.opcode == InstructionType.PHI))
-								{
-									replacedRight = entryInst.replaceRightOperand(replacement);
-//									replaced = true;
-								}
-							}
-							if (entryInst.op2name != null && entryInst.op2name.equals(var) && !replacedLeft)
-							{
-//								if (!(replaced && entryInst.opcode == InstructionType.PHI))
-								{
-									replacedRight = entryInst.replaceRightOperand(replacement);
-//									replaced = true;
-								}
-							}
+							replacedLeft = entryInst.replaceLeftOperand(replacement);
+							couldHaveReplaced = true;
 						}
-						
-						if (replacedLeft && entryInst.opcode != InstructionType.STORE && entryInst.opcode != InstructionType.PHI) // && !couldHaveReplaced)
+						if (entryInst.op1name != null && entryInst.op1name.equals(var))
 						{
-							ArrayList<PLIRInstruction> visitedInsts = new ArrayList<PLIRInstruction>();
-							entryInst.evaluate(entryInst.id - 1, 0, replacement, scope, visitedInsts, 1);
+							replacedLeft = entryInst.replaceLeftOperand(replacement);
+							couldHaveReplaced = true;
 						}
-						
-						if (replacedRight && entryInst.opcode != InstructionType.STORE && entryInst.opcode != InstructionType.PHI) // && !couldHaveReplaced)
+					}
+					
+					if (entryInst.opcode != InstructionType.STORE && !(entryInst.opcode == InstructionType.PHI))
+					{
+						if (entryInst.op2 != null && entryInst.op2.ident.get(scope.getCurrentScope()) != null && entryInst.op2.ident.get(scope.getCurrentScope()).equals(var) && !replacedLeft)
 						{
-							ArrayList<PLIRInstruction> visitedInsts = new ArrayList<PLIRInstruction>();
-							entryInst.evaluate(entryInst.id - 1, 0, replacement, scope, visitedInsts, 2);
+							replacedRight = entryInst.replaceRightOperand(replacement);
 						}
-						
-						if (replacedLeft && couldHaveReplaced && entryInst.opcode == InstructionType.PHI)
-						{ 
-							replacement = entryInst;
-						}
-						
-						// If the phi value was used to replace some operand, and this same expression was used to save a result, replace
-						// with the newly generated result
-//						else if (replaced && (entryInst.origIdent.equals(phi.origIdent) || entryInst.saveName.equals(phi.origIdent)) && entryInst.kind != ResultKind.CONST)
-						else if (replacedLeft && 
-								((entryInst.ident.get(scope.getCurrentScope()) != null && entryInst.ident.get(scope.getCurrentScope()).equals(phi.ident.get(scope.getCurrentScope())))
-								|| (entryInst.saveName.get(scope.getCurrentScope()) != null && entryInst.saveName.get(scope.getCurrentScope()).equals(phi.ident.get(scope.getCurrentScope()))))
-								&& entryInst.kind != ResultKind.CONST)
+						if (entryInst.op2 != null && entryInst.op2.equals(phi) && !replacedLeft)
 						{
-//							System.out.println("now replacing " + phi.origIdent + " with : " + entryInst.toString());
-							replacement = entryInst;
+							replacedRight = entryInst.replaceRightOperand(replacement);
 						}
-						
-//						// If there is an assignment that matches this PHI variable, use its value...
-//						if (entryInst.id > 0 && entryInst.generated && (entryInst.origIdent != null && entryInst.origIdent.equals(var)))
-						if (entryInst.id > 0 && entryInst.generated && (entryInst.ident.get(scope.getCurrentScope()) != null && entryInst.ident.get(scope.getCurrentScope()).equals(var)))
+						if (entryInst.op2name != null && entryInst.op2name.equals(var) && !replacedLeft)
 						{
-							if (entryInst.opcode == InstructionType.LOAD)
-							{
-								// Need to reload based on the value of the phi...?
-								replacement = entryInst;
-							}
-							else
-							{
-								replacement = entryInst;
-							}
+							replacedRight = entryInst.replaceRightOperand(replacement);
 						}
+					}
+					
+					if (replacedLeft && entryInst.opcode != InstructionType.STORE && entryInst.opcode != InstructionType.PHI) // && !couldHaveReplaced)
+					{
+						ArrayList<PLIRInstruction> visitedInsts = new ArrayList<PLIRInstruction>();
+						entryInst.evaluate(entryInst.id - 1, 0, replacement, scope, visitedInsts, 1);
+					}
+					
+					if (replacedRight && entryInst.opcode != InstructionType.STORE && entryInst.opcode != InstructionType.PHI) // && !couldHaveReplaced)
+					{
+						ArrayList<PLIRInstruction> visitedInsts = new ArrayList<PLIRInstruction>();
+						entryInst.evaluate(entryInst.id - 1, 0, replacement, scope, visitedInsts, 2);
+					}
+					
+					if (replacedLeft && couldHaveReplaced && entryInst.opcode == InstructionType.PHI)
+					{ 
+						replacement = entryInst;
+					}
+					
+					// If the phi value was used to replace some operand, and this same expression was used to save a result, replace
+					// with the newly generated result
+					else if (replacedLeft && 
+							((entryInst.ident.get(scope.getCurrentScope()) != null && entryInst.ident.get(scope.getCurrentScope()).equals(phi.ident.get(scope.getCurrentScope())))
+							|| (entryInst.saveName.get(scope.getCurrentScope()) != null && entryInst.saveName.get(scope.getCurrentScope()).equals(phi.ident.get(scope.getCurrentScope()))))
+							&& entryInst.kind != ResultKind.CONST)
+					{
+						replacement = entryInst;
+					}
+					
+					// If there is an assignment that matches this PHI variable, use its value...
+					if (entryInst.id > 0 && entryInst.generated && (entryInst.ident.get(scope.getCurrentScope()) != null && entryInst.ident.get(scope.getCurrentScope()).equals(var)))
+					{
+						replacement = entryInst;
 					}
 				}
 				
@@ -2188,14 +2125,8 @@ public class PLParser
 				// Propagate the PHI through the body of the loop
 				ArrayList<PLIRBasicBlock> visited = new ArrayList<PLIRBasicBlock>();
 				visited.add(entry);
-				System.out.println("Propogating: " + replacement.toString());
 				HashMap<String, PLIRInstruction> scopeMap = new HashMap<String, PLIRInstruction>();
 				scopeMap.put(var, replacement);
-				if (var.equals("i") || var.equals("j"))
-				{
-					System.err.println("here");
-				}
-//				body.propagatePhi(offset + innerOffset, visited, scope, 1, scopeMap, whileScopeName);
 				body.propagatePhi(offset + innerOffset, visited, scope, 1, scopeMap, scope.getCurrentScope());
 				
 				// The current value in scope needs to be updated now with the result of the phi
@@ -2223,12 +2154,10 @@ public class PLParser
 				}
 			}
 			
-			////////////////////////////////////////////
-			
+			// Handle the unconditional while branch
 			PLIRInstruction beqInst = null;
 			if (phisGenerated.size() > 0)
 			{
-//				entryStartLocation += phisGenerated.get(0).id - entryStartLocation;
 				int target = phisGenerated.get(0).id;
 				for (int i = 1; i < phisGenerated.size(); i++)
 				{
@@ -2245,10 +2174,10 @@ public class PLParser
 				beqInst = PLIRInstruction.create_BEQ(scope, entryStartLocation - PLStaticSingleAssignment.globalSSAIndex);
 			}
 			
-			// Insert the unconditional branch at (loop start location - pc)
-//			PLIRInstruction beqInst = PLIRInstruction.create_BEQ(scope, loopLocation - PLStaticSingleAssignment.globalSSAIndex);
+			// Save the cmpInst for code generation later
 			beqInst.jumpInst = cmpInst;
 			
+			// Do the fixup for the conditional branch (to jump past the end of the while loop header)
 			if (body.joinNode != null)
 			{
 				PLIRBasicBlock join = body.joinNode;
@@ -2259,14 +2188,12 @@ public class PLParser
 				join.addInstruction(beqInst);
 				bgeInst.jumpInst = join.getLastInst();
 				
-//				bgeInst.i2 = join.instructions.get(0).id;
 				if (join.instructions.isEmpty())
 				{
 					bgeInst.i2 = beqInst.id - bgeInst.id + 1;
 				}
 				else
 				{
-//					bgeInst.i2 = join.instructions.get(0).id - bgeInst.id + offset;
 					bgeInst.i2 = beqInst.id - bgeInst.id + 1;
 				}
 			}
@@ -2281,16 +2208,9 @@ public class PLParser
 				}
 				else
 				{
-//					bgeInst.i2 = joinNode.instructions.get(0).id - bgeInst.id + offset;
 					bgeInst.i2 = beqInst.id - bgeInst.id + 1;
 				}
 			}
-			
-			// Fixup the conditional branch at the appropriate location
-//			bgeInst.fixupLocation = entryCmpInst.fixupLocation;
-//			bgeInst.i2 = joinNode
-//			Fixup(bgeInst.fixupLocation, 0); //1337
-//			Fixup(bgeInst.fixupLocation, 0); //1337
 			
 			// Configure the dominator tree connections
 			entry.dominatorSet.add(body);
@@ -2334,14 +2254,7 @@ public class PLParser
 				finalRet.forceGenerate(scope);
 				result.addInstruction(finalRet);
 				result.hasReturn = true;
-				
-//				result.instructions.get(result.instructions.size() - 1).overrideGenerate = true;
-//				result.instructions.get(result.instructions.size() - 1).forceGenerate(scope);
-				
-//				result.returnInst = result.getLastInst();
-//				result.returnInst.isReturn = true;
 				result.isEntry = true;
-				debug("Forcing generation of return statement");
 			}
 			else
 			{
@@ -2407,9 +2320,7 @@ public class PLParser
 	}
 
 	private PLIRBasicBlock parse_typeDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
-	{
-		PLIRBasicBlock result = null;
-		
+	{	
 		if (toksym == PLToken.varToken)
 		{
 			advance(in);
@@ -2427,7 +2338,6 @@ public class PLParser
 			if (toksym == PLToken.openBracketToken)
 			{
 				advance(in);
-//				result = parse_number(in);
 				dimensions.add(Integer.parseInt(sym));
 				advance(in);
 				if (toksym == PLToken.closeBracketToken)
@@ -2446,13 +2356,9 @@ public class PLParser
 					}
 					
 					// Set up array information
-					debug("adding array: " + sym);
 					identTypeMap.put(sym, type);
 					scope.addVarToScope(sym);
 					arrayDimensionMap.put(sym, dimensions);
-					
-//					Function func = scope.functions.get(funcName);
-//					func.arraySizes.put(sym, dimensions);
 				}
 				else
 				{
@@ -2472,7 +2378,7 @@ public class PLParser
 		return null;
 	}
 
-	public boolean parseVariableDeclaration = false;
+	
 	private PLIRBasicBlock parse_varDecl(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{	
 		Function func = scope.functions.get(funcName);
@@ -2488,17 +2394,15 @@ public class PLParser
 		}
 		
 		parseVariableDeclaration = true;
-		
 		PLIRBasicBlock result = parse_typeDecl(in);
 		result = parse_ident(in);
-		
-//		String symName = result.getLastInst().origIdent;
 		String symName = result.getLastInst().ident.get(scope.getCurrentScope());
 		if (!globalVariableParsing && this.arrayDimensionMap.containsKey(symName))
 		{
 			func.arraySizes.put(symName, arrayDimensionMap.get(symName));
 		}
 		
+		// Parse any other related declarations
 		while (toksym == PLToken.commaToken)
 		{
 			advance(in);
@@ -2534,9 +2438,6 @@ public class PLParser
 			scope.addVarToScope(sym);
 			scope.pushNewScope(sym);
 			
-			System.out.println("Function: " + sym);
-			scope.displayCurrentScopeSymbols();
-			
 			funcName = sym; // save for recovery later on
 			
 			switch (callType)
@@ -2555,15 +2456,11 @@ public class PLParser
 			if (toksym != PLToken.semiToken)
 			{
 				result = parse_formalParam(in);
-				
-				// TODO: need to add arrays to the function so that space can be allocated on the stack later...
 			}
 			else
 			{
 				paramMap.put(funcName, 0); // no formal parameters specified
 			}
-			
-			scope.displayCurrentScopeSymbols();
 			
 			// Eat the semicolon and then parse the body
 			advance(in);  
@@ -2585,11 +2482,6 @@ public class PLParser
 				result = parse_funcBody(in);
 			}
 			
-//			for (int i = result.instructions.size() - 1; i>= 0; i--)
-//			{
-//				result.instructions.get(i).forceGenerate(scope);
-//			}
-			
 			if (!result.hasReturn)
 			{
 				PLIRInstruction finalRet = new PLIRInstruction(scope);
@@ -2604,7 +2496,7 @@ public class PLParser
 				}
 				
 				joinNode.addInstruction(finalRet);
-				joinNode.hasReturn = true; // needed?
+				joinNode.hasReturn = true;
 				result.hasReturn = true;
 			}
 			
@@ -2614,11 +2506,6 @@ public class PLParser
 				SyntaxError("';' missing from funcDecl non-terminal");
 			}
 			advance(in);
-			
-			// Leave the scope of this new function
-			String leavingScope = scope.popScope();
-//			blockDepth--;
-			debug("Leaving scope: " + leavingScope);
 		}
 		else
 		{
@@ -2628,8 +2515,6 @@ public class PLParser
 		return result;
 	}
 
-	public boolean isFunction = false;
-	public ArrayList<PLIRInstruction> params;
 	private PLIRBasicBlock parse_formalParam(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException
 	{
 		PLIRBasicBlock result = new PLIRBasicBlock();
@@ -2645,13 +2530,9 @@ public class PLParser
 				advance(in);
 			}
 			else
-			{	
-				// Pull out the identifier of the next token...
-//				params.add(sym);
-				
+			{
 				PLIRInstruction dummy = new PLIRInstruction(scope);
 				dummy.dummyName = sym;
-//				dummy.origIdent = sym;
 				dummy.ident.put(scope.getCurrentScope(), sym);
 				dummy.type = OperandType.FUNC_PARAM;
 				dummy.opcode = InstructionType.LOADPARAM;
@@ -2671,7 +2552,6 @@ public class PLParser
 					
 					dummy = new PLIRInstruction(scope);
 					dummy.dummyName = sym;
-//					dummy.origIdent = sym;
 					dummy.ident.put(scope.getCurrentScope(), sym);
 					dummy.type = OperandType.FUNC_PARAM;
 					dummy.opcode = InstructionType.LOADPARAM;
@@ -2710,18 +2590,13 @@ public class PLParser
 		Function func = scope.functions.get(funcName);
 		for (PLIRInstruction inst : result.instructions)
 		{
-//			scope.addVarToScope(inst.dummyName);
-			System.out.println("Adding stack parameter to scope: " + inst.dummyName);
 			scope.addVarToScope(funcName, inst.dummyName);
-			scope.updateSymbol(inst.dummyName, inst);
-//			func.addParameter(inst); 
+			scope.updateSymbol(inst.dummyName, inst); 
 		}
 		
 		return result;
 	}
 
-	public boolean parsingFunctionBody = false;
-	public ArrayList<PLIRInstruction> variables = new ArrayList<PLIRInstruction>();
 	private PLIRBasicBlock parse_funcBody(PLScanner in) throws PLSyntaxErrorException, IOException, PLEndOfFileException, ParserException
 	{
 		PLIRBasicBlock result = null;
@@ -2739,8 +2614,6 @@ public class PLParser
 		{
 			SyntaxError("'{' missing from funcBody non-terminal.");
 		}
-		
-		Function func = scope.functions.get(funcName);
 		
 		// eat the open brace '{'
 		advance(in);
@@ -2761,7 +2634,7 @@ public class PLParser
 		return result;
 	}
 	
-	// per spec
+	// Per spec
 	private PLIRInstruction CondNegBraFwd(PLIRInstruction x)
 	{
 		x.fixupLocation = PLStaticSingleAssignment.globalSSAIndex;
@@ -2770,7 +2643,7 @@ public class PLParser
 		return inst;
 	}
 	
-	// per spec
+	// Per spec
 	private PLIRInstruction UnCondBraFwd(PLIRInstruction x)
 	{
 		PLIRInstruction inst = PLIRInstruction.create_BEQ(scope, x.fixupLocation);
@@ -2783,18 +2656,10 @@ public class PLParser
 	// MODIFIED FROM SPEC => offset needed to be introduced to account for phi injection
 	private void Fixup(int loc, int offset)
 	{
-		debug("Fixing: " + loc + ", " + (PLStaticSingleAssignment.globalSSAIndex - loc + offset) + ", " + offset);
 		if (PLStaticSingleAssignment.instructions.get(loc).opcode == InstructionType.CMP)
 		{
 			System.exit(-1);
-		}
-		
+		}	
 		PLStaticSingleAssignment.instructions.get(loc).i2 = (PLStaticSingleAssignment.globalSSAIndex - loc + offset);
-		debug("Setting: " + PLStaticSingleAssignment.instructions.get(loc)+ " to " + (PLStaticSingleAssignment.globalSSAIndex - loc + offset));
-	}
-	
-	private void FixupExact(int loc, int newVal)
-	{
-		PLStaticSingleAssignment.instructions.get(loc).i2 = newVal;
 	}
 }
