@@ -1,13 +1,10 @@
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane.SystemMenuBar;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -34,7 +31,6 @@ import com.uci.cs241.pl241.optimization.CSE;
 import com.uci.cs241.pl241.optimization.InterferenceGraph;
 import com.uci.cs241.pl241.optimization.RegisterAllocator;
 import com.uci.cs241.pl241.visualization.GraphvizRender;
-
 
 public class PLC
 {
@@ -90,7 +86,6 @@ public class PLC
 			PLScanner scanner = new PLScanner(sourceFile);
 			PLParser parser = new PLParser();
 			ArrayList<PLIRBasicBlock> blocks = parser.parse(scanner);
-//			PLStaticSingleAssignment.finish();
 			
 			// Filter basic blocks...
 			ArrayList<PLIRInstruction> globals = new ArrayList<PLIRInstruction>(); 
@@ -155,7 +150,6 @@ public class PLC
 			}
 			
 			// Display the instructions BEFORE CSE
-			PLIRBasicBlock root = blocks.get(blocks.size() - 1);
 			System.out.println("\nBegin Instructions\n");
 			PrintWriter instWriter = new PrintWriter(new BufferedWriter(new FileWriter(outPath + "/" + sourceFile + "_inst_preCSE.txt")));
 			PLStaticSingleAssignment.displayInstructions();
@@ -177,11 +171,10 @@ public class PLC
 					
 					// Perform CSE, starting at the root
 					CSE cse = new CSE();
-//					cse.performCSE(entry);
+					cse.performCSE(entry);
 				}
 				
 				// Display the instructions AFTER CSE
-				root = blocks.get(blocks.size() - 1);
 				System.out.println("\nBegin Instructions\n");
 				instWriter = new PrintWriter(new BufferedWriter(new FileWriter(outPath + "/" + sourceFile + "_inst_postCSE.txt")));
 				PLStaticSingleAssignment.displayInstructions();
@@ -189,18 +182,6 @@ public class PLC
 				instWriter.flush();
 				instWriter.close();
 				System.out.println("End Instructions\n");
-				
-//				// Display the DU chain
-//				System.out.println("\nDU chain");
-//				for (PLIRInstruction def : parser.duChain.keySet())
-//				{
-//					System.out.println(def.id + " := " + def.toString());
-//					for (PLIRInstruction use : parser.duChain.get(def))
-//					{
-//						System.out.println("\t" + use.id + " := " + use.toString());
-//					}
-//				}
-//				System.out.println("End DU chain\n");
 			}
 			
 			// Generate visualization strings
@@ -284,13 +265,11 @@ public class PLC
 					PLIRBasicBlock block = blocks.get(i);
 					
 					boolean isFunc = false;
-					boolean isProc = false;
 					boolean isMain = true;
 					Function func = null;
 					if (block.label != null && block.label.length() > 0)
 					{
 						isFunc = parser.funcFlagMap.get(block.label);
-						isProc = !isFunc;
 						isMain = false;
 						func = parser.scope.functions.get(block.label);
 						func.hasReturn = isFunc;

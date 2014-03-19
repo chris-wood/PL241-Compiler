@@ -26,38 +26,42 @@ public class DLXGenerator
 	public static final int LOW_REG = 1;
 	public static final int HIGH_REG = 26;
 
+	// Address offset tables
 	public HashMap<Integer, Integer> globalOffset;
 	public HashMap<String, Integer> globalRefMap;
 	public HashMap<String, Integer> globalArrayOffset;
 
+	// Fixup offset maps
 	public HashMap<Integer, DLXInstruction> offsetMap = new HashMap<Integer, DLXInstruction>();
 	public HashMap<Integer, DLXInstruction> leftOffsetMap = new HashMap<Integer, DLXInstruction>();
 	public HashMap<Integer, DLXInstruction> rightOffsetMap = new HashMap<Integer, DLXInstruction>();
 	
+	// Maps to constants and arrays that are caught by the parser
 	public HashMap<Integer, PLIRInstruction> constants = new HashMap<Integer, PLIRInstruction>();
 	public HashMap<String, PLIRInstruction> arrays = new HashMap<String, PLIRInstruction>();
 
-	public ArrayList<PLIRInstruction> lastLeftJumps = new ArrayList<PLIRInstruction>();
-	public int lastLeftJump = -1;
-
+	// List of machine instructions accumulated so far
 	public ArrayList<DLXInstruction> instructions = new ArrayList<DLXInstruction>();
 
 	// Global variable address table
 	public HashMap<String, Integer> functionAddressTable = new HashMap<String, Integer>();
 	public HashMap<String, Function> functionMap = new HashMap<String, Function>();
 	
+	// Exit block (safe keeping)
 	public DLXBasicBlock exitBlock;
+	
+	// Flag to determine if instructions are emitted (false for CSE-eliminated instructions)
+	public boolean emitInstruction = true;
 
 	// Metadata about each instruction
 	public HashMap<InstructionType, Integer> opcodeMap = new HashMap<InstructionType, Integer>();
 	public HashMap<InstructionType, InstructionFormat> formatMap = new HashMap<InstructionType, InstructionFormat>();
 	public HashMap<Integer, DLXBasicBlock> allBlocks = new HashMap<Integer, DLXBasicBlock>();
 	
-	public ArrayList<PLIRInstruction> noops = new ArrayList<PLIRInstruction>();
-	
 	public boolean[] regInUse = new boolean[32];
 
-	public int pc = 3; // account for the initial jump and SP/FP initialization stuff
+	// The master PC - account for the initial jump and SP/FP initialization at the beginning
+	public int pc = 3; 
 
 	public DLXGenerator(HashMap<Integer, Integer> globalOffset, HashMap<String, Integer> globalArrayOffset,
 			HashMap<String, Integer> globalRefMap, HashMap<Integer, PLIRInstruction> constants, HashMap<String, PLIRInstruction> arrays)
@@ -220,11 +224,6 @@ public class DLXGenerator
 				}
 				else // positive offset
 				{
-					if (inst.ssaInst.id == 63)
-						{
-						System.err.println("here");
-						}
-					
 					int refId = inst.ssaInst.id + inst.rc;
 					PLIRInstruction refInst = PLStaticSingleAssignment.getInstruction(refId);	
 					
@@ -336,8 +335,6 @@ public class DLXGenerator
 					}
 					
 					if (jumpToBlock.endInstructions.size() > 0 && index == jumpToBlock.instructions.size() - 1)
-//					if (jumpToBlock.endInstructions.size() > 0 
-//							&& jumpToBlock.instructions.get(jumpToBlock.instructions.size() - 1).pc == offset)
 					{
 						offset -= jumpToBlock.endInstructions.size();
 					}
@@ -346,21 +343,7 @@ public class DLXGenerator
 						offset -= jumpToBlock.offsetSize;
 					}
 					
-//					if (jumpToBlock.startInstructions.size() > 0)
-//					{
-//						offset = jumpToBlock.startInstructions.get(0).pc;
-//					}
-//					else if (jumpToBlock.instructions.size() > 0)
-//					{
-//						offset = jumpToBlock.instructions.get(0).pc;
-//					}
-//					else
-//					{
-//						offset = jumpToBlock.endInstructions.get(0).pc;
-//					}
-					
 					inst.rc = offset - inst.pc;
-//					inst.rc = inst.rc < 0 ? inst.rc *= -1 : inst.rc;
 				}
 				inst.encodedForm = encodeInstruction(inst);
 			}
@@ -382,59 +365,20 @@ public class DLXGenerator
 				a = inst.ra;
 				b = inst.rb;
 				c = inst.rc;
-				if (c < 0)
-				{
-					System.out.println(Long.toBinaryString(c));
-					System.out.println((c & 0xFFFF));
-					System.out.println((~c + 1) & 0xFFFF);
-					BigInteger cop = new BigInteger(Long.toBinaryString(c), 2);
-					System.out.println(cop.xor(new BigInteger("FFFF", 16)));
-					System.out.println(cop.longValue());
-					if (inst.opcode == InstructionType.ADDI)
-					{
-						System.out.println("here");
-					}
-//					code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (~c + 1) & 0xFFFF;
-					code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (cop.longValue() & 0xFFFF);
-				}
-				else
-				{
-					System.out.println(Long.toBinaryString(c));
-					System.out.println((c & 0xFFFF));
-					System.out.println((~c + 1) & 0xFFFF);
-					BigInteger cop = new BigInteger(Long.toBinaryString(c), 2);
-					System.out.println(cop.xor(new BigInteger("FFFF", 16)));
-					System.out.println(cop.longValue());
-					code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (cop.longValue() & 0xFFFF);
-				}
+				BigInteger cop = new BigInteger(Long.toBinaryString(c), 2);
+				code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (cop.longValue() & 0xFFFF);
 				break;
 			case F2:
 				opcode = opcodeMap.get(inst.opcode);
 				a = inst.ra;
 				b = inst.rb;
 				c = inst.rc;
-				if (c < 0)
-				{
-//					code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | ((~c + 1) & 0x1F);
-					code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (c & 0x1F);
-				}
-				else
-				{
-					code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (c & 0x1F);
-				}
+				code = (long) ((opcode & 0x3F) << 26) | ((a & 0x1F) << 21) | ((b & 0x1F) << 16) | (c & 0x1F);
 				break;
 			case F3:
 				opcode = opcodeMap.get(inst.opcode);
 				c = inst.rc;
-				if (c < 0)
-				{
-//					code = (long) ((opcode & 0x3F) << 26) | ((~c + 1) & 0x3FFFFFF);
-					code = (long) ((opcode & 0x3F) << 26) | (c & 0x3FFFFFF);
-				}
-				else
-				{
-					code = (long) ((opcode & 0x3F) << 26) | (c & 0x3FFFFFF);
-				}
+				code = (long) ((opcode & 0x3F) << 26) | (c & 0x3FFFFFF);
 				break;
 		}
 
@@ -447,86 +391,17 @@ public class DLXGenerator
 		return code;
 	}
 	
-	public void fixOffset(DLXBasicBlock dlxBlock)
-	{
-		DLXInstruction dlxInst = null;
-		if (dlxBlock.instructions.isEmpty() && dlxBlock.endInstructions.isEmpty())
-		{
-			return;
-		}
-		else if (dlxBlock.instructions.isEmpty())
-		{
-			dlxInst = dlxBlock.endInstructions.get(0);
-		}
-		else
-		{
-			dlxInst = dlxBlock.instructions.get(0);
-		}
-		
-		for (PLIRInstruction inst : lastLeftJumps)
-		{
-			if (noops.size() > 0)
-			{
-				for (PLIRInstruction noop : noops)
-				{
-					offsetMap.put(noop.id, dlxInst);
-					if (leftOffsetMap.containsKey(noop.id) == false)
-					{
-						leftOffsetMap.put(noop.id, dlxInst);
-					}
-					if (rightOffsetMap.containsKey(noop.id) == false)
-					{
-						rightOffsetMap.put(noop.id, dlxInst);
-					}
-				}
-				noops.clear();
-			}
-			offsetMap.put(inst.id, dlxInst);
-		}
-	}
-	
 	public void fixOffset(int ssaInstId, DLXInstruction dlxInst)
 	{
-		if (noops.size() > 0)
-		{
-			for (PLIRInstruction noop : noops)
-			{
-				offsetMap.put(noop.id, dlxInst);
-				if (leftOffsetMap.containsKey(noop.id) == false)
-				{
-					leftOffsetMap.put(noop.id, dlxInst);
-				}
-				if (rightOffsetMap.containsKey(noop.id) == false)
-				{
-					rightOffsetMap.put(noop.id, dlxInst);
-				}
-			}
-			noops.clear();
-		}
 		offsetMap.put(ssaInstId, dlxInst);
 	}
 
 	public void appendInstructionToBlock(DLXBasicBlock block, DLXInstruction inst)
 	{
 		inst.block = block;
-//		if (emitInstruction)
-		{
 		inst.encodedForm = encodeInstruction(inst);
 		block.instructions.add(inst);
 		inst.pc = pc++;
-//		inst.block = block;
-
-//		if (lastLeftJump != -1)
-		if (lastLeftJumps.size() > 0)
-		{
-			for (PLIRInstruction ssaInst : lastLeftJumps)
-			{
-				leftOffsetMap.put(ssaInst.id, inst);
-			}			
-//			lastLeftJump = -1;
-			lastLeftJumps.clear();
-		}
-		}
 		inst.emit = emitInstruction;
 	}
 	
@@ -534,39 +409,27 @@ public class DLXGenerator
 	{
 		inst.block = block;
 		inst.emit = emitInstruction;
-//		if (emitInstruction)
-		{
 		inst.encodedForm = encodeInstruction(inst);
 		block.startInstructions.add(inst);
 		inst.pc = pc++;
-//		inst.block = block;
-		}
 	}
 
 	public void appendInstructionToEndBlock(DLXBasicBlock block, DLXInstruction inst)
 	{
 		inst.block = block;
 		inst.emit = emitInstruction;
-//		if (emitInstruction)
-		{
 		inst.encodedForm = encodeInstruction(inst);
 		block.endInstructions.add(inst);
 		inst.pc = pc++;
-//		inst.block = block;
-		}
 	}
 
 	public void appendInstructionToBlockFromOffset(DLXBasicBlock block, DLXInstruction inst, int offset)
 	{
 		inst.block = block;
 		inst.emit = emitInstruction;
-//		if (emitInstruction)
-		{
 		inst.encodedForm = encodeInstruction(inst);
 		block.instructions.add(block.instructions.size() + offset, inst);
 		inst.pc = pc++;
-//		inst.block = block;
-		}
 	}
 	
 	public DLXBasicBlock findJoin(DLXBasicBlock parent, DLXBasicBlock left, DLXBasicBlock right)
@@ -651,7 +514,6 @@ public class DLXGenerator
 	{
 		ArrayList<DLXInstruction> instructions = new ArrayList<DLXInstruction>();
 
-//		if (entry.id == stopBlock)
 		if (stopBlocks.contains(entry.id))
 		{
 			return instructions;
@@ -729,21 +591,7 @@ public class DLXGenerator
 			{
 				if (func != null && func.hasReturn == false)
 				{
-//					DLXInstruction retInst = new DLXInstruction();
-//					retInst.opcode = InstructionType.RET;
-//					retInst.format = formatMap.get(InstructionType.RET);
-//					retInst.ra = 0;
-//					retInst.rb = 0;
-//					retInst.rc = RA; // jump to RA
-
-//					appendInstructionToBlock(entry, retInst);
-//					instructions.add(retInst);
-					
 					exitBlock = entry;
-				}
-				else if (func != null && func.hasReturn == true)
-				{
-					// TODO: deal with function invocations later
 				}
 			}
 		}
@@ -770,38 +618,13 @@ public class DLXGenerator
 			name = usingInst.ident.get(usingInst.block.scopeName);
 			saveName = usingInst.saveName.get(usingInst.block.scopeName);
 		}
-//		String name = usingInst.ident.get(usingInst.block.scopeName);
-//		String saveName = usingInst.saveName.get(usingInst.block.scopeName);
 		
-		
-//		if (globalArrayOffset.containsKey(usingInst.origIdent))
 		if (globalArrayOffset.containsKey(name))
 		{
 			return false;
 		}
 		
 		boolean loaded = false;
-//		if (usingInst.opcode == PLIRInstruction.InstructionType.PHI)
-//		{
-//			String name = usingInst.op1name;
-//			if (globalRefMap.containsKey(name))
-//			{
-//				DLXInstruction loadInst = new DLXInstruction();
-//				loadInst.opcode = InstructionType.LDW;
-//				loadInst.format = formatMap.get(InstructionType.LDW);
-//				loadInst.ra = regNum; // save contents of ssaInst.regNum
-//				loadInst.rb = GLOBAL_ADDRESS;
-//				
-//				loadInst.rc = -4 * (globalOffset.get(globalRefMap.get(name)) + 1); // 
-//
-//				if (fixOffset)
-//				{
-//					fixOffset(offset, loadInst);
-//				}
-//				appendInstructionToBlock(edb, loadInst);
-//				loaded = true;
-//			}
-//		}
 		if (!loaded && globalOffset.containsKey(refId))
 		{
 			DLXInstruction loadInst = new DLXInstruction();
@@ -811,7 +634,6 @@ public class DLXGenerator
 			loadInst.rb = GLOBAL_ADDRESS;
 
 			loadInst.rc = -4 * (globalOffset.get(globalRefMap.get(name)) + 1); // word size
-//			loadInst.rc = -4 * (globalOffset.get(refId) + 1); // word size
 
 			if (fixOffset)
 			{
@@ -831,15 +653,14 @@ public class DLXGenerator
 			int ref = 0;
 			if (name == null || name.length() == 0)
 			{
-//				ref = globalRefMap.get(usingInst.saveName);
 				ref = globalRefMap.get(saveName);
 			}
 			else
 			{
-//				ref = globalRefMap.get(usingInst.origIdent);
 				ref = globalRefMap.get(name);
 			}
-			loadInst.rc = -4 * (globalOffset.get(ref) + 1); // 
+			
+			loadInst.rc = -4 * (globalOffset.get(ref) + 1);  
 
 			if (fixOffset)
 			{
@@ -852,12 +673,7 @@ public class DLXGenerator
 	}
 
 	public boolean checkForGlobalStore(DLXBasicBlock edb, PLIRInstruction usingInst, boolean appendToStart, boolean reallyStart)
-	{	
-		
-		if (usingInst.id == 25)
-		{
-			System.err.println("asd");
-		}
+	{
 		// Short circuit for arrays
 		String name, saveName;
 		if (usingInst.block == null || (usingInst.block != null && usingInst.block.label == null))
@@ -875,10 +691,8 @@ public class DLXGenerator
 			name = usingInst.ident.get(usingInst.block.scopeName);
 			saveName = usingInst.saveName.get(usingInst.block.scopeName);
 		}
-//		String name = usingInst.ident.get(usingInst.block.scopeName);
-//		String saveName = usingInst.saveName.get(usingInst.block.scopeName);
 		
-//		if (globalArrayOffset.containsKey(usingInst.origIdent))
+		// Short circuit for arrays - code to store is automatically generated by parser
 		if (globalArrayOffset.containsKey(name))
 		{
 			return false;
@@ -907,7 +721,6 @@ public class DLXGenerator
 			// success
 			return true;
 		}
-//		else if (!store && (usingInst.isGlobalVariable || this.globalRefMap.containsKey(usingInst.origIdent)))
 		else if (!store && (this.globalRefMap.containsKey(name)))
 		{
 			DLXInstruction storeInst = new DLXInstruction();
@@ -917,15 +730,12 @@ public class DLXGenerator
 			storeInst.rb = GLOBAL_ADDRESS;
 			
 			int ref = 0;
-//			if (usingInst.origIdent == null || usingInst.origIdent.length() == 0)
 			if (name == null || name.length() == 0)
 			{
-//				ref = globalRefMap.get(usingInst.saveName);
 				ref = globalRefMap.get(saveName);
 			}
 			else
 			{
-//				ref = globalRefMap.get(usingInst.origIdent);
 				ref = globalRefMap.get(name);
 			}
 			storeInst.rc = -4 * (globalOffset.get(ref) + 1); // word size
@@ -953,9 +763,6 @@ public class DLXGenerator
 	
 	public void setupStack(DLXBasicBlock edb, PLIRBasicBlock b, Function func)
 	{
-		// Push local variable space onto the stack
-		
-		
 		// Push array space onto the stack
 		for (String array : func.arraySizes.keySet())
 		{
@@ -983,7 +790,6 @@ public class DLXGenerator
 	public void tearDownStack(DLXBasicBlock edb, PLIRBasicBlock b, Function func)
 	{
 		int offset = 0;
-		// Pop local variables off the stack
 		
 		// Push array space onto the stack
 		for (String array : func.arraySizes.keySet())
@@ -1012,7 +818,6 @@ public class DLXGenerator
 		edb.offsetSize = offset;
 	}
 
-	public boolean emitInstruction = true;
 	public void generateBlockTreeInstructons(DLXBasicBlock edb, PLIRBasicBlock b, Function func, boolean isMain, HashSet<Integer> visited)
 	{	
 		// Be sure to visit each block at most once
@@ -1028,7 +833,7 @@ public class DLXGenerator
 				if (ssaInst.refInst != null)
 				{
 					emitInstruction = false;
-//					continue; // this instruction was eliminated via CSE and the original will already be generated
+					continue;
 				}
 				
 				// Walk back to the original instruction operands if they were eliminated by CSE
@@ -1075,7 +880,6 @@ public class DLXGenerator
 								DLXInstruction preInst = new DLXInstruction();
 								preInst.opcode = InstructionType.ADDI;
 								preInst.format = formatMap.get(InstructionType.ADDI);
-//								preInst.ra = ssaInst.regNum;
 								preInst.ra = constants.get(ssaInst.i1).regNum;
 								preInst.rb = 0;
 								preInst.rc = ssaInst.i1;
@@ -2568,10 +2372,6 @@ public class DLXGenerator
 			{
 				generateBlockTreeInstructons(edb.right, b.rightChild, func, isMain, visited);
 			}
-		}
-		else
-		{
-			this.fixOffset(edb);
 		}
 	}
 

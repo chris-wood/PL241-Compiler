@@ -1,49 +1,18 @@
 digraph cfg {
-BB7[shape = box, label = "BB(7 [ setnextbit ])\n" + "7 := loadparam 0\n" + "8 := loadparam 1\n" + "9 := loadparam 2\n" + "10 := loadparam 3\n" + "11 := div (10) #2\n" + "12 := mul (11) #2\n" + "13 := sub (10) (12)\n" + "14 := mul #4\n" + "15 := add FP rulebin_baseaddr\n" + "16 := adda (14) (15)\n" + "17 := mul #4\n" + "18 := mul (17) #2\n" + "19 := adda (18) (16)\n" + "20 := mul #4\n" + "21 := mul (20) #4\n" + "22 := adda (21) (19)\n" + "23 := store (22) (13)\n" + "24 := mul #4\n" + "25 := add FP rulebin_baseaddr\n" + "26 := adda (24) (25)\n" + "27 := mul #4\n" + "28 := mul (27) #2\n" + "29 := adda (28) (26)\n" + "30 := mul #4\n" + "31 := mul (30) #4\n" + "32 := adda (31) (29)\n" + "33 := load (32)\n" + "34 := write (33)\n" + "35 := div (10) #2\n" + "36 := return (35)\n"];
-
-BB29[shape = box, label = "BB(29 [ initrulebin ])\n" + "37 := add #0 #0\n" + "38 := func setnextbit #0 #0 #0 (6)\n" + "39 := func setnextbit #0 #0 #1 (38)\n" + "40 := func setnextbit #0 #1 #0 (39)\n" + "41 := func setnextbit #0 #1 #1 (40)\n" + "42 := func setnextbit #1 #0 #0 (41)\n" + "43 := func setnextbit #1 #0 #1 (42)\n" + "44 := func setnextbit #1 #1 #0 (43)\n" + "45 := func setnextbit #1 #1 #1 (44)\n" + "46 := return\n"];
-
-BB90[shape = box, label = "BB(90 [ cleardata ])\n" + "47 := add #0 #0\n" + "48 := add #0 #0\n" + "49 := phi({cleardata=i}) #0 (58)\n" + "50 := phi({cleardata=data}) (1) (57)\n" + "51 := add (4) #2\n" + "52 := cmp (49) (51)\n" + "53 := bge (52) #7\n"];
-BB99[shape = box, label = "BB(99)\n" + "54 := mul #4 (49)\n" + "55 := add FP data_baseaddr\n" + "56 := adda\n" + "57 := store (56) #0\n" + "58 := add (49) #1\n" + "59 := beq #0 #-10\n"];
-BB106[shape = box, label = "BB(106)\n" + "60 := return\n"];
-BB90 -> BB99;
-BB90 -> BB106;
-BB99 -> BB90;
-
-BB108[shape = box, label = "BB(108 [ output ])\n" + "61 := add #0 #0\n" + "62 := phi({output=i}) #1 (82)\n" + "63 := cmp (62) (4)\n" + "64 := bgt (63) #20\n"];
-BB117[shape = box, label = "BB(117)\n" + "65 := mul #4 (62)\n" + "66 := add FP data_baseaddr\n" + "67 := adda\n" + "68 := load (67)\n" + "69 := cmp (68) #0\n" + "70 := bne (69) #3\n"];
-BB138[shape = box, label = "BB(138)\n" + "84 := wln\n" + "85 := return\n"];
-BB121[shape = box, label = "BB(121)\n" + "71 := write #1\n" + "72 := beq #0 #10\n"];
-BB125[shape = box, label = "BB(125)\n" + "73 := mul #4 (62)\n" + "74 := add FP data_baseaddr\n" + "75 := adda (73)\n" + "76 := load (75)\n" + "77 := cmp (76) #1\n" + "78 := bne (77) #3\n"];
-BB122[shape = box, label = "BB(122)\n" + "82 := add (62) #1\n" + "83 := beq #0 #-21\n"];
-BB129[shape = box, label = "BB(129)\n" + "79 := write #8\n" + "80 := beq #0 #2\n"];
-BB133[shape = box, label = "BB(133)\n" + "81 := write #0\n"];
-BB130[shape = box, label = "BB(130)\n"];
-BB108 -> BB117;
-BB108 -> BB138;
-BB117 -> BB121;
-BB117 -> BB125;
-BB121 -> BB122;
-BB125 -> BB129;
-BB125 -> BB133;
-BB122 -> BB108;
-BB129 -> BB130;
-BB133 -> BB130;
-BB130 -> BB122;
-
-BB141[shape = box, label = "BB(141 [ calcnext ])\n" + "86 := add #0 #0\n" + "87 := add #0 #0\n" + "88 := add #0 #0\n" + "89 := add #0 #0\n" + "90 := add #0 #0\n" + "91 := mul #4 #1\n" + "92 := add FP data_baseaddr\n" + "93 := adda (91) (92)\n" + "94 := load (93)\n" + "95 := mul #4 #0\n" + "96 := add FP data_baseaddr\n" + "97 := adda (95) (96)\n" + "98 := store (97) (94)\n" + "99 := add (4) #1\n" + "100 := mul #4 (4)\n" + "101 := add FP data_baseaddr\n" + "102 := adda (100) (101)\n" + "103 := load (102)\n" + "104 := mul #4 (99)\n" + "105 := add FP data_baseaddr\n" + "106 := adda (104) (105)\n" + "107 := store (106) (103)\n" + "108 := mul #4 #0\n" + "109 := add FP data_baseaddr\n" + "110 := adda\n" + "111 := load (110)\n" + "112 := mul #4 #1\n" + "113 := add FP data_baseaddr\n" + "114 := adda\n" + "115 := add #0 #1\n" + "116 := load (114)\n" + "117 := phi({calcnext=next}) (90) (127)\n" + "118 := phi({calcnext=akt}) (116) (127)\n" + "119 := phi({calcnext=last}) (111) (116)\n" + "120 := phi({calcnext=data}) (107) (141)\n" + "121 := phi({calcnext=i}) #1 (142)\n" + "122 := cmp (121) (4)\n" + "123 := bgt (122) #21\n"];
-BB168[shape = box, label = "BB(168)\n" + "2 := add (121) #1\n" + "124 := mul #4 (2)\n" + "125 := add FP data_baseaddr\n" + "126 := adda\n" + "127 := load (126)\n" + "128 := mul #4 (127)\n" + "129 := add FP rulebin_baseaddr\n" + "130 := adda\n" + "131 := mul #4 (118)\n" + "132 := mul\n" + "133 := adda\n" + "134 := mul #4 (119)\n" + "135 := mul\n" + "136 := adda\n" + "137 := load (136)\n" + "138 := mul #4 (121)\n" + "139 := add FP data_baseaddr\n" + "140 := adda\n" + "141 := store (140) (137)\n" + "142 := add (121) #1\n" + "143 := beq #0 #-26\n"];
-BB187[shape = box, label = "BB(187)\n" + "144 := return\n"];
-BB141 -> BB168;
-BB141 -> BB187;
-BB168 -> BB141;
-
-BB189[shape = box, label = "BB(189 [ run ])\n" + "145 := add #0 #0\n" + "146 := phi({run=i}) #0 (151)\n" + "147 := cmp (146) (5)\n" + "148 := bge (147) #5\n"];
-BB196[shape = box, label = "BB(196)\n" + "149 := proc output\n" + "150 := proc calcnext\n" + "151 := add (146) #1\n" + "152 := beq #0 #-6\n"];
-BB202[shape = box, label = "BB(202)\n" + "153 := return\n"];
-BB189 -> BB196;
-BB189 -> BB202;
-BB196 -> BB189;
-
-BB205[shape = box, label = "BB(205)\n" + "1 := global #0\n" + "3 := global #0\n" + "4 := global #0\n" + "5 := global #0\n" + "6 := global #0\n" + "154 := write #22\n" + "155 := write #80\n" + "156 := write #60\n" + "157 := proc cleardata\n" + "158 := mul #4 #40\n" + "159 := add FP data_baseaddr\n" + "160 := adda (158) (159)\n" + "161 := store (160) #1\n" + "162 := mul #4 #40\n" + "163 := add FP data_baseaddr\n" + "164 := adda (162) (163)\n" + "165 := load (164)\n" + "166 := write (165)\n" + "167 := wln\n" + "168 := proc initrulebin\n" + "169 := wln\n" + "170 := proc run\n" + "171 := end\n"];
+BB7[shape = box, label = "BB(7)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := global #0\n" + "4 := global #0\n" + "5 := global #0\n" + "6 := phi({main=i}) (3) (40)\n" + "7 := phi({main=j}) (4) (41)\n" + "8 := phi({main=output}) (5) (29)\n" + "9 := phi({main=a}) (1) (14)\n" + "10 := phi({main=b}) (2) (15)\n" + "11 := cmp #1 #2\n" + "12 := beq (11) #50\n"];
+BB9[shape = box, label = "BB(9)\n" + "13 := wln\n" + "14 := read\n" + "15 := read\n" + "16 := read\n" + "17 := read\n" + "18 := add (14) (15)\n" + "19 := write (18)\n" + "20 := write (16)\n" + "21 := write (17)\n" + "22 := (18)\n" + "23 := mul #4 (17)\n" + "24 := add FP output_baseaddr\n" + "25 := adda\n" + "26 := mul #4 (16)\n" + "27 := mul\n" + "28 := adda\n" + "29 := store (28) (18)\n" + "30 := (23)\n" + "31 := (24)\n" + "32 := adda\n" + "33 := (26)\n" + "34 := mul\n" + "35 := adda\n" + "36 := load (35)\n" + "37 := write (36)\n" + "38 := wln\n" + "39 := (18)\n" + "40 := phi({while0=i}) #0 (58)\n" + "41 := phi({while0=j}) (7) (45)\n" + "42 := cmp (40) #10\n" + "44 := bge (42) #17\n"];
+BB67[shape = box, label = "BB(67)\n" + "62 := end\n"];
+BB46[shape = box, label = "BB(46)\n" + "43 := (18)\n" + "45 := phi({while1=j}) #0 (56)\n" + "46 := cmp (45) #10\n" + "47 := bge (46) #11\n"];
+BB66[shape = box, label = "BB(66)\n" + "61 := beq #0 #-55\n"];
+BB55[shape = box, label = "BB(55)\n" + "48 := mul #4 (45)\n" + "49 := (24)\n" + "50 := adda\n" + "51 := mul #4 (40)\n" + "52 := mul\n" + "53 := adda\n" + "54 := load (53)\n" + "55 := write (54)\n" + "56 := add (45) #1\n" + "57 := beq #0 #-12\n"];
+BB60[shape = box, label = "BB(60)\n" + "58 := add (40) #1\n" + "59 := wln\n" + "60 := beq #0 #-20\n"];
+BB7 -> BB9;
+BB7 -> BB67;
+BB9 -> BB46;
+BB9 -> BB66;
+BB46 -> BB55;
+BB46 -> BB60;
+BB66 -> BB7;
+BB55 -> BB46;
+BB60 -> BB9;
 }
