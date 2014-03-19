@@ -37,11 +37,8 @@ public class PLParser
 	public HashMap<String, ArrayList<Integer>> arrayDimensionMap = new HashMap<String, ArrayList<Integer>>();
 	
 	public HashMap<String, PLIRInstruction> globalVariables = new HashMap<String, PLIRInstruction>();
-	
-	// TODO!!!
 	private ArrayList<String> deferredPhiIdents = new ArrayList<String>();
 	
-	// TODO!!!
 	private String funcName = "";
 	private ArrayList<String> callStack = new ArrayList<String>();
 	private HashMap<String, PLIRBasicBlock> funcBlockMap = new HashMap<String, PLIRBasicBlock>();
@@ -185,11 +182,9 @@ public class PLParser
 				{
 				case PLToken.funcToken:
 					funcBlockMap.put(funcName, funcEntry); // save this so that others may use it
-//					funcFlagMap.put(funcName, true);
 					break;
 				case PLToken.procToken:
 					procBlockMap.put(funcName, funcEntry); // save this so that others may use it
-//					funcFlagMap.put(funcName, false);
 					break;
 				}
 				
@@ -201,23 +196,6 @@ public class PLParser
 				
 				// Insert global variable save functions at the end of the function, if necessary
 				Function func = scope.functions.get(funcName);
-				if (funcName.equals("OutputNum") == false && funcName.equals("OutputNewLine") == false && funcName.equals("InputNum") == false)
-				{
-//					for (PLIRInstruction inst : func.modifiedGlobals.keySet())
-//					{
-//						PLIRInstruction saveInst = new PLIRInstruction(scope);
-//						saveInst.opcode = InstructionType.SAVEGLOBAL;
-//						saveInst.op1 = func.modifiedGlobals.get(inst);
-//						saveInst.op1type = OperandType.ADDRESS;
-//						saveInst.op2 = inst;
-//						saveInst.op2type = OperandType.ADDRESS;
-//						
-//						saveInst.forceGenerate(scope);
-//						
-//						endBlock.instructions.add(saveInst);
-//					}
-				}
-				
 				for (PLIRInstruction inst : func.vars)
 				{
 					funcEntry.insertInstruction(inst, 0);
@@ -310,11 +288,9 @@ public class PLParser
 				inst.i2 = 0;
 				inst.op2type = OperandType.CONST;
 				inst.kind = ResultKind.VAR;
-				inst.type = OperandType.CONST; // TODO: was LOCALPARAM
+				inst.type = OperandType.CONST; 
 				inst.overrideGenerate = true;
 				inst.forceGenerate(scope);
-				
-//				inst.origIdent = symName;
 				inst.ident.put(scope.getCurrentScope(), symName);
 				
 				func.addParameter(inst);
@@ -342,31 +318,12 @@ public class PLParser
 				inst = scope.getCurrentValue(sym);
 				func.addVarToScope(sym);
 				
-//				PLIRInstruction loadInst = new PLIRInstruction(scope);
-//				loadInst.kind = ResultKind.VAR;
-//				loadInst.type = OperandType.ADDRESS;
-//				loadInst.opcode = InstructionType.LOAD;
-//				loadInst.op1 = inst;
-//				loadInst.op1type = OperandType.ADDRESS;	
-//				loadInst.globalMark = true;
-				
-//				PLIRInstruction locInst = new PLIRInstruction(scope);
-//				locInst.kind = ResultKind.VAR;
-//				locInst.type = OperandType.ADDRESS;
-//				locInst.opcode = inst.opcode;
-//				locInst.op1 = inst.op1;
-//				locInst.op1type = inst.op1type;
-//				locInst.op2 = inst.op2;
-//				locInst.op2type = inst.op2type;
-//				locInst.globalMark = true;
-				
 				// Eat the symbol, create the block with the single instruction, add the ident to the list
 				// of used identifiers, and return
 				advance(in);
 				
 				block = new PLIRBasicBlock();
 				block.addInstruction(inst);
-//				block.addInstruction(loadInst);
 				block.addUsedValue(symName, inst);
 				
 				// Add the sheet to scope
@@ -380,11 +337,6 @@ public class PLParser
 				}
 				return block;
 			}
-//			else if (func.isLocalVariable(symName))
-//			{
-//				inst = scope.getCurrentValue(symName);
-////				inst = func.getLocalVariableByName(symName);
-//			}
 			else
 			{
 				inst = func.getOperandByName(sym);
@@ -406,8 +358,6 @@ public class PLParser
 			inst.opcode = InstructionType.GLOBAL;
 			inst.i1 = 0;
 			inst.op1type = OperandType.CONST;
-//			inst.i2 = 0;
-//			inst.op2type = OperandType.CONST;
 			inst.kind = ResultKind.VAR;
 			inst.type = OperandType.ADDRESS;
 			inst.overrideGenerate = true;
@@ -416,34 +366,17 @@ public class PLParser
 			inst.ident.put(scope.getCurrentScope(), symName);
 			inst.saveName.put(scope.getCurrentScope(), symName);
 			
-//			inst.origIdent = symName;
-//			inst.saveName = symName;
-			
-//			PLIRInstruction locinst = new PLIRInstruction(scope);
-//			locinst.opcode = InstructionType.ADD;
-//			locinst.i1 = 0;
-//			locinst.i2 = 0;
-//			locinst.op1type = OperandType.CONST;
-//			locinst.op2type = OperandType.CONST;
-//			locinst.kind = ResultKind.VAR;
-//			locinst.type = OperandType.ADDRESS;
-//			locinst.overrideGenerate = true;
-//			locinst.forceGenerate(scope);
-//			locinst.origIdent = symName;
-			
 			// Eat the symbol, create the block with the single instruction, add the ident to the list
 			// of used identifiers, and return
 			advance(in);
 			
 			block = new PLIRBasicBlock();
 			block.addInstruction(inst);
-//			block.addInstruction(locinst);
 			block.addUsedValue(symName, inst);
 			
 			// Add the sheet to scope
 			scope.addVarToScope(symName);
 			scope.updateSymbol(symName, inst);
-//			scope.updateSymbol(symName, locinst);
 			scope.addGlobalVariable(inst);
 			duChain.put(inst, new HashSet<PLIRInstruction>());
 			globalVariables.put(symName, inst);
@@ -461,7 +394,6 @@ public class PLParser
 				if (instArray != null)
 				{
 					instArray.wasIdent = true;
-//					instArray.origIdent = sym;
 					instArray.ident.put(scope.getCurrentScope(), sym);
 				}
 				
@@ -482,7 +414,6 @@ public class PLParser
 				if (inst != null)
 				{
 					inst.wasIdent = true;
-//					inst.origIdent = sym;
 					inst.ident.put(scope.getCurrentScope(), sym);
 				}
 				
@@ -503,13 +434,6 @@ public class PLParser
 		}
 		
 		PLIRInstruction inst = scope.getCurrentValue(sym);
-		
-		// Memorize the ident we saw here
-		if (inst != null)
-		{
-//			inst.wasIdent = true;
-//			inst.origIdent = sym;
-		}
 		
 		// Eat the symbol, create the block with the single instruction, add the ident to the list
 		// of used identifiers, and return
@@ -569,30 +493,6 @@ public class PLParser
 		if (isArray)
 		{
 			result.arrayName = name;
-			
-//			ArrayList<PLIRInstruction> offsetInstructions = null;
-//			if (result.instructions.get(0).opcode == InstructionType.STORE)
-//			{
-//				result.instructions.remove(0);
-//			}
-//			offsetInstructions = arrayOffsetCalculation(result);
-//			for (PLIRInstruction inst : offsetInstructions)
-//			{
-//				result.addInstruction(inst);
-//			}
-			
-//			PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
-//			PLIRInstruction load = new PLIRInstruction(scope);
-//			offsetInstructions.add(0, result.instructions.get(0));
-//			load.loadInstructions = offsetInstructions;
-//			load.opcode = InstructionType.LOAD;
-//			load.origIdent = name;
-//			load.op1type = OperandType.ADDRESS;
-//			load.op1 = offset;
-//			load.type = OperandType.INST;
-//			load.forceGenerate(scope);
-//			load.isArray = true;
-//			result.addInstruction(load);
 		}
 		
 		if (isArray && arrayDimensionMap.get(name).size() != result.arrayOperands.size())
@@ -628,7 +528,6 @@ public class PLParser
 			PLIRInstruction funcInst = factor.getLastInst();
 			
 			String funcName = callStack.get(callStack.size() - 1);
-			debug("returning from: " + funcName);
 			if (callStack.get(callStack.size() - 1).equals("InputNum"))
 			{
 				// pass, this is a special case
@@ -651,14 +550,11 @@ public class PLParser
 						{
 							func.constantsToSave.put(name, scope.getCurrentValue(name).tempVal);
 						}
-//						glob.overrideGenerate = true;
-//						glob.forceGenerate(scope);
 						glob.type = OperandType.INST;
 						glob.kind = ResultKind.VAR;
 						glob.overrideGenerate = true;
 						glob.forceGenerate(scope);
 						scope.updateSymbol(name, glob);
-						debug(glob.toString());
 					}
 				}
 				
@@ -671,14 +567,11 @@ public class PLParser
 						{
 							func.constantsToSave.put(name, scope.getCurrentValue(name).tempVal);
 						}
-//						glob.overrideGenerate = true;
-//						glob.forceGenerate(scope);
 						glob.type = OperandType.INST;
 						glob.kind = ResultKind.VAR;
 						glob.overrideGenerate = true;
 						glob.forceGenerate(scope);
 						scope.updateSymbol(name, glob);
-						debug(glob.toString());
 					}
 				}
 			}
@@ -728,11 +621,6 @@ public class PLParser
 				{
 					termNode.addInstruction(inst);
 				}
-//				ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(factor);
-//				for (PLIRInstruction inst : offsetInstructions)
-//				{
-//					termNode.addInstruction(inst);
-//				}
 				
 				PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
 				PLIRInstruction load = new PLIRInstruction(scope);
@@ -775,11 +663,6 @@ public class PLParser
 				{
 					termNode.addInstruction(inst);
 				}
-//				ArrayList<PLIRInstruction> offsetInstructions = arrayOffsetCalculation(rightNode);
-//				for (PLIRInstruction inst : offsetInstructions)
-//				{
-//					termNode.addInstruction(inst);
-//				}
 				
 				PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
 				PLIRInstruction load = new PLIRInstruction(scope);
@@ -821,7 +704,6 @@ public class PLParser
 				termInst.type = OperandType.INST;
 			}
 			
-			// ???
 			for (PLIRInstruction inst : factor.instructions)
 			{
 				termNode.addInstruction(inst);
@@ -835,7 +717,6 @@ public class PLParser
 			// Save whatever values are used in these expressions
 			for (String sym : factor.usedIdents.keySet())
 			{
-//				debug("adding " + sym + " with " + left.usedIdents.get(sym).toString());
 				termNode.addUsedValue(sym, factor.usedIdents.get(sym));
 			}
 			for (String sym : rightNode.usedIdents.keySet())
@@ -973,7 +854,6 @@ public class PLParser
 				exprInst.forceGenerate(scope);
 			}
 			
-			// ???
 			for (PLIRInstruction inst : term.instructions)
 			{
 				exprNode.addInstruction(inst);
@@ -1053,8 +933,8 @@ public class PLParser
 		}
 		
 		// Build the comparison instruction with the memorized condition
-		if (leftInst == null || (leftInst != null && leftInst.isArray && leftInst.opcode != InstructionType.LOAD) || left.arrayName != null)
-//		if (leftInst == null || (leftInst != null && leftInst.isArray) || left.arrayName != null)
+		if (leftInst == null || (leftInst != null && leftInst.isArray && 
+				leftInst.opcode != InstructionType.LOAD) || left.arrayName != null)
 		{
 			ArrayList<PLIRInstruction> offsetInstructions = null;
 			if (leftInst.opcode == InstructionType.LOAD)
@@ -1085,7 +965,6 @@ public class PLParser
 			load.type = OperandType.INST;
 			load.forceGenerate(scope);
 			load.isArray = true;
-//			load.origIdent = leftInst.origIdent;
 			load.ident.put(scope.getCurrentScope(), leftInst.ident.get(scope.getCurrentScope()));
 			leftInst = load;
 			relation.addInstruction(load);
@@ -1116,16 +995,11 @@ public class PLParser
 		}
 		
 		// Add the result of all relations
-//		if (rightInst.isArray)
 		if (rightInst == null || (rightInst != null && rightInst.isArray && rightInst.opcode != InstructionType.LOAD) || right.arrayName != null)
-//		if (rightInst == null || (rightInst != null && rightInst.isArray) || right.arrayName != null)
-		{
-//			ArrayList<PLIRInstruction> 
-			
+		{	
 			ArrayList<PLIRInstruction> offsetInstructions = null;
 			if (rightInst.opcode == InstructionType.LOAD)
 			{
-//				offsetInstructions = rightInst.loadInstructions;
 				offsetInstructions = new ArrayList<PLIRInstruction>();
 				for (PLIRInstruction inst : rightInst.loadInstructions)
 				{
@@ -1152,7 +1026,6 @@ public class PLParser
 			load.type = OperandType.INST;
 			load.forceGenerate(scope);
 			load.isArray = true;
-//			load.origIdent = rightInst.origIdent;
 			load.ident.put(scope.getCurrentScope(), rightInst.ident.get(scope.getCurrentScope()));
 			rightInst = load;
 			relation.addInstruction(load);
@@ -1166,14 +1039,11 @@ public class PLParser
 		inst.fixupLocation = 0;
 		
 		// Create the relation block containing the instruction
-//		if (leftInst.type != OperandType.CONST) relation.addInstruction(leftInst);
-//		if (rightInst.type != OperandType.CONST) relation.addInstruction(rightInst);
 		relation.addInstruction(inst);
 		
 		// Save whatever values are used in these expressions
 		for (String sym : left.usedIdents.keySet())
 		{
-//			debug("adding " + sym + " with " + left.usedIdents.get(sym).toString());
 			relation.addUsedValue(sym, left.usedIdents.get(sym));
 		}
 		for (String sym : right.usedIdents.keySet())
@@ -1208,18 +1078,13 @@ public class PLParser
 				PLIRBasicBlock desigBlock = parse_designator(in);
 				PLIRInstruction desigInst = desigBlock.getLastInst();
 				
-//				desigInst.origIdent = varName;
-//				desigInst.saveName = varName;
-				
 				// Check to see if this assignment needs to be saved at the end of the function
 				boolean markToSave = false;
-//				if (parsingFunctionBody && globalVariables.containsKey(desigBlock.getLastInst().origIdent))
 				if (parsingFunctionBody && globalVariables.containsKey(desigBlock.getLastInst().ident.get(scope.getCurrentScope())))
 				{
 					markToSave = true;
 				}
 				
-//				if (globalVariables.containsKey(desigBlock.getLastInst().origIdent))
 				if (globalVariables.containsKey(desigBlock.getLastInst().ident.get(scope.getCurrentScope())))
 				{
 					desigInst.isGlobalVariable = true;
@@ -1232,11 +1097,6 @@ public class PLParser
 					PLIRInstruction storeInst = result.getLastInst();
 					
 					// Check if the result is an array, in which case we need to load it from memory
-//					if (storeInst!= null)
-//					{
-//						storeInst.saveName = varName;
-//					}
-//					if (storeInst == null || (storeInst != null && storeInst.isArray) || result.arrayName != null)
 					if (storeInst == null || result.arrayName != null)
 					{
 						ArrayList<PLIRInstruction> offsetInstructions = null;
@@ -1249,13 +1109,12 @@ public class PLParser
 						{
 							result.addInstruction(inst);
 						}
-//						
+
 						PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
 						PLIRInstruction load = new PLIRInstruction(scope);
 						offsetInstructions.add(0, result.instructions.get(0));
 						load.loadInstructions = offsetInstructions;
 						load.opcode = InstructionType.LOAD;
-//						load.origIdent = varName;
 						load.ident.put(scope.getCurrentScope(), varName);
 						load.op1type = OperandType.ADDRESS;
 						load.op1 = offset;
@@ -1265,26 +1124,20 @@ public class PLParser
 						result.addInstruction(load);
 						storeInst = load;
 						storeInst.isGlobalVariable = this.globalVariables.containsKey(desigBlock.arrayName);
-//						storeInst.origIdent = desigBlock.arrayName;
-//						storeInst.origIdent = varName;
 						storeInst.ident.put(scope.getCurrentScope(), varName);
-//						storeInst.saveName = varName;
 						storeInst.saveName.put(scope.getCurrentScope(), varName);
 					}
 					else
 					{
-//						storeInst.saveName = varName;
 						storeInst.saveName.put(scope.getCurrentScope(), varName);
 						storeInst.isGlobalVariable = desigInst.isGlobalVariable;
 						if (desigBlock.arrayName != null)
 						{
-//							storeInst.origIdent = desigBlock.arrayName;
 							storeInst.ident.put(scope.getCurrentScope(), desigBlock.arrayName);
 							storeInst.isGlobalVariable = false; // code to store in arrays will be in SSA form, we don't generate it on the fly like we do for regular global variables
 						}
 						if (storeInst.isGlobalVariable  && storeInst.kind == ResultKind.CONST)
 						{
-//							storeInst.origIdent = varName;
 							storeInst.ident.put(scope.getCurrentScope(), varName);
 						}
 					}
@@ -1294,16 +1147,6 @@ public class PLParser
 					if (desigBlock.arrayOperands == null)
 					{		
 						storeInst.tempPosition = PLStaticSingleAssignment.globalSSAIndex;
-						
-//						// If we aren't deferring generation because of a potential PHI usage, just replace with the current value in scope
-//						if ((storeInst.op1 != null && deferredPhiIdents.contains(storeInst.op1.origIdent)) || 
-//								(storeInst.op2 != null && deferredPhiIdents.contains(storeInst.op2.origIdent)))
-//						{
-//							storeInst.kind = ResultKind.VAR;
-//							storeInst.overrideGenerate = true;
-//							storeInst.forceGenerate(scope);
-//						}
-//						else 
 						if (deferredPhiIdents.contains(varName)) 
 						{
 							storeInst.kind = ResultKind.VAR;
@@ -1356,7 +1199,6 @@ public class PLParser
 						}
 						
 						PLIRInstruction offset = offsetInstructions.get(offsetInstructions.size() - 1);
-//						offset.origIdent = varName;
 						offset.ident.put(scope.getCurrentScope(), varName);
 						PLIRInstruction store = new PLIRInstruction(scope);
 						store.opcode = InstructionType.STORE;
@@ -1372,7 +1214,6 @@ public class PLParser
 						store.forceGenerate(scope);
 						store.storedValue = store.op2;
 						store.isArray = true;
-//						store.origIdent = varName;
 						store.ident.put(scope.getCurrentScope(), varName);
 						result.addInstruction(store);
 						
@@ -1386,7 +1227,6 @@ public class PLParser
 						
 						if (markToSave)
 						{
-//							scope.functions.get(funcName).addModifiedGlobal(globalVariables.get(store.origIdent), store);
 							scope.functions.get(funcName).addModifiedGlobal(globalVariables.get(store.ident.get(scope.getCurrentScope())), store);
 						}
 					}
@@ -1484,14 +1324,6 @@ public class PLParser
 				
 				lastOffset = inst3;
 			}
-			
-//			PLIRInstruction load = new PLIRInstruction(scope);
-//			load.opcode = InstructionType.LOAD;
-//			load.op1type = OperandType.ADDRESS;
-//			load.op1 = inst3;
-//			load.type = OperandType.INST;
-//			load.forceGenerate(scope);
-//			instructions.add(load);
 		}
 		
 		return instructions;
@@ -1514,16 +1346,6 @@ public class PLParser
 			result = parse_ident(in);
 			callStack.add(funcName); // add to call stack
 			
-			if (funcName.equals("initrulebin"))
-			{
-				System.err.println("here");
-			}
-			
-			if (funcName.equals("max"))
-			{
-				System.err.println("here");
-			}
-			
 			if (toksym == PLToken.openParenToken)
 			{
 				advance(in);
@@ -1539,7 +1361,6 @@ public class PLParser
 					
 					result = new PLIRBasicBlock();
 					result.joinNode = null; // just in case
-					
 					if (callExprBlock.instructions.get(0).opcode == InstructionType.STORE)
 					{
 						callExprBlock.instructions.remove(0);
@@ -1594,10 +1415,6 @@ public class PLParser
 						{
 							exprInst = callExprBlock.getLastInst();
 						}
-						if (exprInst == null)
-						{
-							SyntaxError("Invalid parameter to OutputNum");
-						}
 						
 						if (!exprInst.generated)
 						{
@@ -1621,10 +1438,7 @@ public class PLParser
 						{
 							advance(in);
 							
-							// TODO: should we be merging the BBs here?
 							PLIRBasicBlock nextCallBlock = parse_expression(in);
-//							result = PLIRBasicBlock.merge(result, parse_expression(in));
-							
 							if (nextCallBlock.instructions.get(0).opcode == InstructionType.STORE)
 							{
 								nextCallBlock.instructions.remove(0);
@@ -1670,8 +1484,7 @@ public class PLParser
 						}
 						
 						PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, funcFlagMap.get(funcName), operands);
-						callInst.forceGenerate(scope);
-//						result.hasReturn = funcFlagMap.get(funcName); 
+						callInst.forceGenerate(scope); 
 						result.addInstruction(callInst);
 						result.isEntry = true;
 						
@@ -1691,7 +1504,6 @@ public class PLParser
 					PLIRInstruction inst = new PLIRInstruction(scope, InstructionType.READ);
 					inst.type = OperandType.INST;
 					inst.forceGenerate(scope);
-//					result.hasReturn = true; // special case... this is a machine instruction, not a user-defined function
 					result.addInstruction(inst);
 					result.isEntry = true;
 				}
@@ -1708,7 +1520,6 @@ public class PLParser
 					callInst.forceGenerate(scope);
 					result.addInstruction(callInst);
 					result.isEntry = true;
-//					result.hasReturn = funcFlagMap.get(funcName);
 				}
 				
 				// Eat the last token and proceed
@@ -1718,7 +1529,6 @@ public class PLParser
 			{
 				ArrayList<PLIRInstruction> emptyList = new ArrayList<PLIRInstruction>();
 				PLIRInstruction callInst = PLIRInstruction.create_call(scope, funcName, funcFlagMap.get(funcName), emptyList);
-//				result.hasReturn = funcFlagMap.get(funcName); // special case... this is a machine instruction, not a user-defined function
 				result.addInstruction(callInst);
 				result.isEntry = true;
 			}
@@ -1765,8 +1575,6 @@ public class PLParser
 						glob.overrideGenerate = true;
 						glob.forceGenerate(scope);
 						scope.updateSymbol(name, glob);
-						debug(glob.toString());
-//						debug(scope.getCurrentValue("x").toString());
 					}
 				}
 				
@@ -1784,7 +1592,6 @@ public class PLParser
 						glob.overrideGenerate = true;
 						glob.forceGenerate(scope);
 						scope.updateSymbol(name, glob);
-						debug(glob.toString());
 					}
 				}
 			}
@@ -1800,18 +1607,8 @@ public class PLParser
 			// Push on a new scope for the then block
 			scope.pushNewScope("if" + (blockDepth++));
 			
-			// Parse the condition relation
-			PLIRBasicBlock entry = parse_relation(in);
-			for (PLIRInstruction inst : entry.instructions)
-			{
-//				if (inst.kind == ResultKind.CONST)
-//				{
-//					inst.overrideGenerate = true;
-//					inst.forceGenerate(scope);
-//				}
-			}
-			
 			// Fixup setup
+			PLIRBasicBlock entry = parse_relation(in);
 			PLIRInstruction lastEntryInst = entry.getLastInst();
 			PLIRInstruction branch = CondNegBraFwd(lastEntryInst);
 			branch.fixupLocation = PLStaticSingleAssignment.globalSSAIndex - 1;
@@ -1920,28 +1717,23 @@ public class PLParser
 					{
 						if (i1.equals(i2) && sharedModifiers.contains(i1) == false)
 						{
-							debug("adding: " + i1);
 							sharedModifiers.add(i1);
 						}
 					}
 				}
-				debug("(shared if) Inserting " + sharedModifiers.size() + " phis");
 				HashMap<String, PLIRInstruction> phisToAdd = new HashMap<String, PLIRInstruction>(); 
 				for (int i = 0; i < sharedModifiers.size(); i++)
 				{
 					String var = sharedModifiers.get(i);
 					offset++; 
 					PLIRInstruction thenInst = thenBlock.modifiedIdents.get(var);
-					debug(thenInst.toString());
 					
 					thenInst.forceGenerate(scope, thenInst.tempPosition);
 					PLIRInstruction elseInst = elseBlock.modifiedIdents.get(var);
 					
-					debug(elseInst.toString());
 					elseInst.forceGenerate(scope, elseInst.tempPosition);
 					PLIRInstruction phi = PLIRInstruction.create_phi(scope, var, thenInst, elseInst, PLStaticSingleAssignment.globalSSAIndex, true);
 					phi.isGlobalVariable = thenInst.isGlobalVariable || elseInst.isGlobalVariable;
-//					phi.saveName = var;
 					phi.saveName.put(scope.getCurrentScope(), var);
 					joinNode.insertInstruction(phi, 0);
 					phisToAdd.put(var, phi);
@@ -1956,7 +1748,6 @@ public class PLParser
 						modifiers.add(modded);
 					}
 				}
-				debug("(only the else) Inserting " + modifiers.size() + " phis");
 				for (String var : modifiers)
 				{
 					// Check to make sure this thing was actually in scope!
@@ -1974,13 +1765,10 @@ public class PLParser
 					
 					PLIRInstruction phi = PLIRInstruction.create_phi(scope, var, followInst, elseInst, PLStaticSingleAssignment.globalSSAIndex, true);
 					phi.isGlobalVariable = followInst.isGlobalVariable || elseInst.isGlobalVariable;
-//					phi.saveName = var;
 					phi.saveName.put(scope.getCurrentScope(), var);
-//					debug(phi.toString());
 					joinNode.insertInstruction(phi, 0);
 					
 					// The current value in scope needs to be updated now with the result of the phi
-//					scope.updateSymbol(var, phi);
 					phisToAdd.put(var, phi);
 				}
 				
@@ -1992,7 +1780,6 @@ public class PLParser
 						modifiers.add(modded);
 					}
 				}
-				debug("(only the if) Inserting " + modifiers.size() + " phis");
 				for (String var : modifiers)
 				{
 					// Check to make sure this thing was actually in scope!
@@ -2038,14 +1825,10 @@ public class PLParser
 					
 					PLIRInstruction phi = PLIRInstruction.create_phi(scope, var, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex, true);
 					phi.isGlobalVariable = leftInst.isGlobalVariable || followInst.isGlobalVariable;
-//					debug(phi.toString());
-//					phi.saveName = var;
 					phi.saveName.put(scope.getCurrentScope(), var);
 					joinNode.insertInstruction(phi, 0);
 					phisToAdd.put(var, phi);
 				}
-				
-				System.out.println("Adding phis");
 				
 				// Update the current scope with these new PHIs
 				ArrayList<String> phiNames = new ArrayList<String>();
@@ -2055,7 +1838,6 @@ public class PLParser
 				}
 				for (String var : phisToAdd.keySet())
 				{
-					System.out.println("Adding: " + phisToAdd.get(var).toString());
 					scope.updateSymbol(var, phisToAdd.get(var));
 					entry.modifiedIdents.put(var, phisToAdd.get(var));
 					joinNode.modifiedIdents.put(var, phisToAdd.get(var));
@@ -2084,15 +1866,8 @@ public class PLParser
 						modifiers.add(modded);
 					}
 				}
-				debug("(if statement without else) Inserting " + modifiers.size() + " phis");
 				for (String var : modifiers)
 				{
-					// Check to make sure this thing was actually in scope!
-					if (scope.getCurrentValue(var) == null)
-					{
-						debug("Uninitialized identifier in path: " + var);
-					}
-					
 					offset++;
 					PLIRInstruction leftInst = thenBlock.modifiedIdents.get(var);
 					leftInst.forceGenerate(scope, leftInst.tempPosition);
@@ -2102,13 +1877,10 @@ public class PLParser
 					
 					PLIRInstruction phi = PLIRInstruction.create_phi(scope, var, leftInst, followInst, PLStaticSingleAssignment.globalSSAIndex, true);
 					phi.isGlobalVariable = leftInst.isGlobalVariable || followInst.isGlobalVariable;
-//					debug(phi.toString());
-//					phi.saveName = var;
 					phi.saveName.put(scope.getCurrentScope(), var);
 					joinNode.insertInstruction(phi, 0);
 					
 					// The current value in scope needs to be updated now with the result of the phi
-//					System.out.println(scope.getCurrentScope());
 					scope.updateSymbol(var, phi);
 					
 					// Add to this block's list of modified identifiers
@@ -2131,10 +1903,7 @@ public class PLParser
 					}
 				}
 				numInstructions = numInstructions > 0 ? 0 : 1;
-//				FixupExact(lastEntryInst.fixupLocation, uncond.tempPosition - lastEntryInst.fixupLocation);
 				lastEntryInst.i2 = uncond.id - lastEntryInst.id + 1;
-//				FixupExact(uncond.tempPosition - numInstructions, PLStaticSingleAssignment.globalSSAIndex - uncond.tempPosition - offset);
-//				uncond.i2 = PLStaticSingleAssignment.globalSSAIndex - uncond.tempPosition + offset;
 				if (joinNode.instructions.isEmpty())
 				{
 					uncond.i2 = PLStaticSingleAssignment.globalSSAIndex - uncond.id - offset + 1;
@@ -2260,40 +2029,25 @@ public class PLParser
 			{
 				modded.add(i1);
 			}
-			debug("(while loop) Inserting " + modded.size() + " phis");
 			int offset = 0;
 			ArrayList<PLIRInstruction> phisGenerated = new ArrayList<PLIRInstruction>();
-//			for (String var : modded)
 			for (int mi = modded.size() - 1; mi >= 0; mi--)
 			{
 				String var = modded.get(mi);
 				PLIRInstruction bodyInst = body.modifiedIdents.get(var);
-//				bodyInst.generated = false;
-//				bodyInst.forceGenerate(scope, bodyInst.tempPosition);
-//				bodyInst.forceGenerate(scope);
 				
 				PLIRInstruction preInst = scope.getCurrentValue(var);
-//				preInst.generated = false;
-//				preInst.forceGenerate(scope, preInst.tempPosition);
-//				preInst.forceGenerate(scope);
 				
 				// Inject the phi at the appropriate spot in the join node...
-//				PLIRInstruction phi = PLIRInstruction.create_phi(scope, preInst, bodyInst, loopLocation + offset);
-//				PLIRInstruction phi = PLIRInstruction.create_phi(scope, preInst, bodyInst, entryStartLocation, true);
 				PLIRInstruction phi = PLIRInstruction.create_phi(scope, var, preInst, bodyInst, entryStartLocation + offset, true);
 				phi.op1name = var;
 				phi.op2name = var;
 				phi.isGlobalVariable = preInst.isGlobalVariable || bodyInst.isGlobalVariable;
 				phi.whilePhi = true;
 				phisGenerated.add(phi);
-				debug("new phi: " + phi.id + " := " + phi.toString());
-//				phi.origIdent = var; // needed for propagation
 				phi.ident.put(scope.getCurrentScope(), var);
-//				phi.saveName = var;
 				phi.saveName.put(scope.getCurrentScope(), var);
 				offset++;
-//				entryStartLocation = phi.id;
-//				PLStaticSingleAssignment.injectInstruction(phi, scope, entryStartLocation);
 				
 				// Propogate through the start of the while header
 				PLIRInstruction replacement = phi;
