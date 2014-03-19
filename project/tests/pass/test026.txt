@@ -1,4 +1,4 @@
-# Killing a subexpression test
+// Killing a subexpression test
 main
 var i, j, k, w, z, x, y;
 array[ 8 ] a, b;

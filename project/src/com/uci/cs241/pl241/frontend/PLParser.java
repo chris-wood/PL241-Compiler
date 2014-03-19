@@ -2410,6 +2410,10 @@ public class PLParser
 			advance(in);
 			scope.addVarToScope(sym);
 			
+			if (type == IdentType.ARRAY)
+			{
+				arrayDimensionMap.put(sym, size);
+			}
 			if (!globalVariableParsing && this.arrayDimensionMap.containsKey(sym))
 			{
 				func.arraySizes.put(sym, size);

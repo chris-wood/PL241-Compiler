@@ -110,21 +110,21 @@ public class CSE
 						    {
 						    	inst.removeInstruction(EliminationReason.CSE, parentInst);
 						    }
-						    else if (inst.op1type == OperandType.INST && inst.op2type == OperandType.INST)
+						    else if (inst.op1type == OperandType.INST && (inst.op2type == OperandType.INST || inst.op2type == OperandType.ADDRESS))
 							{
 								if (inst.op1.equals(parentInst.op1) && inst.op2.equals(parentInst.op2))
 								{
 									inst.removeInstruction(EliminationReason.CSE, parentInst);
 								}
 							}
-							else if (inst.op1type == OperandType.CONST && inst.op2type == OperandType.INST)
+							else if (inst.op1type == OperandType.CONST && (inst.op2type == OperandType.INST || inst.op2type == OperandType.ADDRESS))
 							{
 								if (inst.i1 == parentInst.i1 && inst.op2.equals(parentInst.op2))
 								{
 									inst.removeInstruction(EliminationReason.CSE, parentInst);
 								}
 							}
-							else if (inst.op1type == OperandType.INST && inst.op2type == OperandType.CONST)
+							else if ((inst.op1type == OperandType.INST || inst.op1type == OperandType.ADDRESS) && inst.op2type == OperandType.CONST)
 							{
 								if (inst.op1.equals(parentInst.op1) && inst.i2 == parentInst.i2)
 								{
