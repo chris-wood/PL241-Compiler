@@ -1,3 +1,67 @@
+main
+var a, b, i, j;
+array[6] x;
+
+procedure inc();
+{
+  let x[0] <- 1
+};
+
+{
+  let i <- call InputNum();
+  let x[i] <- call InputNum();
+  let a <- i + 1;
+  let b <- a + x[i];
+  if a > 0 then
+    let b <- b + 1;
+    let x[i] <- a
+  fi;
+  let b <- b + x[i]; 
+  //let i <- i + 1;
+  call inc();
+  let a <- a + x[i];
+  let x[1] <- 10;
+  let x[1] <- 10;
+  let x[2] <- 10;
+  call OutputNum(b)
+}.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // test...
 main
 array[82] data;
@@ -75,8 +139,7 @@ var last, akt, next;
 
   let i <- 1;
   while i <= colcount do
-    let j <- i + 1;
-    let next <- data[j];
+    let next <- data[i + 1];
     let data[i] <- rulebin[last][akt][next];
 
     let last <- akt;

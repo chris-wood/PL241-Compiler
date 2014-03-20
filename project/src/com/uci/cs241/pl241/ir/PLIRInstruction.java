@@ -30,6 +30,7 @@ public class PLIRInstruction
 	
 	public boolean isConstant = false;
 	public boolean stale = true;
+	public boolean killed = false;
 	
 	// Pointers to other instructions that need to be considered when this is generated
 	public ArrayList<PLIRInstruction> dependents = new ArrayList<PLIRInstruction>();

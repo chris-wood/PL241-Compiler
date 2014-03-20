@@ -160,6 +160,11 @@ public class PLC
 			if (runAll || runStep1 || runStep2 || runStep3 || runStep4)
 			{
 				// Perform CSE on each block
+				HashMap<String, Function> functions = new HashMap<String, Function>();
+				for (int i = 0; i < blocks.size(); i++)
+				{
+					functions.put(blocks.get(i).label, parser.scope.functions.get(blocks.get(i).label));
+				}
 				for (PLIRBasicBlock entry : blocks)
 				{
 					// Find the root by walking up the tree in any direction
@@ -170,7 +175,7 @@ public class PLC
 					
 					// Perform CSE, starting at the root
 					CSE cse = new CSE();
-					cse.performCSE(entry);
+					cse.performCSE(entry, functions);
 				}
 				
 				// Display the instructions AFTER CSE

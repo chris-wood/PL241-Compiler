@@ -10,6 +10,8 @@ public class Function
 	public ArrayList<PLIRInstruction> params;
 	public ArrayList<PLIRInstruction> vars;
 	public ArrayList<String> scope;
+	public ArrayList<String> killedArrays;
+	public ArrayList<PLIRInstruction> killedArrayOffsets;
 	public HashMap<String, Integer> constantsToSave = new HashMap<String, Integer>(); 
 	public HashMap<PLIRInstruction, PLIRInstruction> modifiedGlobals;
 	public HashMap<PLIRInstruction, PLIRInstruction> usedGlobals;
@@ -26,6 +28,8 @@ public class Function
 		this.usedGlobals = new HashMap<PLIRInstruction, PLIRInstruction>();
 		this.scope = new ArrayList<String>();
 		this.arraySizes = new HashMap<String, ArrayList<Integer>>();
+		this.killedArrays = new ArrayList<String>();
+		this.killedArrayOffsets = new ArrayList<PLIRInstruction>();
 		for (PLIRInstruction s : parameters)
 		{
 			this.params.add(s);
@@ -42,6 +46,8 @@ public class Function
 		this.usedGlobals = new HashMap<PLIRInstruction, PLIRInstruction>();
 		this.scope = new ArrayList<String>();
 		this.arraySizes = new HashMap<String, ArrayList<Integer>>();
+		this.killedArrays = new ArrayList<String>();
+		this.killedArrayOffsets = new ArrayList<PLIRInstruction>();
 		for (PLIRInstruction s : parameters)
 		{
 			this.params.add(s);
@@ -50,6 +56,12 @@ public class Function
 		{
 			this.vars.add(s);
 		}
+	}
+	
+	public void addKilledArray(String arrName, PLIRInstruction inst)
+	{
+		killedArrays.add(arrName);
+		killedArrayOffsets.add(inst);
 	}
 	
 	public int getStackOffset(String var)

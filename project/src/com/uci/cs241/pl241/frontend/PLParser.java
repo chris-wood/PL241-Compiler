@@ -47,6 +47,8 @@ public class PLParser
 	public HashMap<String, PLIRInstruction> globalVariables = new HashMap<String, PLIRInstruction>();
 	private ArrayList<String> deferredPhiIdents = new ArrayList<String>();
 	
+	public HashMap<PLIRInstruction, String> addressKillMap = new HashMap<PLIRInstruction, String>();
+	
 	public String funcName = "";
 	public ArrayList<String> callStack = new ArrayList<String>();
 	public HashMap<String, PLIRBasicBlock> funcBlockMap = new HashMap<String, PLIRBasicBlock>();
@@ -624,6 +626,7 @@ public class PLParser
 				load.type = OperandType.INST;
 				load.forceGenerate(scope);
 				load.isArray = true;
+				load.dummyName = leftInst.ident.get(scope.getCurrentScope());
 				leftInst = load;
 				termNode.addInstruction(load);
 			}
@@ -666,6 +669,7 @@ public class PLParser
 				load.type = OperandType.INST;
 				load.forceGenerate(scope);
 				load.isArray = true;
+				load.dummyName = rightInst.ident.get(scope.getCurrentScope());
 				rightInst = load;
 				termNode.addInstruction(load);
 			}
@@ -774,6 +778,7 @@ public class PLParser
 				load.type = OperandType.INST;
 				load.forceGenerate(scope);
 				load.isArray = true;
+				load.dummyName = term.arrayName;
 				leftInst = load;
 				exprNode.addInstruction(load);
 			}
@@ -816,6 +821,7 @@ public class PLParser
 				load.type = OperandType.INST;
 				load.forceGenerate(scope);
 				load.isArray = true;
+				load.dummyName = rightNode.arrayName;
 				rightInst = load;
 				exprNode.addInstruction(load);
 			}
@@ -959,6 +965,7 @@ public class PLParser
 			load.forceGenerate(scope);
 			load.isArray = true;
 			load.ident.put(scope.getCurrentScope(), leftInst.ident.get(scope.getCurrentScope()));
+			load.dummyName = left.arrayName;
 			leftInst = load;
 			relation.addInstruction(load);
 		}
@@ -1020,6 +1027,7 @@ public class PLParser
 			load.forceGenerate(scope);
 			load.isArray = true;
 			load.ident.put(scope.getCurrentScope(), rightInst.ident.get(scope.getCurrentScope()));
+			load.dummyName = right.arrayName;
 			rightInst = load;
 			relation.addInstruction(load);
 		}
@@ -1109,6 +1117,7 @@ public class PLParser
 						load.type = OperandType.INST;
 						load.forceGenerate(scope);
 						load.isArray = true;
+						load.dummyName = storeInst.ident.get(scope.getCurrentScope());
 						result.addInstruction(load);
 						storeInst = load;
 						storeInst.isGlobalVariable = this.globalVariables.containsKey(desigBlock.arrayName);
@@ -1202,7 +1211,13 @@ public class PLParser
 						store.storedValue = store.op2;
 						store.isArray = true;
 						store.ident.put(scope.getCurrentScope(), varName);
+						store.dummyName = varName;
 						result.addInstruction(store);
+						
+						if (parsingFunctionBody)
+						{
+							scope.functions.get(funcName).addKilledArray(varName, store.op1);
+						}
 						
 						// Tag the variable name with the dependent instructions so we can get unique accesses later on 
 						scope.updateSymbol(varName, store); // (SSA ID) := expr
@@ -1376,6 +1391,7 @@ public class PLParser
 						load.type = OperandType.INST;
 						load.forceGenerate(scope);
 						load.isArray = true;
+						load.dummyName = exprInst.ident.get(scope.getCurrentScope());
 						result.addInstruction(load);
 						exprInst = load;
 					}
@@ -1453,6 +1469,7 @@ public class PLParser
 								load.type = OperandType.INST;
 								load.forceGenerate(scope);
 								load.isArray = true;
+								load.dummyName = exprInst.ident.get(scope.getCurrentScope());
 								exprInst = load;
 								result.addInstruction(load);
 							}
@@ -1827,6 +1844,11 @@ public class PLParser
 					scope.updateSymbol(var, phisToAdd.get(var));
 					entry.modifiedIdents.put(var, phisToAdd.get(var));
 					joinNode.modifiedIdents.put(var, phisToAdd.get(var));
+					
+					if (identTypeMap.get(var) == IdentType.ARRAY)
+					{
+						
+					}
 					
 					for (String otherName : phiNames)
 					{

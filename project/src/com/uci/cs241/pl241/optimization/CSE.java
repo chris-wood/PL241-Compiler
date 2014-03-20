@@ -3,7 +3,9 @@ package com.uci.cs241.pl241.optimization;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.uci.cs241.pl241.frontend.Function;
 import com.uci.cs241.pl241.ir.PLIRBasicBlock;
+import com.uci.cs241.pl241.ir.PLStaticSingleAssignment;
 import com.uci.cs241.pl241.ir.PLIRInstruction.EliminationReason;
 import com.uci.cs241.pl241.ir.PLIRInstruction.OperandType;
 import com.uci.cs241.pl241.ir.PLIRInstruction.InstructionType;
@@ -11,8 +13,11 @@ import com.uci.cs241.pl241.ir.PLIRInstruction;
 
 public class CSE 
 {	
-	public PLIRBasicBlock performCSE(PLIRBasicBlock root)
+	public HashMap<String, Function> functions;
+	
+	public PLIRBasicBlock performCSE(PLIRBasicBlock root, HashMap<String, Function> functions)
 	{
+		this.functions = functions;
 		PLIRBasicBlock ret = root;
 		
 		HashMap<InstructionType, ArrayList<PLIRInstruction>> domList = 
@@ -25,18 +30,21 @@ public class CSE
 		domList.put(InstructionType.MUL, new ArrayList<PLIRInstruction>());
 		domList.put(InstructionType.DIV, new ArrayList<PLIRInstruction>());
 		domList.put(InstructionType.CMP, new ArrayList<PLIRInstruction>());
+		domList.put(InstructionType.ADDA, new ArrayList<PLIRInstruction>());
+		domList.put(InstructionType.LOAD, new ArrayList<PLIRInstruction>());
+		domList.put(InstructionType.STORE, new ArrayList<PLIRInstruction>());
 		
 		// Record what's already been visited to prevent loops on while loop BBs
 		ArrayList<Integer> visited = new ArrayList<Integer>();
 		
 		// Start depth-first traversal of the tree, recursively
-		cseOnBlock(domList, visited, root);
+		cseOnBlock(domList, visited, root, new ArrayList<PLIRInstruction>());
 		
 		return ret;
 	}
 	
 	private void cseOnBlock(HashMap<InstructionType, ArrayList<PLIRInstruction>> parentDomList, 
-			ArrayList<Integer> visited, PLIRBasicBlock block)
+			ArrayList<Integer> visited, PLIRBasicBlock block, ArrayList<PLIRInstruction> killedAddresses)
 	{
 		// Avoid cyclic loops from while loops
 		if (visited.contains(block.id))
@@ -47,6 +55,7 @@ public class CSE
 		{
 			HashMap<InstructionType, ArrayList<PLIRInstruction>> domList = 
 					new HashMap<InstructionType, ArrayList<PLIRInstruction>>();
+			HashMap<PLIRInstruction, PLIRInstruction> killMap = new HashMap<PLIRInstruction, PLIRInstruction>();
 			
 			// Re-populate the map
 			for (InstructionType key : parentDomList.keySet())
@@ -86,12 +95,20 @@ public class CSE
 						inst.op1 = inst.op1.refInst;
 					}
 				}
+				if (killMap.containsKey(inst.op1))
+				{
+					inst.op1 = killMap.get(inst.op1);
+				}
 				if (inst.op2 != null)
 				{
 					while (inst.op2.refInst != null)
 					{
 						inst.op2 = inst.op2.refInst;
 					}
+				}
+				if (killMap.containsKey(inst.op2))
+				{
+					inst.op2 = killMap.get(inst.op2);
 				}
 				
 				if (domList.containsKey(inst.opcode))
@@ -110,23 +127,62 @@ public class CSE
 						    {
 						    	inst.removeInstruction(EliminationReason.CSE, parentInst);
 						    }
+						    else if (inst.opcode == InstructionType.LOAD && inst.op1.equals(parentInst.op1))
+						    {
+						    	// Need to check and make sure this load wasn't killed by a store between its spot and the parent
+						    	boolean killed = killedAddresses.contains(inst.op1);
+						    	boolean funcKilled = false;
+						    	for (int i = parentInst.id; i < inst.id && !funcKilled; i++)
+						    	{
+						    		PLIRInstruction other = PLStaticSingleAssignment.instructions.get(i); 
+						    		if (other.opcode == InstructionType.FUNC || other.opcode == InstructionType.PROC)
+						    		{
+						    			if (functions.get(other.funcName).killedArrays.contains(inst.dummyName))
+						    			{
+						    				funcKilled = true;
+						    			}
+						    		}
+						    	}
+						    	if (!killed && !funcKilled)
+						    	{
+						    		inst.removeInstruction(EliminationReason.CSE, parentInst);
+						    	}
+						    	else if (!funcKilled)
+						    	{
+						    		killMap.put(parentInst, inst); // anything that references the parent must now point to this new load
+						    	}
+						    	
+						    	// If the address was killed before, now it's OK
+						    	killedAddresses.remove(inst.op1); // disregard return - we don't care if this succeeds or not
+						    }
+						    else if (inst.opcode == InstructionType.STORE && inst.op1.equals(parentInst.op1))
+						    {
+						    	if (inst.op2type == OperandType.CONST && parentInst.op2type == OperandType.CONST && inst.i2 == parentInst.i2)
+						    	{
+						    		inst.removeInstruction(EliminationReason.CSE, parentInst);	
+						    	}
+						    	else if (inst.op2 != null && parentInst.op2 != null && inst.op2.equals(parentInst.op2))
+						    	{
+						    		inst.removeInstruction(EliminationReason.CSE, parentInst);
+						    	}
+						    }
 						    else if (inst.op1type == OperandType.INST && (inst.op2type == OperandType.INST || inst.op2type == OperandType.ADDRESS))
 							{
-								if (inst.op1.equals(parentInst.op1) && inst.op2.equals(parentInst.op2))
+								if (inst.op1.equals(parentInst.op1) && inst.op2.equals(parentInst.op2) && killedAddresses.contains(inst.op1) == false && killedAddresses.contains(inst.op2) == false)
 								{
 									inst.removeInstruction(EliminationReason.CSE, parentInst);
 								}
 							}
 							else if (inst.op1type == OperandType.CONST && (inst.op2type == OperandType.INST || inst.op2type == OperandType.ADDRESS))
 							{
-								if (inst.i1 == parentInst.i1 && inst.op2.equals(parentInst.op2))
+								if (inst.i1 == parentInst.i1 && inst.op2.equals(parentInst.op2) && killedAddresses.contains(inst.op2) == false)
 								{
 									inst.removeInstruction(EliminationReason.CSE, parentInst);
 								}
 							}
 							else if ((inst.op1type == OperandType.INST || inst.op1type == OperandType.ADDRESS) && inst.op2type == OperandType.CONST)
 							{
-								if (inst.op1.equals(parentInst.op1) && inst.i2 == parentInst.i2)
+								if (inst.op1.equals(parentInst.op1) && killedAddresses.contains(inst.op1) == false && inst.i2 == parentInst.i2)
 								{
 									inst.removeInstruction(EliminationReason.CSE, parentInst);
 								}
@@ -157,8 +213,8 @@ public class CSE
 					    		else if ((inst.op1type == OperandType.INST && parentInst.op1type == OperandType.INST) &&
 						    			(inst.op2type == OperandType.INST && parentInst.op2type == OperandType.INST))	
 						    	{
-					    			if ((inst.op1.equals(parentInst.op1) && inst.op2.equals(parentInst.op2)) ||
-					    				((inst.op1.equals(parentInst.op2) && inst.op2.equals(parentInst.op1))))
+					    			if ((inst.op1.equals(parentInst.op1) && inst.op2.equals(parentInst.op2) && killedAddresses.contains(inst.op1) == false && killedAddresses.contains(inst.op2) == false) ||
+					    				((inst.op1.equals(parentInst.op2) && inst.op2.equals(parentInst.op1) && killedAddresses.contains(inst.op1) == false && killedAddresses.contains(inst.op2) == false)))
 					    			{
 					    				inst.removeInstruction(EliminationReason.CSE, parentInst);
 					    			}
@@ -169,7 +225,7 @@ public class CSE
 					    		else if ((inst.op1type == OperandType.INST && parentInst.op1type == OperandType.INST) &&
 						    			(inst.op2type == OperandType.CONST && parentInst.op2type == OperandType.CONST))	
 					    		{
-					    			if ((inst.op1.equals(parentInst.op1) && inst.i2 == parentInst.i2 ))
+					    			if ((inst.op1.equals(parentInst.op1) && killedAddresses.contains(inst.op1) == false && inst.i2 == parentInst.i2 ))
 					    			{
 					    				inst.removeInstruction(EliminationReason.CSE, parentInst);
 					    			}
@@ -180,7 +236,7 @@ public class CSE
 					    		else if ((inst.op1type == OperandType.INST && parentInst.op1type == OperandType.CONST) &&
 						    			(inst.op2type == OperandType.CONST && parentInst.op2type == OperandType.INST))	
 						    		{
-					    				if ((inst.op1.equals(parentInst.op2) && inst.i2 == parentInst.i1 ))
+					    				if ((inst.op1.equals(parentInst.op2) && killedAddresses.contains(inst.op1) == false && inst.i2 == parentInst.i1 ))
 						    			{
 						    				inst.removeInstruction(EliminationReason.CSE, parentInst);
 						    			}
@@ -191,7 +247,7 @@ public class CSE
 					    		else if ((inst.op1type == OperandType.CONST && parentInst.op1type == OperandType.CONST) &&
 						    			(inst.op2type == OperandType.INST && parentInst.op2type == OperandType.INST))	
 						    		{
-					    				if ((inst.op2.equals(parentInst.op2) && inst.i1 == parentInst.i1))
+					    				if ((inst.op2.equals(parentInst.op2) && killedAddresses.contains(inst.op2) == false && inst.i1 == parentInst.i1))
 						    			{
 						    				inst.removeInstruction(EliminationReason.CSE, parentInst);
 						    			}
@@ -202,7 +258,7 @@ public class CSE
 					    		else if ((inst.op1type == OperandType.CONST && parentInst.op1type == OperandType.INST) &&
 						    			(inst.op2type == OperandType.INST && parentInst.op2type == OperandType.CONST))	
 						    		{
-					    				if ((inst.op2.equals(parentInst.op1) && inst.i1 == parentInst.i2 ))
+					    				if ((inst.op2.equals(parentInst.op1) && killedAddresses.contains(inst.op2) == false && inst.i1 == parentInst.i2 ))
 						    			{
 						    				inst.removeInstruction(EliminationReason.CSE, parentInst);
 						    			}
@@ -226,8 +282,8 @@ public class CSE
 					    		else if ((inst.op1type == OperandType.INST && parentInst.op1type == OperandType.INST) &&
 						    			(inst.op2type == OperandType.INST && parentInst.op2type == OperandType.INST))	
 						    		{
-					    				if ((inst.op1.equals(parentInst.op1) && inst.op2.equals(parentInst.op2)) ||
-						    				((inst.op1.equals(parentInst.op2) && inst.op2.equals(parentInst.op1))))
+					    				if ((inst.op1.equals(parentInst.op1) && inst.op2.equals(parentInst.op2) && killedAddresses.contains(inst.op1) == false && killedAddresses.contains(inst.op2) == false) ||
+						    				((inst.op1.equals(parentInst.op2) && inst.op2.equals(parentInst.op1) && killedAddresses.contains(inst.op1) == false && killedAddresses.contains(inst.op2) == false)))
 						    			{
 						    				inst.removeInstruction(EliminationReason.CSE, parentInst);
 						    			}
@@ -238,7 +294,7 @@ public class CSE
 					    		else if ((inst.op1type == OperandType.INST && parentInst.op1type == OperandType.INST) &&
 						    			(inst.op2type == OperandType.CONST && parentInst.op2type == OperandType.CONST))	
 						    		{
-					    			if ((inst.op1.equals(parentInst.op1) && inst.i2 == parentInst.i2 ))
+					    			if ((inst.op1.equals(parentInst.op1) && killedAddresses.contains(inst.op1) == false && inst.i2 == parentInst.i2 ))
 					    			{
 					    				inst.removeInstruction(EliminationReason.CSE, parentInst);
 					    			}
@@ -249,7 +305,7 @@ public class CSE
 					    		else if ((inst.op1type == OperandType.INST && parentInst.op1type == OperandType.CONST) &&
 						    			(inst.op2type == OperandType.CONST && parentInst.op2type == OperandType.INST))	
 						    		{
-					    			if ((inst.op1.equals(parentInst.op2) && inst.i2 == parentInst.i1 ))
+					    			if ((inst.op1.equals(parentInst.op2) && killedAddresses.contains(inst.op1) == false &&inst.i2 == parentInst.i1 ))
 					    			{
 					    				inst.removeInstruction(EliminationReason.CSE, parentInst);
 					    			}
@@ -260,7 +316,7 @@ public class CSE
 					    		else if ((inst.op1type == OperandType.CONST && parentInst.op1type == OperandType.CONST) &&
 						    			(inst.op2type == OperandType.INST && parentInst.op2type == OperandType.INST))	
 						    		{
-					    			if ((inst.op2.equals(parentInst.op2) && inst.i1 == parentInst.i1))
+					    			if ((inst.op2.equals(parentInst.op2) && killedAddresses.contains(inst.op2) == false && inst.i1 == parentInst.i1))
 					    			{
 					    				inst.removeInstruction(EliminationReason.CSE, parentInst);
 					    			}
@@ -271,7 +327,7 @@ public class CSE
 					    		else if ((inst.op1type == OperandType.CONST && parentInst.op1type == OperandType.INST) &&
 						    			(inst.op2type == OperandType.INST && parentInst.op2type == OperandType.CONST))	
 						    		{
-					    			if ((inst.op2.equals(parentInst.op1) && inst.i1 == parentInst.i2 ))
+					    			if ((inst.op2.equals(parentInst.op1) && killedAddresses.contains(inst.op2) == false && inst.i1 == parentInst.i2 ))
 					    			{
 					    				inst.removeInstruction(EliminationReason.CSE, parentInst);
 					    			}
@@ -281,6 +337,20 @@ public class CSE
 					    	default:
 					    		break;
 					    	}
+							
+							
+							if (inst.opcode == InstructionType.STORE)
+							{
+								for (int i = 0; i < inst.id; i++)
+								{
+									PLIRInstruction other = PLStaticSingleAssignment.instructions.get(i);
+									if (other.opcode == InstructionType.LOAD && other.op1.equals(inst.op1))
+									{
+										killedAddresses.add(other);
+									}
+								}
+								killedAddresses.add(inst.op1);
+							}
 						}
 					}
 					domList.get(inst.opcode).add(0, inst);
@@ -293,7 +363,7 @@ public class CSE
 			// DFS on the children now
 			for (PLIRBasicBlock child : block.dominatorSet)
 			{
-				cseOnBlock(domList, visited, child);
+				cseOnBlock(domList, visited, child, killedAddresses);
 			}
 		}
 	}
