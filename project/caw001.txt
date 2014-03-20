@@ -1,6 +1,7 @@
 main
 var a, b, i, j;
 array[6] x;
+array[6] y;
 
 procedure inc();
 {
@@ -14,7 +15,7 @@ procedure inc();
   let b <- a + x[i];
   if a > 0 then
     let b <- b + 1;
-    let x[i] <- a
+    let y[i] <- a
   fi;
   let b <- b + x[i]; 
   //let i <- i + 1;

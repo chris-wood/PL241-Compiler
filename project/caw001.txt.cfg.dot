@@ -1,10 +1,10 @@
 digraph cfg {
-BB7[shape = box, label = "BB(7 [ inc ])\n" + "6 := mul #4 #0\n" + "7 := add FP x_baseaddr\n" + "8 := adda (6) (7)\n" + "9 := store (8) #1\n" + "10 := return\n"];
+BB8[shape = box, label = "BB(8 [ inc ])\n" + "7 := mul #4 #0\n" + "8 := add FP x_baseaddr\n" + "9 := adda (7) (8)\n" + "10 := store (9) #1\n" + "11 := return\n"];
 
-BB11[shape = box, label = "BB(11)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := global #0\n" + "4 := global #0\n" + "5 := global #0\n" + "11 := read\n" + "12 := read\n" + "13 := mul #4 (11)\n" + "14 := add FP x_baseaddr\n" + "15 := adda (13) (14)\n" + "16 := store (15) (12)\n" + "17 := add (11) #1\n" + "18 := (13)\n" + "19 := (14)\n" + "20 := (15)\n" + "21 := load (15)\n" + "22 := add (17) (21)\n" + "23 := cmp (17) #0\n" + "24 := ble (23) #6\n"];
-BB28[shape = box, label = "BB(28)\n" + "25 := add (22) #1\n" + "26 := (13)\n" + "27 := (14)\n" + "28 := (15)\n" + "29 := store (15) (17)\n"];
-BB35[shape = box, label = "BB(35)\n" + "30 := phi({inc=b}) (25) (22)\n" + "31 := phi({inc=x}) (29) (16)\n" + "32 := (13)\n" + "33 := (14)\n" + "34 := (15)\n" + "35 := load (15)\n" + "36 := add (30) (35)\n" + "37 := proc inc\n" + "38 := (13)\n" + "39 := (14)\n" + "40 := (15)\n" + "41 := load (15)\n" + "42 := add (17) (41)\n" + "43 := mul #4 #1\n" + "44 := (14)\n" + "45 := adda (43) (14)\n" + "46 := store (45) #10\n" + "47 := (43)\n" + "48 := (14)\n" + "49 := (45)\n" + "50 := (46)\n" + "51 := mul #4 #2\n" + "52 := (14)\n" + "53 := adda (51) (14)\n" + "54 := store (53) #10\n" + "55 := write (36)\n" + "56 := end\n"];
-BB11 -> BB28;
-BB11 -> BB35;
-BB28 -> BB35;
+BB12[shape = box, label = "BB(12)\n" + "1 := global #0\n" + "2 := global #0\n" + "3 := global #0\n" + "4 := global #0\n" + "5 := global #0\n" + "6 := global #0\n" + "12 := read\n" + "13 := read\n" + "14 := mul #4 (12)\n" + "15 := add FP x_baseaddr\n" + "16 := adda (14) (15)\n" + "17 := store (16) (13)\n" + "18 := add (12) #1\n" + "19 := (14)\n" + "20 := (15)\n" + "21 := (16)\n" + "22 := load (16)\n" + "23 := add (18) (22)\n" + "24 := cmp (18) #0\n" + "25 := ble (24) #6\n"];
+BB29[shape = box, label = "BB(29)\n" + "26 := add (23) #1\n" + "27 := (14)\n" + "28 := add FP y_baseaddr\n" + "29 := adda (14) (28)\n" + "30 := store (29) (18)\n"];
+BB36[shape = box, label = "BB(36)\n" + "31 := phi({inc=b}) (26) (23)\n" + "32 := phi({inc=y}) (30) (6)\n" + "33 := (14)\n" + "34 := (15)\n" + "35 := (16)\n" + "36 := (22)\n" + "37 := add (31) (22)\n" + "38 := proc inc\n" + "39 := (14)\n" + "40 := (15)\n" + "41 := (16)\n" + "42 := load (16)\n" + "43 := add (18) (42)\n" + "44 := mul #4 #1\n" + "45 := (15)\n" + "46 := adda (44) (15)\n" + "47 := store (46) #10\n" + "48 := (44)\n" + "49 := (15)\n" + "50 := (46)\n" + "51 := (47)\n" + "52 := mul #4 #2\n" + "53 := (15)\n" + "54 := adda (52) (15)\n" + "55 := store (54) #10\n" + "56 := write (37)\n" + "57 := end\n"];
+BB12 -> BB29;
+BB12 -> BB36;
+BB29 -> BB36;
 }
